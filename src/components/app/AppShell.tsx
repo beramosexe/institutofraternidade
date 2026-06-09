@@ -11,13 +11,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/me.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth-context";
 
 export function useMyAccess() {
   const fn = useServerFn(getMyAccess);
+  const { session } = useAuth();
   return useQuery({
     queryKey: ["my-access"],
     queryFn: () => fn(),
+    enabled: !!session,
     staleTime: 60_000,
+    retry: false,
   });
 }
 
