@@ -14,7 +14,12 @@ import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as CanalizacoesRouteImport } from './routes/canalizacoes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgendaRouteImport } from './routes/agenda'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
+import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAudiosRouteImport } from './routes/_authenticated/app.audios'
+import { Route as AuthenticatedAppAudiosIdRouteImport } from './routes/_authenticated/app.audios.$id'
 
 const QuemSomosRoute = QuemSomosRouteImport.update({
   id: '/quem-somos',
@@ -41,11 +46,36 @@ const AgendaRoute = AgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppAudiosRoute = AuthenticatedAppAudiosRouteImport.update({
+  id: '/audios',
+  path: '/audios',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppAudiosIdRoute =
+  AuthenticatedAppAudiosIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedAppAudiosRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +84,10 @@ export interface FileRoutesByFullPath {
   '/canalizacoes': typeof CanalizacoesRoute
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
+  '/app': typeof AuthenticatedAppRouteWithChildren
+  '/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
+  '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,15 +96,23 @@ export interface FileRoutesByTo {
   '/canalizacoes': typeof CanalizacoesRoute
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
+  '/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
+  '/app': typeof AuthenticatedAppIndexRoute
+  '/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/agenda': typeof AgendaRoute
   '/auth': typeof AuthRoute
   '/canalizacoes': typeof CanalizacoesRoute
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
+  '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
+  '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,20 +123,39 @@ export interface FileRouteTypes {
     | '/canalizacoes'
     | '/contato'
     | '/quem-somos'
+    | '/app'
+    | '/app/audios'
+    | '/app/'
+    | '/app/audios/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agenda' | '/auth' | '/canalizacoes' | '/contato' | '/quem-somos'
-  id:
-    | '__root__'
+  to:
     | '/'
     | '/agenda'
     | '/auth'
     | '/canalizacoes'
     | '/contato'
     | '/quem-somos'
+    | '/app/audios'
+    | '/app'
+    | '/app/audios/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/agenda'
+    | '/auth'
+    | '/canalizacoes'
+    | '/contato'
+    | '/quem-somos'
+    | '/_authenticated/app'
+    | '/_authenticated/app/audios'
+    | '/_authenticated/app/'
+    | '/_authenticated/app/audios/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AgendaRoute: typeof AgendaRoute
   AuthRoute: typeof AuthRoute
   CanalizacoesRoute: typeof CanalizacoesRoute
@@ -139,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgendaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -146,11 +214,78 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/app': {
+      id: '/_authenticated/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthenticatedAppRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/': {
+      id: '/_authenticated/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/audios': {
+      id: '/_authenticated/app/audios'
+      path: '/audios'
+      fullPath: '/app/audios'
+      preLoaderRoute: typeof AuthenticatedAppAudiosRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/audios/$id': {
+      id: '/_authenticated/app/audios/$id'
+      path: '/$id'
+      fullPath: '/app/audios/$id'
+      preLoaderRoute: typeof AuthenticatedAppAudiosIdRouteImport
+      parentRoute: typeof AuthenticatedAppAudiosRoute
+    }
   }
 }
 
+interface AuthenticatedAppAudiosRouteChildren {
+  AuthenticatedAppAudiosIdRoute: typeof AuthenticatedAppAudiosIdRoute
+}
+
+const AuthenticatedAppAudiosRouteChildren: AuthenticatedAppAudiosRouteChildren =
+  {
+    AuthenticatedAppAudiosIdRoute: AuthenticatedAppAudiosIdRoute,
+  }
+
+const AuthenticatedAppAudiosRouteWithChildren =
+  AuthenticatedAppAudiosRoute._addFileChildren(
+    AuthenticatedAppAudiosRouteChildren,
+  )
+
+interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAudiosRoute: typeof AuthenticatedAppAudiosRouteWithChildren
+  AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+}
+
+const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAudiosRoute: AuthenticatedAppAudiosRouteWithChildren,
+  AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+}
+
+const AuthenticatedAppRouteWithChildren =
+  AuthenticatedAppRoute._addFileChildren(AuthenticatedAppRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppRoute: typeof AuthenticatedAppRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppRoute: AuthenticatedAppRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AgendaRoute: AgendaRoute,
   AuthRoute: AuthRoute,
   CanalizacoesRoute: CanalizacoesRoute,

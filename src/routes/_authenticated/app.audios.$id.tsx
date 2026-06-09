@@ -45,7 +45,7 @@ function AudioDetail() {
   if (isLoading) return <div className="p-10 text-muted-foreground">Carregando…</div>;
   if (!audio) return <div className="p-10 text-muted-foreground">Áudio não encontrado.</div>;
 
-  const transcription = audio.audio_transcriptions?.[0];
+  const transcription = Array.isArray(audio.audio_transcriptions) ? audio.audio_transcriptions[0] : audio.audio_transcriptions;
   const segments = (transcription?.segments as { start: number; end: number; text: string }[] | null) ?? [];
 
   return (
@@ -73,7 +73,7 @@ function AudioDetail() {
                 ? "border-brand/40 bg-brand/10 text-foreground"
                 : "border-gold/40 bg-gold/10 text-foreground"}
             >
-              Transcrição: {REVIEW_STATUS_LABELS[transcription.review_status]}
+              Transcrição: {REVIEW_STATUS_LABELS[transcription.review_status as keyof typeof REVIEW_STATUS_LABELS]}
             </Badge>
           )}
         </div>

@@ -11,6 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { ACCESS_LEVEL_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
 
+type TranscriptionPreview = { id: string; text: string; review_status: "unreviewed" | "in_review" | "reviewed" } | null;
+function getTranscription(a: { audio_transcriptions: unknown }): TranscriptionPreview {
+  const t = a.audio_transcriptions;
+  if (!t) return null;
+  if (Array.isArray(t)) return (t[0] as TranscriptionPreview) ?? null;
+  return t as TranscriptionPreview;
+}
+
 export const Route = createFileRoute("/_authenticated/app/audios")({
   component: AudiosLibrary,
 });
@@ -51,7 +59,7 @@ function AudiosLibrary() {
       return (
         a.title.toLowerCase().includes(term) ||
         a.message_source?.toLowerCase().includes(term) ||
-        a.audio_transcriptions?.[0]?.text?.toLowerCase().includes(term)
+        getTranscription(a)?.text?.toLowerCase().includes(term)
       );
     });
   }, [audios, q, workFilter, typeFilter]);
@@ -105,7 +113,7 @@ function AudiosLibrary() {
             Nenhum áudio encontrado.
           </Card>
         ) : filtered.map((a) => {
-          const transcription = a.audio_transcriptions?.[0];
+          const transcription = getTranscription(a);
           return (
             <Link key={a.id} to="/app/audios/$id" params={{ id: a.id }}>
               <Card className="p-5 transition-colors hover:bg-accent/30">
@@ -132,7 +140,7 @@ function AudiosLibrary() {
                     )}
                     {transcription && transcription.review_status !== "reviewed" && (
                       <Badge variant="outline" className="border-gold/40 bg-gold/10 text-foreground">
-                        {REVIEW_STATUS_LABELS[transcription.review_status]}
+                        {REVIEW_STATUS_LABELS[transcription.review_status as keyof typeof REVIEW_STATUS_LABELS]}
                       </Badge>
                     )}
                   </div>
