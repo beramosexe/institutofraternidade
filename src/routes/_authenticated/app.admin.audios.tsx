@@ -25,9 +25,14 @@ function AdminAudios() {
     queryFn: async () => {
       const { data } = await supabase
         .from("audios")
-        .select("id, title, status, access_level, audio_type, message_source, works(name), uploaded_by, profiles:uploaded_by(full_name), published_at")
+        .select("id, title, status, access_level, audio_type, message_source, works(name), uploaded_by, published_at")
         .order("published_at", { ascending: false });
-      return data ?? [];
+      const ids = Array.from(new Set((data ?? []).map((a) => a.uploaded_by).filter(Boolean) as string[]));
+      const { data: profs } = ids.length
+        ? await supabase.from("profiles").select("id, full_name").in("id", ids)
+        : { data: [] as { id: string; full_name: string | null }[] };
+      const nameOf = new Map((profs ?? []).map((p) => [p.id, p.full_name]));
+      return (data ?? []).map((a) => ({ ...a, uploader_name: a.uploaded_by ? nameOf.get(a.uploaded_by) ?? null : null }));
     },
   });
 
@@ -62,7 +67,7 @@ function AdminAudios() {
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-foreground">{a.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  {a.works?.name ?? "—"} · {a.message_source ?? "—"} · por {a.profiles?.full_name ?? "?"}
+                  {a.works?.name ?? "—"} · {a.message_source ?? "—"} · por {a.uploader_name ?? "?"}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">

@@ -33,7 +33,7 @@ function AdminLogs() {
                 {l.entity_id && <span className="ml-2 font-mono text-xs text-muted-foreground">{l.entity_id.slice(0, 8)}</span>}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                por {l.profiles?.full_name ?? "—"} · {format(new Date(l.created_at), "d MMM yyyy HH:mm", { locale: ptBR })}
+                por {l.actor_name ?? "—"} · {format(new Date(l.created_at), "d MMM yyyy HH:mm", { locale: ptBR })}
               </p>
             </div>
             {l.diff && (
