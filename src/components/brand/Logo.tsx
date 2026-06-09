@@ -22,7 +22,7 @@ export function Logo({
       <div className="leading-tight">
         <div className="font-display text-base text-foreground">Instituto Fraternidade</div>
         <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-          Acolher · Iluminar · Servir
+          Nova Terra com Consciência
         </div>
       </div>
     </div>
