@@ -34,6 +34,8 @@ export const registerAudio = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const dbg = await supabase.rpc("has_permission", { _user_id: userId, _permission: "audio.upload" });
+    console.log("[registerAudio] userId=", userId, "has_permission=", dbg.data, "err=", dbg.error?.message);
     const { data: row, error } = await supabase
       .from("audios")
       .insert({
@@ -43,7 +45,7 @@ export const registerAudio = createServerFn({ method: "POST" })
       })
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) { console.error("[registerAudio] insert error", error, "payload=", { ...data, uploaded_by: userId }); throw new Error(error.message); }
 
     await supabase.from("processing_jobs").insert({
       audio_id: row.id, job_type: "transcribe", status: "pending",
