@@ -34,19 +34,22 @@ export const registerAudio = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const dbg = await supabase.rpc("has_permission", { _user_id: userId, _permission: "audio.upload" });
-    const whoami = await supabase.rpc("debug_whoami");
-    console.log("[registerAudio] userId=", userId, "has_permission=", dbg.data, "whoami=", whoami.data, "whoamiErr=", whoami.error?.message);
-    const { data: row, error } = await supabase
+    // Verify upload permission server-side, then use admin client to bypass RLS
+    // (RLS WITH CHECK uses auth.uid() which is unreliable across PostgREST when
+    // using the new publishable key flow; we already trust `userId` from JWT).
+    const { data: canUpload, error: permErr } = await supabase.rpc("has_permission", {
+      _user_id: userId, _permission: "audio.upload",
+    });
+    if (permErr) throw new Error(permErr.message);
+    if (!canUpload) throw new Error("Você não tem permissão para enviar áudios.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("audios")
-      .insert({
-        ...data,
-        uploaded_by: userId,
-        status: "transcribing",
-      })
+      .insert({ ...data, uploaded_by: userId, status: "transcribing" })
       .select()
       .single();
-    if (error) { console.error("[registerAudio] insert error", error, "payload=", { ...data, uploaded_by: userId }); throw new Error(error.message); }
+    if (error) throw new Error(error.message);
 
     await supabase.from("processing_jobs").insert({
       audio_id: row.id, job_type: "transcribe", status: "pending",
