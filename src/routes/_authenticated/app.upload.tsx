@@ -38,13 +38,21 @@ function UploadPage() {
   const [workId, setWorkId] = useState<string>("none");
   const [recordedAt, setRecordedAt] = useState<string>("");
   const [audioType, setAudioType] = useState<"canalizacao" | "outro">("canalizacao");
-  const [messageSource, setMessageSource] = useState("");
+  const [entityChoice, setEntityChoice] = useState<string>(NONE_VALUE);
+  const [messageSourceOther, setMessageSourceOther] = useState("");
   const [accessLevel, setAccessLevel] = useState<"public" | "associates" | "work_participants" | "attendees_only">("associates");
   const [busy, setBusy] = useState(false);
 
   const { data: works } = useQuery({
     queryKey: ["works-options"],
     queryFn: async () => (await supabase.from("works").select("id, name").order("starts_at", { ascending: false })).data ?? [],
+  });
+
+  const listEntFn = useServerFn(listEntitiesForWork);
+  const { data: entities = [] } = useQuery({
+    queryKey: ["entities-for-work", workId],
+    queryFn: () => listEntFn({ data: { work_id: workId === "none" ? null : workId } }),
+    staleTime: 30_000,
   });
 
   const canUpload = access?.isAdmin || access?.permissions.includes("audio.upload");
