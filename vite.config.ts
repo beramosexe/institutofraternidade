@@ -12,4 +12,15 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    optimizeDeps: {
+      include: [
+        "date-fns",
+        "date-fns/locale",
+        "@radix-ui/react-select",
+        "@radix-ui/react-switch",
+        "@radix-ui/react-dialog",
+      ],
+    },
+  },
 });
