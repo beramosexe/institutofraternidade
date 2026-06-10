@@ -89,6 +89,17 @@ function UploadPage() {
         .upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
 
+      // Resolve message source from entity choice
+      let resolvedSource: string | undefined;
+      let resolvedEntityId: string | null = null;
+      if (entityChoice === OTHER_VALUE) {
+        resolvedSource = messageSourceOther.trim() || undefined;
+      } else if (entityChoice !== NONE_VALUE) {
+        const ent = entities.find((e) => e.id === entityChoice);
+        resolvedSource = ent?.name;
+        resolvedEntityId = ent?.id ?? null;
+      }
+
       const row = await register({
         data: {
           title: title.trim(),
@@ -96,7 +107,8 @@ function UploadPage() {
           work_id: workId === "none" ? null : workId,
           recorded_at: recordedAt || null,
           audio_type: audioType,
-          message_source: messageSource.trim() || undefined,
+          message_source: resolvedSource,
+          message_entity_id: resolvedEntityId,
           access_level: accessLevel,
           storage_path: path,
           file_size_bytes: file.size,
