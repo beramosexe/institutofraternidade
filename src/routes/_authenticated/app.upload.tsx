@@ -12,8 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { registerAudio } from "@/lib/audios.functions";
+import { listEntitiesForWork } from "@/lib/entities.functions";
 import { useMyAccess } from "@/components/app/AppShell";
 import { useAuth } from "@/lib/auth-context";
+
+const OTHER_VALUE = "__other__";
+const NONE_VALUE = "__none__";
 
 const ACCEPT = ".mp3,.m4a,.wav,.webm,.ogg,.aac,audio/*";
 const MAX_BYTES = 500 * 1024 * 1024;
