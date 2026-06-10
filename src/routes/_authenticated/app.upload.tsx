@@ -157,8 +157,28 @@ function UploadPage() {
               <Input id="title" required value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
             </div>
             <div>
-              <Label htmlFor="source">Mensagem de quem</Label>
-              <Input id="source" placeholder="Ex.: Mentor X, Espírito amigo…" value={messageSource} onChange={(e) => setMessageSource(e.target.value)} maxLength={200} />
+              <Label htmlFor="source">Mensagem de quem (canalização)</Label>
+              <Select value={entityChoice} onValueChange={setEntityChoice}>
+                <SelectTrigger id="source"><SelectValue placeholder="Selecionar entidade" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>— Não informar —</SelectItem>
+                  {entities.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.name}{e.is_favorite ? " ★" : ""}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={OTHER_VALUE}>Outro…</SelectItem>
+                </SelectContent>
+              </Select>
+              {entityChoice === OTHER_VALUE && (
+                <Input
+                  className="mt-2"
+                  placeholder="Digite o nome da entidade ou origem"
+                  value={messageSourceOther}
+                  onChange={(e) => setMessageSourceOther(e.target.value)}
+                  maxLength={200}
+                />
+              )}
             </div>
           </div>
 
