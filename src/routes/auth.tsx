@@ -1,20 +1,21 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth-context";
-import { useEffect } from "react";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
+const REMEMBER_KEY = "if-remember-me";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
@@ -66,17 +67,74 @@ function AuthPage() {
   );
 }
 
+function PasswordInput({
+  id, value, onChange, autoComplete,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        type={visible ? "text" : "password"}
+        autoComplete={autoComplete}
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="pr-10"
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+        aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
+        tabIndex={-1}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
+
 function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [remember, setRemember] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const saved = window.localStorage.getItem(REMEMBER_KEY);
+    return saved === null ? true : saved === "1";
+  });
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(REMEMBER_KEY, remember ? "1" : "0");
+      // Sinaliza para listener mover a sessão para sessionStorage quando não-lembrar.
+      if (!remember) window.sessionStorage.setItem("if-session-only", "1");
+      else window.sessionStorage.removeItem("if-session-only");
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) toast.error(error.message);
+    else if (!remember && typeof window !== "undefined") {
+      // Move tokens de localStorage → sessionStorage para sumir ao fechar.
+      const keys: string[] = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith("sb-")) keys.push(k);
+      }
+      for (const k of keys) {
+        const v = window.localStorage.getItem(k);
+        if (v) window.sessionStorage.setItem(k, v);
+        window.localStorage.removeItem(k);
+      }
+    }
   }
 
   return (
@@ -87,7 +145,13 @@ function SignInForm() {
       </div>
       <div>
         <Label htmlFor="si-pass">Senha</Label>
-        <Input id="si-pass" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <PasswordInput id="si-pass" autoComplete="current-password" value={password} onChange={setPassword} />
+      </div>
+      <div className="flex items-center gap-2">
+        <Checkbox id="remember" checked={remember} onCheckedChange={(c) => setRemember(c === true)} />
+        <Label htmlFor="remember" className="cursor-pointer text-sm font-normal">
+          Lembrar de mim
+        </Label>
       </div>
       <Button type="submit" className="w-full" disabled={busy}>
         {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Entrar
@@ -134,7 +198,7 @@ function SignUpForm() {
       </div>
       <div>
         <Label htmlFor="su-pass">Senha</Label>
-        <Input id="su-pass" type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        <PasswordInput id="su-pass" autoComplete="new-password" value={password} onChange={setPassword} />
       </div>
       <Button type="submit" className="w-full" disabled={busy}>
         {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Criar conta

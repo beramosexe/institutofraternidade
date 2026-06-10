@@ -31,6 +31,7 @@ import { Route as AuthenticatedAppAdminLogsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppAdminEntidadesRouteImport } from './routes/_authenticated/app.admin.entidades'
 import { Route as AuthenticatedAppAdminCargosRouteImport } from './routes/_authenticated/app.admin.cargos'
 import { Route as AuthenticatedAppAdminAudiosRouteImport } from './routes/_authenticated/app.admin.audios'
+import { Route as AuthenticatedAppTrabalhosIdCheckinRouteImport } from './routes/_authenticated/app.trabalhos.$id.checkin'
 
 const QuemSomosRoute = QuemSomosRouteImport.update({
   id: '/quem-somos',
@@ -150,6 +151,12 @@ const AuthenticatedAppAdminAudiosRoute =
     path: '/admin/audios',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppTrabalhosIdCheckinRoute =
+  AuthenticatedAppTrabalhosIdCheckinRouteImport.update({
+    id: '/trabalhos/$id/checkin',
+    path: '/trabalhos/$id/checkin',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/usuarios': typeof AuthenticatedAppAdminUsuariosRoute
   '/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
   '/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
+  '/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -195,6 +203,7 @@ export interface FileRoutesByTo {
   '/app/admin/usuarios': typeof AuthenticatedAppAdminUsuariosRoute
   '/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
   '/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
+  '/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -220,6 +229,7 @@ export interface FileRoutesById {
   '/_authenticated/app/admin/usuarios': typeof AuthenticatedAppAdminUsuariosRoute
   '/_authenticated/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
   '/_authenticated/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
+  '/_authenticated/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/app/admin/usuarios'
     | '/app/audios/$id'
     | '/app/revisao/$id'
+    | '/app/trabalhos/$id/checkin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/app/admin/usuarios'
     | '/app/audios/$id'
     | '/app/revisao/$id'
+    | '/app/trabalhos/$id/checkin'
   id:
     | '__root__'
     | '/'
@@ -291,6 +303,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/admin/usuarios'
     | '/_authenticated/app/audios/$id'
     | '/_authenticated/app/revisao/$id'
+    | '/_authenticated/app/trabalhos/$id/checkin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -459,6 +472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAdminAudiosRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/trabalhos/$id/checkin': {
+      id: '/_authenticated/app/trabalhos/$id/checkin'
+      path: '/trabalhos/$id/checkin'
+      fullPath: '/app/trabalhos/$id/checkin'
+      preLoaderRoute: typeof AuthenticatedAppTrabalhosIdCheckinRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
   }
 }
 
@@ -503,6 +523,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAdminLogsRoute: typeof AuthenticatedAppAdminLogsRoute
   AuthenticatedAppAdminTrabalhosRoute: typeof AuthenticatedAppAdminTrabalhosRoute
   AuthenticatedAppAdminUsuariosRoute: typeof AuthenticatedAppAdminUsuariosRoute
+  AuthenticatedAppTrabalhosIdCheckinRoute: typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
@@ -518,6 +539,8 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAdminLogsRoute: AuthenticatedAppAdminLogsRoute,
   AuthenticatedAppAdminTrabalhosRoute: AuthenticatedAppAdminTrabalhosRoute,
   AuthenticatedAppAdminUsuariosRoute: AuthenticatedAppAdminUsuariosRoute,
+  AuthenticatedAppTrabalhosIdCheckinRoute:
+    AuthenticatedAppTrabalhosIdCheckinRoute,
 }
 
 const AuthenticatedAppRouteWithChildren =
@@ -546,3 +569,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
