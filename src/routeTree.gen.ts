@@ -28,6 +28,7 @@ import { Route as AuthenticatedAppAudiosIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppAdminUsuariosRouteImport } from './routes/_authenticated/app.admin.usuarios'
 import { Route as AuthenticatedAppAdminTrabalhosRouteImport } from './routes/_authenticated/app.admin.trabalhos'
 import { Route as AuthenticatedAppAdminLogsRouteImport } from './routes/_authenticated/app.admin.logs'
+import { Route as AuthenticatedAppAdminEntidadesRouteImport } from './routes/_authenticated/app.admin.entidades'
 import { Route as AuthenticatedAppAdminCargosRouteImport } from './routes/_authenticated/app.admin.cargos'
 import { Route as AuthenticatedAppAdminAudiosRouteImport } from './routes/_authenticated/app.admin.audios'
 
@@ -131,6 +132,12 @@ const AuthenticatedAppAdminLogsRoute =
     path: '/admin/logs',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppAdminEntidadesRoute =
+  AuthenticatedAppAdminEntidadesRouteImport.update({
+    id: '/admin/entidades',
+    path: '/admin/entidades',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppAdminCargosRoute =
   AuthenticatedAppAdminCargosRouteImport.update({
     id: '/admin/cargos',
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/admin/audios': typeof AuthenticatedAppAdminAudiosRoute
   '/app/admin/cargos': typeof AuthenticatedAppAdminCargosRoute
+  '/app/admin/entidades': typeof AuthenticatedAppAdminEntidadesRoute
   '/app/admin/logs': typeof AuthenticatedAppAdminLogsRoute
   '/app/admin/trabalhos': typeof AuthenticatedAppAdminTrabalhosRoute
   '/app/admin/usuarios': typeof AuthenticatedAppAdminUsuariosRoute
@@ -181,6 +189,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/audios': typeof AuthenticatedAppAdminAudiosRoute
   '/app/admin/cargos': typeof AuthenticatedAppAdminCargosRoute
+  '/app/admin/entidades': typeof AuthenticatedAppAdminEntidadesRoute
   '/app/admin/logs': typeof AuthenticatedAppAdminLogsRoute
   '/app/admin/trabalhos': typeof AuthenticatedAppAdminTrabalhosRoute
   '/app/admin/usuarios': typeof AuthenticatedAppAdminUsuariosRoute
@@ -205,6 +214,7 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/admin/audios': typeof AuthenticatedAppAdminAudiosRoute
   '/_authenticated/app/admin/cargos': typeof AuthenticatedAppAdminCargosRoute
+  '/_authenticated/app/admin/entidades': typeof AuthenticatedAppAdminEntidadesRoute
   '/_authenticated/app/admin/logs': typeof AuthenticatedAppAdminLogsRoute
   '/_authenticated/app/admin/trabalhos': typeof AuthenticatedAppAdminTrabalhosRoute
   '/_authenticated/app/admin/usuarios': typeof AuthenticatedAppAdminUsuariosRoute
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/admin/audios'
     | '/app/admin/cargos'
+    | '/app/admin/entidades'
     | '/app/admin/logs'
     | '/app/admin/trabalhos'
     | '/app/admin/usuarios'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/admin/audios'
     | '/app/admin/cargos'
+    | '/app/admin/entidades'
     | '/app/admin/logs'
     | '/app/admin/trabalhos'
     | '/app/admin/usuarios'
@@ -273,6 +285,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/audios'
     | '/_authenticated/app/admin/cargos'
+    | '/_authenticated/app/admin/entidades'
     | '/_authenticated/app/admin/logs'
     | '/_authenticated/app/admin/trabalhos'
     | '/_authenticated/app/admin/usuarios'
@@ -425,6 +438,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAdminLogsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/admin/entidades': {
+      id: '/_authenticated/app/admin/entidades'
+      path: '/admin/entidades'
+      fullPath: '/app/admin/entidades'
+      preLoaderRoute: typeof AuthenticatedAppAdminEntidadesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/admin/cargos': {
       id: '/_authenticated/app/admin/cargos'
       path: '/admin/cargos'
@@ -479,6 +499,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppAdminAudiosRoute: typeof AuthenticatedAppAdminAudiosRoute
   AuthenticatedAppAdminCargosRoute: typeof AuthenticatedAppAdminCargosRoute
+  AuthenticatedAppAdminEntidadesRoute: typeof AuthenticatedAppAdminEntidadesRoute
   AuthenticatedAppAdminLogsRoute: typeof AuthenticatedAppAdminLogsRoute
   AuthenticatedAppAdminTrabalhosRoute: typeof AuthenticatedAppAdminTrabalhosRoute
   AuthenticatedAppAdminUsuariosRoute: typeof AuthenticatedAppAdminUsuariosRoute
@@ -493,6 +514,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppAdminAudiosRoute: AuthenticatedAppAdminAudiosRoute,
   AuthenticatedAppAdminCargosRoute: AuthenticatedAppAdminCargosRoute,
+  AuthenticatedAppAdminEntidadesRoute: AuthenticatedAppAdminEntidadesRoute,
   AuthenticatedAppAdminLogsRoute: AuthenticatedAppAdminLogsRoute,
   AuthenticatedAppAdminTrabalhosRoute: AuthenticatedAppAdminTrabalhosRoute,
   AuthenticatedAppAdminUsuariosRoute: AuthenticatedAppAdminUsuariosRoute,

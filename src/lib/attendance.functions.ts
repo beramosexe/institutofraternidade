@@ -2,28 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/**
- * Helper: verifica se o usuário pode gerenciar o check-in deste trabalho.
- * (admin OU work.manage OU responsável pelo trabalho)
- */
-async function assertCanManageWork(
-  supabase: Awaited<ReturnType<typeof import("@/integrations/supabase/auth-middleware").requireSupabaseAuth.handler>> extends { supabase: infer S } ? S : never,
-  userId: string,
-  workId: string,
-) {
-  // RLS já restringe; checagem extra defensiva via has_permission + is_work_responsible
-  const { data, error } = await (supabase as never as ReturnType<typeof import("@/integrations/supabase/client").supabase.from>)
-    .from("works")
-    .select("id")
-    .eq("id", workId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Trabalho não encontrado ou sem acesso.");
-  // void unused param to keep TS happy in this minimal signature
-  void userId;
-}
-
-/** Dados do check-in: trabalho + lista de "frequentes" (participantes + recorrentes) + presenças do dia. */
+/** Dados do check-in: trabalho + lista de "frequentes" + presenças do dia. */
 export const getCheckinData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { work_id: string; occurrence_date: string }) =>
@@ -33,10 +12,17 @@ export const getCheckinData = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
-    await assertCanManageWork(supabase as never, userId, data.work_id);
-
+    const { supabase } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // RLS check: usuário precisa enxergar este trabalho (admin / work.manage / responsável)
+    const { data: workAccess, error: waErr } = await supabase
+      .from("works")
+      .select("id")
+      .eq("id", data.work_id)
+      .maybeSingle();
+    if (waErr) throw new Error(waErr.message);
+    if (!workAccess) throw new Error("Trabalho não encontrado ou sem acesso.");
 
     const [
       { data: work },
@@ -51,14 +37,13 @@ export const getCheckinData = createServerFn({ method: "POST" })
         .maybeSingle(),
       supabaseAdmin
         .from("work_participants")
-        .select("user_id, profiles:profiles!work_participants_user_id_fkey(id, full_name, avatar_url)")
+        .select("user_id")
         .eq("work_id", data.work_id),
       supabaseAdmin
         .from("attendance")
-        .select("id, user_id, guest_name, guest_email, guest_phone, checked_in_at, profiles:profiles!attendance_user_id_fkey(id, full_name, avatar_url)")
+        .select("id, user_id, guest_name, guest_email, guest_phone, checked_in_at")
         .eq("work_id", data.work_id)
         .eq("occurrence_date", data.occurrence_date),
-      // Frequência histórica para auto-promover recorrentes
       supabaseAdmin
         .from("attendance")
         .select("user_id")
@@ -73,36 +58,32 @@ export const getCheckinData = createServerFn({ method: "POST" })
     for (const r of history ?? []) {
       if (r.user_id) counts.set(r.user_id, (counts.get(r.user_id) ?? 0) + 1);
     }
-    const recurrentIds = new Set(
-      [...counts.entries()].filter(([, n]) => n >= 3).map(([id]) => id),
-    );
+    const recurrentIds = [...counts.entries()].filter(([, n]) => n >= 3).map(([id]) => id);
 
-    // Carrega perfis recorrentes que não estão em participants
-    const participantIds = new Set((participants ?? []).map((p) => p.user_id));
-    const recurrentMissing = [...recurrentIds].filter((id) => !participantIds.has(id));
-    let recurrentProfiles: Array<{ id: string; full_name: string | null; avatar_url: string | null }> = [];
-    if (recurrentMissing.length > 0) {
-      const { data: rp } = await supabaseAdmin
+    const participantIds = (participants ?? []).map((p) => p.user_id);
+    const allRegularIds = Array.from(new Set([...participantIds, ...recurrentIds]));
+    const attendanceUserIds = (attendances ?? []).map((a) => a.user_id).filter((x): x is string => !!x);
+    const allProfileIds = Array.from(new Set([...allRegularIds, ...attendanceUserIds]));
+
+    let profileMap = new Map<string, { id: string; full_name: string | null; avatar_url: string | null }>();
+    if (allProfileIds.length > 0) {
+      const { data: profs } = await supabaseAdmin
         .from("profiles")
         .select("id, full_name, avatar_url")
-        .in("id", recurrentMissing);
-      recurrentProfiles = rp ?? [];
+        .in("id", allProfileIds);
+      profileMap = new Map((profs ?? []).map((p) => [p.id, p]));
     }
 
-    const regulars = [
-      ...(participants ?? []).map((p) => ({
-        user_id: p.user_id,
-        full_name: p.profiles?.full_name ?? null,
-        avatar_url: p.profiles?.avatar_url ?? null,
-        kind: "participant" as const,
-      })),
-      ...recurrentProfiles.map((p) => ({
-        user_id: p.id,
-        full_name: p.full_name,
-        avatar_url: p.avatar_url,
-        kind: "recurrent" as const,
-      })),
-    ];
+    const participantSet = new Set(participantIds);
+    const regulars = allRegularIds.map((id) => {
+      const p = profileMap.get(id);
+      return {
+        user_id: id,
+        full_name: p?.full_name ?? null,
+        avatar_url: p?.avatar_url ?? null,
+        kind: participantSet.has(id) ? ("participant" as const) : ("recurrent" as const),
+      };
+    });
 
     return {
       work,
@@ -114,21 +95,20 @@ export const getCheckinData = createServerFn({ method: "POST" })
         guest_email: a.guest_email,
         guest_phone: a.guest_phone,
         checked_in_at: a.checked_in_at,
-        full_name: a.profiles?.full_name ?? a.guest_name ?? null,
-        avatar_url: a.profiles?.avatar_url ?? null,
+        full_name: (a.user_id ? profileMap.get(a.user_id)?.full_name : null) ?? a.guest_name ?? null,
+        avatar_url: a.user_id ? profileMap.get(a.user_id)?.avatar_url ?? null : null,
       })),
     };
   });
 
-/** Busca perfis por nome (autocomplete do check-in). */
 export const searchProfiles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { q: string }) =>
     z.object({ q: z.string().trim().min(1).max(80) }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     void context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name, avatar_url")
@@ -137,7 +117,6 @@ export const searchProfiles = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
-/** Marca presença de usuário existente ou convidado. */
 export const markPresence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: {
@@ -178,12 +157,9 @@ export const markPresence = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) {
-      if (error.message.includes("duplicate") || error.code === "23505") {
-        throw new Error("Esta pessoa já está marcada como presente.");
-      }
+      if (error.code === "23505") throw new Error("Esta pessoa já está marcada como presente.");
       throw new Error(error.message);
     }
-    // Cria pending_invite para futuro vínculo
     if (!data.user_id && (data.guest_email || data.guest_phone)) {
       await supabase.from("pending_invites").insert({
         work_id: data.work_id,
