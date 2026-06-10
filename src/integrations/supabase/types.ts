@@ -17,23 +17,41 @@ export type Database = {
       attendance: {
         Row: {
           checked_in_at: string
+          created_by: string | null
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
           id: string
+          invited_user_id: string | null
           method: string | null
-          user_id: string
+          occurrence_date: string
+          user_id: string | null
           work_id: string
         }
         Insert: {
           checked_in_at?: string
+          created_by?: string | null
+          guest_email?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
           id?: string
+          invited_user_id?: string | null
           method?: string | null
-          user_id: string
+          occurrence_date?: string
+          user_id?: string | null
           work_id: string
         }
         Update: {
           checked_in_at?: string
+          created_by?: string | null
+          guest_email?: string | null
+          guest_name?: string | null
+          guest_phone?: string | null
           id?: string
+          invited_user_id?: string | null
           method?: string | null
-          user_id?: string
+          occurrence_date?: string
+          user_id?: string | null
           work_id?: string
         }
         Relationships: [
@@ -112,6 +130,7 @@ export type Database = {
           error_message: string | null
           file_size_bytes: number | null
           id: string
+          message_entity_id: string | null
           message_source: string | null
           mime_type: string | null
           published_at: string | null
@@ -133,6 +152,7 @@ export type Database = {
           error_message?: string | null
           file_size_bytes?: number | null
           id?: string
+          message_entity_id?: string | null
           message_source?: string | null
           mime_type?: string | null
           published_at?: string | null
@@ -154,6 +174,7 @@ export type Database = {
           error_message?: string | null
           file_size_bytes?: number | null
           id?: string
+          message_entity_id?: string | null
           message_source?: string | null
           mime_type?: string | null
           published_at?: string | null
@@ -167,6 +188,13 @@ export type Database = {
           work_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "audios_message_entity_id_fkey"
+            columns: ["message_entity_id"]
+            isOneToOne: false
+            referencedRelation: "channeling_entities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "audios_work_id_fkey"
             columns: ["work_id"]
@@ -205,6 +233,74 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      channeling_entities: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pending_invites: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          work_id: string | null
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          work_id?: string | null
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          work_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_invites_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       processing_jobs: {
         Row: {
@@ -406,6 +502,39 @@ export type Database = {
           },
         ]
       }
+      work_entity_favorites: {
+        Row: {
+          created_at: string
+          entity_id: string
+          work_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          work_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_entity_favorites_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "channeling_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_entity_favorites_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_participants: {
         Row: {
           created_at: string
@@ -432,6 +561,32 @@ export type Database = {
           },
         ]
       }
+      work_responsibles: {
+        Row: {
+          created_at: string
+          user_id: string
+          work_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+          work_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_responsibles_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       works: {
         Row: {
           created_at: string
@@ -439,10 +594,16 @@ export type Database = {
           description: string | null
           ends_at: string | null
           id: string
+          is_template: boolean
           location: string | null
+          modality: string | null
           name: string
+          recurrence: string
+          recurrence_time: string | null
+          recurrence_weekday: number | null
           starts_at: string
           status: Database["public"]["Enums"]["work_status"]
+          template_id: string | null
           updated_at: string
           visibility: Database["public"]["Enums"]["work_visibility"]
         }
@@ -452,10 +613,16 @@ export type Database = {
           description?: string | null
           ends_at?: string | null
           id?: string
+          is_template?: boolean
           location?: string | null
+          modality?: string | null
           name: string
+          recurrence?: string
+          recurrence_time?: string | null
+          recurrence_weekday?: number | null
           starts_at: string
           status?: Database["public"]["Enums"]["work_status"]
+          template_id?: string | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["work_visibility"]
         }
@@ -465,14 +632,28 @@ export type Database = {
           description?: string | null
           ends_at?: string | null
           id?: string
+          is_template?: boolean
           location?: string | null
+          modality?: string | null
           name?: string
+          recurrence?: string
+          recurrence_time?: string | null
+          recurrence_weekday?: number | null
           starts_at?: string
           status?: Database["public"]["Enums"]["work_status"]
+          template_id?: string | null
           updated_at?: string
           visibility?: Database["public"]["Enums"]["work_visibility"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "works_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -521,6 +702,10 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_associate: { Args: { _user_id: string }; Returns: boolean }
+      is_work_responsible: {
+        Args: { _user_id: string; _work_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_permission:

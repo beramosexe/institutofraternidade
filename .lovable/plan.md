@@ -1,132 +1,107 @@
 
-# Instituto Fraternidade — Plano da V1 (atualizado)
+## 1. Login — visualizar senha e "Lembrar de mim"
 
-Aplicação completa com site público + área autenticada, biblioteca de áudios com transcrição automática **com revisão humana e sincronização ao player**, módulo de trabalhos/agenda, gestão flexível de cargos e administração. Banco unificado no Lovable Cloud (Supabase), preparado para check-in, permissões granulares e auditoria.
+Em `src/routes/auth.tsx`:
 
-## Identidade visual
+- Campo senha vira `Input` com ícone olho/olho-cortado (`Eye`/`EyeOff`) que alterna entre `type="password"` e `type="text"` (apenas no SignIn; replicar no SignUp opcional).
+- Checkbox "Lembrar de mim" abaixo do campo senha.
+  - Quando marcado: comportamento padrão (sessão persiste no `localStorage`).
+  - Quando desmarcado: após login, sinalizar `sessionStorage.setItem("if-session-only","1")` e, no `onAuthStateChange("SIGNED_IN")`, mover a sessão para `sessionStorage` (assim some ao fechar o navegador). Preferência fica gravada em `localStorage` para próxima visita.
 
-- Paleta serena baseada no logo: azul suave (#A8B8D9), branco quente, cinzas claros, dourado discreto.
-- Tipografia: serifa leve para títulos (Fraunces/Cormorant) + sans humanista para corpo (Inter).
-- Mobile-first, acessível, tokens semânticos em `src/styles.css`.
-- Logo branco sobre fundo azul; avatar (globo+coração) como ícone/favicon.
+## 2. Entidades canalizadoras (gestão admin + dropdown)
 
-## Rotas
+Nova tabela global + ligação opcional por trabalho.
 
-Público:
-- `/` Home, `/quem-somos`, `/agenda`, `/canalizacoes`, `/contato`, `/auth`
+```text
+channeling_entities         (id, name, description, is_active, created_at, updated_at)
+work_entity_favorites       (work_id, entity_id)   -- entidades "favoritas" daquele trabalho
+```
 
-Autenticado:
-- `/app` dashboard
-- `/app/audios` biblioteca + player + transcrição sincronizada + busca
-- `/app/audios/$id` detalhe
-- `/app/upload` formulário (uploaders)
-- `/app/meus-uploads`
-- `/app/revisao` **fila de transcrições não revisadas** (para uploaders/revisores)
-- `/app/revisao/$id` **editor de transcrição sincronizado com áudio**
-- `/app/admin/trabalhos`
-- `/app/admin/audios`
-- `/app/admin/usuarios` (gestão de pessoas, cargos e atribuições)
-- `/app/admin/cargos` **CRUD de cargos customizados + permissões**
-- `/app/admin/logs`
+RLS: leitura para `authenticated`; escrita exige `user.manage` ou admin (reaproveita perfil admin).
 
-## Cargos flexíveis (novidade)
+Nova rota admin: `src/routes/_authenticated/app.admin.entidades.tsx` (CRUD simples — listar, criar, editar nome/descrição, ativar/desativar). Link no `AppShell` em Administração (gate `user.manage`).
 
-Em vez de enum fixo, sistema baseado em **cargos (roles) editáveis** + **permissões**:
+Server fns em `src/lib/entities.functions.ts`: `listEntities`, `createEntity`, `updateEntity`, `deleteEntity`, `setWorkFavoriteEntities(workId, entityIds[])`.
 
-- `roles` (id, slug, name, description, is_system) — `is_system` marca os 4 base não removíveis: `admin`, `associate`, `uploader`, `reviewer`.
-- `permissions` enum fixo no código (granular):
-  `audio.upload`, `audio.edit_any`, `audio.delete`, `audio.publish`, `audio.reprocess`,
-  `transcription.review`, `transcription.approve`,
-  `work.manage`, `user.manage`, `role.manage`, `logs.view`,
-  `content.associate_only`, `content.public_only`.
-- `role_permissions` (role_id, permission) — admin define quais permissões cada cargo possui via UI checkboxes.
-- `user_roles` (user_id, role_id) — usuário pode ter múltiplos cargos.
-- Função SQL `has_permission(user_id, permission)` SECURITY DEFINER consultada em RLS e server fns.
-- UI `/app/admin/cargos`: criar cargo, marcar permissões; `/app/admin/usuarios`: atribuir/remover cargos por usuário (multi-select).
+### Uso no upload de áudio (`app.upload.tsx`)
 
-Admin sempre tem todas as permissões implicitamente.
+Substituir o input livre "Mensagem de quem" por um `Select` (ou Combobox) populado com entidades ativas. Se um trabalho estiver selecionado, ordenar primeiro as favoritas dele. Última opção: **"Outro…"** — ao escolher, abre `Input` para texto livre. Persistência: a coluna existente `audios.message_source` continua armazenando o texto final (nome da entidade ou o livre); adicionar coluna opcional `message_entity_id uuid` para vínculo estruturado quando vier do dropdown.
 
-## Banco de dados
+Mesmo padrão aplicável onde "Trabalho" pede tipo da canalização — mantemos o select de trabalhos como já existe.
 
-- `profiles` (id=auth.users, full_name, avatar_url, phone)
-- `roles`, `role_permissions`, `user_roles` (acima)
-- `works` (id, name, description, starts_at, location, status, visibility, created_by)
-- `work_participants` (work_id, user_id)
-- `attendance` (work_id, user_id, checked_in_at) — estrutura para check-in futuro
-- `audios` (id, work_id, title, description, recorded_at, audio_type, message_source, access_level, original_url, stream_url, duration_seconds, uploaded_by, published_at, status, error_message)
-- `audio_transcriptions` (id, audio_id, language, text, segments jsonb [{start,end,text}], provider, **review_status** [`unreviewed`|`in_review`|`reviewed`], **reviewed_by**, **reviewed_at**, version)
-- `transcription_revisions` (id, transcription_id, editor_id, segments_before jsonb, segments_after jsonb, note, created_at) — histórico de edições
-- `audio_access_grants` (audio_id, user_id) — overrides
-- `audit_logs` (actor_id, entity, entity_id, action, diff jsonb, created_at)
-- `processing_jobs` (audio_id, job_type, status, attempts, payload, result, started_at, finished_at)
-- Storage: `audios-original` (privado), `audios-stream` (signed URLs)
-- Index FTS: `to_tsvector('portuguese', text)` em `audio_transcriptions`.
+## 3. Trabalhos — recorrência, modalidade, responsáveis
 
-## Pipeline de áudio
+Alterações em `works` + novas tabelas.
 
-1. Upload via signed URL para `audios-original`.
-2. Server fn cria `processing_jobs` (convert + transcribe).
-3. **Conversão**: estrutura plugada para serviço externo (Cloudflare Worker não roda ffmpeg). V1 fallback: usa o próprio arquivo como stream (mp3/m4a/webm tocam direto).
-4. **Transcrição**: Lovable AI / Whisper (`whisper-1` via OpenAI compatível) — gera `text` + `segments` com timestamps por sentença.
-5. Status do áudio passa para `ready`; transcrição entra como `review_status='unreviewed'`.
-6. Reprocessamento manual por quem tem `audio.reprocess`.
+```text
+ALTER TABLE works ADD COLUMN modality      text   -- 'presencial' | 'online' | 'hibrido' | 'externo'
+ALTER TABLE works ADD COLUMN recurrence    text   -- 'one_off' | 'weekly'
+ALTER TABLE works ADD COLUMN recurrence_weekday smallint   -- 0-6 quando weekly
+ALTER TABLE works ADD COLUMN recurrence_time    time       -- hora local
+ALTER TABLE works ADD COLUMN is_template   boolean default false
+ALTER TABLE works ADD COLUMN template_id   uuid references works(id) on delete set null
 
-## Player com transcrição sincronizada
+CREATE TABLE work_responsibles (work_id uuid, user_id uuid, primary key (work_id, user_id))
+```
 
-Componente `SyncedTranscript`:
-- Player HTML5 controlado por `currentTime`.
-- Lista de segmentos `{start, end, text}`; segmento ativo destacado (highlight + auto-scroll suave).
-- Clique em segmento → `audio.currentTime = segment.start`.
-- Atalhos de teclado: espaço (play/pause), ←/→ (pular 5s), Tab (próximo segmento).
-- Modo leitura (na biblioteca) e modo edição (na revisão).
+Modelo: trabalho recorrente é criado como **template** (`is_template=true`); ocorrências concretas têm `template_id` apontando para ele e `starts_at` real. Um job semanal (pg_cron + rota `/api/public/hooks/generate-occurrences`) materializa as próximas ~12 semanas e regenera ao avançar. Trabalho pontual (`one_off`) é criado direto, sem template.
 
-## Interface de revisão de transcrição
+### Form do trabalho (`app.admin.trabalhos.tsx`)
 
-Rota `/app/revisao/$id` (acesso: `transcription.review`):
-- Layout em duas colunas (stack em mobile):
-  - Esquerda: player sticky + controles (velocidade 0.75x/1x/1.25x, pular 5s, loop do segmento atual).
-  - Direita: lista editável de segmentos. Cada segmento é um `textarea` inline com timestamp clicável.
-- Atalhos: `Tab` próximo, `Shift+Tab` anterior, `Ctrl+Enter` salvar segmento, `Ctrl+L` loop segmento, `Esc` pausar.
-- Salvamento automático a cada edição (debounce 1s) → grava versão em `transcription_revisions`.
-- Botões: **"Marcar como revisada"** (define `review_status='reviewed'`, registra revisor), **"Pedir nova revisão"**.
-- Badge "Não revisada" exibida na biblioteca enquanto `review_status != 'reviewed'`; usuário comum vê transcrição com aviso "transcrição automática, pode conter erros".
+Adicionar ao `WorkDialog`:
+- Select **Recorrência**: Pontual (uma vez) / Semanal recorrente. Se Semanal: aparecem campos Dia da semana + Hora (substituem `datetime-local`).
+- Select **Modalidade**: Presencial / Online / Híbrido / Externo. Quando Externo, mostrar destaque no campo Local.
+- Multi-select **Responsáveis** (`Combobox` com busca por nome em `profiles`, multi).
+- Multi-select **Entidades frequentes** (das `channeling_entities`).
+- Multi-select **Participantes frequentes** (perfis) — alimenta `work_participants`.
 
-Fila `/app/revisao`: lista áudios com `review_status != 'reviewed'`, filtros por trabalho, uploader, idade, com botão "Revisar".
+### Permissões dos responsáveis
 
-Permissão de revisão: quem tem `transcription.review` OU é o `uploaded_by` do áudio.
+Atualizar funções SQL e RLS:
+- Nova função `is_work_responsible(_user_id, _work_id)`.
+- Policies de `works` (update), `attendance` (insert/update/delete), `audios` vinculados ao trabalho passam a aceitar `is_work_responsible` além de admin/`work.manage`.
+- Server fns sensíveis (`updateWork`, futuras de check-in) checam `is_admin OR has_permission('work.manage') OR is_work_responsible`.
 
-## Autenticação
+## 4. Check-in / lista de presença
 
-- Lovable Cloud: email/senha + Google.
-- Trigger cria `profile` e atribui cargo default (`associate` configurável).
-- Layout `_authenticated/route.tsx` managed.
-- Server fns sensíveis: `requireSupabaseAuth` + `has_permission()`.
+Nova rota: `src/routes/_authenticated/app.trabalhos.$id.checkin.tsx` (acesso: admin, `work.manage` ou responsável).
 
-## Tecnologia
+Tabela `attendance` já existe; ampliar:
 
-- TanStack Start, React 19, Tailwind v4, shadcn/ui, TanStack Query.
-- Lovable Cloud (DB/Auth/Storage), Lovable AI Gateway para Whisper.
-- Validação Zod, limites de upload (500MB, mp3/m4a/wav/webm/ogg).
-- Auditoria via triggers SQL nas tabelas críticas.
+```text
+ALTER TABLE attendance ADD COLUMN occurrence_date date NOT NULL DEFAULT current_date
+ALTER TABLE attendance ADD COLUMN guest_name      text
+ALTER TABLE attendance ADD COLUMN guest_email     text
+ALTER TABLE attendance ADD COLUMN guest_phone     text
+ALTER TABLE attendance ADD COLUMN invited_user_id uuid   -- preenchido quando o convidado virar usuário depois
+-- user_id passa a ser nullable (guest sem conta)
+UNIQUE (work_id, occurrence_date, coalesce(user_id::text, guest_email, guest_phone))
 
-## Entregáveis V1
+CREATE TABLE pending_invites (id, work_id, email, phone, full_name, created_by, created_at)
+```
 
-1. Schema completo + RLS + função `has_permission` + seeds (admin, cargos base, trabalhos exemplo).
-2. Design system + site público (5 páginas).
-3. Auth + perfil.
-4. Dashboard + biblioteca de áudios com **player + transcrição sincronizada** + busca FTS.
-5. CRUD Trabalhos.
-6. Upload de áudio com status.
-7. Pipeline de transcrição (Whisper via Lovable AI) com segmentos timestamped.
-8. **Fila e editor de revisão de transcrição sincronizado** com salvamento incremental e histórico.
-9. Admin: gestão de áudios, **gestão de cargos (CRUD + permissões)**, **atribuição de cargos por usuário**, logs.
-10. Estrutura `attendance` pronta (regra `attendees_only` já aplicada nas RLS).
+Trigger no `handle_new_user`: após criar perfil, procurar `pending_invites` por e-mail e popular `attendance.invited_user_id` retroativamente + adicionar como participante.
 
-## Fora da V1 (preparado)
+### UI
 
-- Tela de check-in com QR.
-- Conversão ffmpeg em serviço externo dedicado.
-- Notificações por email/push (ex: "sua transcrição foi revisada").
-- App mobile nativo.
+- Cabeçalho: trabalho + data da ocorrência (`occurrence_date`, padrão hoje, ajustável).
+- Lista "Frequentes" — vem de duas fontes mescladas:
+  1. `work_participants` (marcação manual);
+  2. usuários com ≥ 3 check-ins anteriores naquele trabalho.
+  Cada linha: avatar + nome + toggle Presente.
+- Botão "Adicionar presença" abre Combobox com **busca incremental** (1+ caractere chama server fn `searchProfiles(workId, q)` que retorna até 8 perfis por `full_name ILIKE q%`). Ao clicar, marca presença na hora.
+- Se nenhum resultado, mostrar "Adicionar como convidado" → mini-form (nome obrigatório, e-mail OU telefone obrigatório). Grava em `attendance` como guest e cria `pending_invites` para futuro vínculo.
 
-Confirme para eu habilitar o Lovable Cloud e iniciar pela base (schema + design + auth), depois site público, depois biblioteca + revisão.
+### Server fns (`src/lib/attendance.functions.ts`)
+
+`getCheckinData(workId, date)`, `searchProfiles(workId, q)`, `markPresence({workId, date, userId?, guest?})`, `unmarkPresence(id)`, `listPendingInvites(workId)`.
+
+## 5. Tarefas técnicas resumo
+
+1. Migração SQL: novas colunas em `works`/`attendance`, tabelas `channeling_entities`, `work_entity_favorites`, `work_responsibles`, `pending_invites`; função `is_work_responsible`; ajuste de RLS e trigger `handle_new_user`.
+2. Server fns: `entities.functions.ts`, `attendance.functions.ts`; expandir `works.functions.ts` (recurrence, modality, responsibles, favoritos, participantes frequentes).
+3. UI: `auth.tsx` (mostrar senha + lembrar); `app.upload.tsx` (combobox entidades + Outro); `app.admin.trabalhos.tsx` (form completo); nova rota admin entidades; nova rota check-in.
+4. Sidebar: adicionar links "Entidades" (admin) e "Check-in" (a partir da página do trabalho).
+5. Cron `pg_cron` semanal chamando `/api/public/hooks/generate-occurrences` para materializar 12 semanas de trabalhos recorrentes.
+
+Confirme para eu implementar — começando pelas migrações, depois server fns, depois UI.

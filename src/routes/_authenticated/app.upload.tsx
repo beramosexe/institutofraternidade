@@ -12,8 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { registerAudio } from "@/lib/audios.functions";
+import { listEntitiesForWork } from "@/lib/entities.functions";
 import { useMyAccess } from "@/components/app/AppShell";
 import { useAuth } from "@/lib/auth-context";
+
+const OTHER_VALUE = "__other__";
+const NONE_VALUE = "__none__";
 
 const ACCEPT = ".mp3,.m4a,.wav,.webm,.ogg,.aac,audio/*";
 const MAX_BYTES = 500 * 1024 * 1024;
@@ -34,13 +38,21 @@ function UploadPage() {
   const [workId, setWorkId] = useState<string>("none");
   const [recordedAt, setRecordedAt] = useState<string>("");
   const [audioType, setAudioType] = useState<"canalizacao" | "outro">("canalizacao");
-  const [messageSource, setMessageSource] = useState("");
+  const [entityChoice, setEntityChoice] = useState<string>(NONE_VALUE);
+  const [messageSourceOther, setMessageSourceOther] = useState("");
   const [accessLevel, setAccessLevel] = useState<"public" | "associates" | "work_participants" | "attendees_only">("associates");
   const [busy, setBusy] = useState(false);
 
   const { data: works } = useQuery({
     queryKey: ["works-options"],
     queryFn: async () => (await supabase.from("works").select("id, name").order("starts_at", { ascending: false })).data ?? [],
+  });
+
+  const listEntFn = useServerFn(listEntitiesForWork);
+  const { data: entities = [] } = useQuery({
+    queryKey: ["entities-for-work", workId],
+    queryFn: () => listEntFn({ data: { work_id: workId === "none" ? null : workId } }),
+    staleTime: 30_000,
   });
 
   const canUpload = access?.isAdmin || access?.permissions.includes("audio.upload");
@@ -77,6 +89,17 @@ function UploadPage() {
         .upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
 
+      // Resolve message source from entity choice
+      let resolvedSource: string | undefined;
+      let resolvedEntityId: string | null = null;
+      if (entityChoice === OTHER_VALUE) {
+        resolvedSource = messageSourceOther.trim() || undefined;
+      } else if (entityChoice !== NONE_VALUE) {
+        const ent = entities.find((e) => e.id === entityChoice);
+        resolvedSource = ent?.name;
+        resolvedEntityId = ent?.id ?? null;
+      }
+
       const row = await register({
         data: {
           title: title.trim(),
@@ -84,7 +107,8 @@ function UploadPage() {
           work_id: workId === "none" ? null : workId,
           recorded_at: recordedAt || null,
           audio_type: audioType,
-          message_source: messageSource.trim() || undefined,
+          message_source: resolvedSource,
+          message_entity_id: resolvedEntityId,
           access_level: accessLevel,
           storage_path: path,
           file_size_bytes: file.size,
@@ -133,8 +157,28 @@ function UploadPage() {
               <Input id="title" required value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
             </div>
             <div>
-              <Label htmlFor="source">Mensagem de quem</Label>
-              <Input id="source" placeholder="Ex.: Mentor X, Espírito amigo…" value={messageSource} onChange={(e) => setMessageSource(e.target.value)} maxLength={200} />
+              <Label htmlFor="source">Mensagem de quem (canalização)</Label>
+              <Select value={entityChoice} onValueChange={setEntityChoice}>
+                <SelectTrigger id="source"><SelectValue placeholder="Selecionar entidade" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE_VALUE}>— Não informar —</SelectItem>
+                  {entities.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.name}{e.is_favorite ? " ★" : ""}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={OTHER_VALUE}>Outro…</SelectItem>
+                </SelectContent>
+              </Select>
+              {entityChoice === OTHER_VALUE && (
+                <Input
+                  className="mt-2"
+                  placeholder="Digite o nome da entidade ou origem"
+                  value={messageSourceOther}
+                  onChange={(e) => setMessageSourceOther(e.target.value)}
+                  maxLength={200}
+                />
+              )}
             </div>
           </div>
 

@@ -12,6 +12,7 @@ export const registerAudio = createServerFn({ method: "POST" })
     recorded_at?: string | null;
     audio_type: "canalizacao" | "outro";
     message_source?: string;
+    message_entity_id?: string | null;
     access_level: "public" | "associates" | "work_participants" | "attendees_only";
     storage_path: string;
     file_size_bytes: number;
@@ -24,6 +25,7 @@ export const registerAudio = createServerFn({ method: "POST" })
       recorded_at: z.string().nullable().optional(),
       audio_type: z.enum(["canalizacao", "outro"]),
       message_source: z.string().max(200).optional(),
+      message_entity_id: z.string().uuid().nullable().optional(),
       access_level: z.enum(["public", "associates", "work_participants", "attendees_only"]),
       storage_path: z.string().min(1),
       file_size_bytes: z.number().int().min(1).max(1024 * 1024 * 1024),
