@@ -35,7 +35,8 @@ export const registerAudio = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const dbg = await supabase.rpc("has_permission", { _user_id: userId, _permission: "audio.upload" });
-    console.log("[registerAudio] userId=", userId, "has_permission=", dbg.data, "err=", dbg.error?.message);
+    const whoami = await supabase.rpc("debug_whoami");
+    console.log("[registerAudio] userId=", userId, "has_permission=", dbg.data, "whoami=", whoami.data, "whoamiErr=", whoami.error?.message);
     const { data: row, error } = await supabase
       .from("audios")
       .insert({
