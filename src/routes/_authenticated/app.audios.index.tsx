@@ -19,7 +19,7 @@ function getTranscription(a: { audio_transcriptions: unknown }): TranscriptionPr
   return t as TranscriptionPreview;
 }
 
-export const Route = createFileRoute("/_authenticated/app/audios")({
+export const Route = createFileRoute("/_authenticated/app/audios/")({
   component: AudiosLibrary,
 });
 
