@@ -38,6 +38,7 @@ const NAV: NavItem[] = [
 const ADMIN_NAV: NavItem[] = [
   { to: "/app/admin/trabalhos", label: "Trabalhos", icon: Calendar, need: "work.manage" },
   { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
+  { to: "/app/admin/entidades", label: "Entidades", icon: ShieldCheck, need: "user.manage" },
   { to: "/app/admin/usuarios", label: "Usuários", icon: UsersIcon, need: "user.manage" },
   { to: "/app/admin/cargos", label: "Cargos", icon: ShieldCheck, need: "role.manage" },
   { to: "/app/admin/logs", label: "Logs", icon: History, need: "logs.view" },
