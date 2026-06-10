@@ -22,6 +22,7 @@ import { Route as AuthenticatedAppUploadRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAppRevisaoRouteImport } from './routes/_authenticated/app.revisao'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
 import { Route as AuthenticatedAppMeusUploadsRouteImport } from './routes/_authenticated/app.meus-uploads'
+import { Route as AuthenticatedAppAudiosRouteImport } from './routes/_authenticated/app.audios'
 import { Route as AuthenticatedAppAudiosIndexRouteImport } from './routes/_authenticated/app.audios.index'
 import { Route as AuthenticatedAppRevisaoIdRouteImport } from './routes/_authenticated/app.revisao.$id'
 import { Route as AuthenticatedAppAudiosIdRouteImport } from './routes/_authenticated/app.audios.$id'
@@ -98,11 +99,16 @@ const AuthenticatedAppMeusUploadsRoute =
     path: '/meus-uploads',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppAudiosRoute = AuthenticatedAppAudiosRouteImport.update({
+  id: '/audios',
+  path: '/audios',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppAudiosIndexRoute =
   AuthenticatedAppAudiosIndexRouteImport.update({
-    id: '/audios/',
-    path: '/audios/',
-    getParentRoute: () => AuthenticatedAppRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAppAudiosRoute,
   } as any)
 const AuthenticatedAppRevisaoIdRoute =
   AuthenticatedAppRevisaoIdRouteImport.update({
@@ -112,9 +118,9 @@ const AuthenticatedAppRevisaoIdRoute =
   } as any)
 const AuthenticatedAppAudiosIdRoute =
   AuthenticatedAppAudiosIdRouteImport.update({
-    id: '/audios/$id',
-    path: '/audios/$id',
-    getParentRoute: () => AuthenticatedAppRoute,
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedAppAudiosRoute,
   } as any)
 const AuthenticatedAppAdminUsuariosRoute =
   AuthenticatedAppAdminUsuariosRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
@@ -216,6 +223,7 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/_authenticated/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/_authenticated/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
@@ -242,6 +250,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/quem-somos'
     | '/app'
+    | '/app/audios'
     | '/app/meus-uploads'
     | '/app/perfil'
     | '/app/revisao'
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/quem-somos'
     | '/_authenticated/app'
+    | '/_authenticated/app/audios'
     | '/_authenticated/app/meus-uploads'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/revisao'
@@ -410,12 +420,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppMeusUploadsRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/audios': {
+      id: '/_authenticated/app/audios'
+      path: '/audios'
+      fullPath: '/app/audios'
+      preLoaderRoute: typeof AuthenticatedAppAudiosRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/audios/': {
       id: '/_authenticated/app/audios/'
-      path: '/audios'
+      path: '/'
       fullPath: '/app/audios/'
       preLoaderRoute: typeof AuthenticatedAppAudiosIndexRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
+      parentRoute: typeof AuthenticatedAppAudiosRoute
     }
     '/_authenticated/app/revisao/$id': {
       id: '/_authenticated/app/revisao/$id'
@@ -426,10 +443,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/app/audios/$id': {
       id: '/_authenticated/app/audios/$id'
-      path: '/audios/$id'
+      path: '/$id'
       fullPath: '/app/audios/$id'
       preLoaderRoute: typeof AuthenticatedAppAudiosIdRouteImport
-      parentRoute: typeof AuthenticatedAppRoute
+      parentRoute: typeof AuthenticatedAppAudiosRoute
     }
     '/_authenticated/app/admin/usuarios': {
       id: '/_authenticated/app/admin/usuarios'
@@ -483,6 +500,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAppAudiosRouteChildren {
+  AuthenticatedAppAudiosIdRoute: typeof AuthenticatedAppAudiosIdRoute
+  AuthenticatedAppAudiosIndexRoute: typeof AuthenticatedAppAudiosIndexRoute
+}
+
+const AuthenticatedAppAudiosRouteChildren: AuthenticatedAppAudiosRouteChildren =
+  {
+    AuthenticatedAppAudiosIdRoute: AuthenticatedAppAudiosIdRoute,
+    AuthenticatedAppAudiosIndexRoute: AuthenticatedAppAudiosIndexRoute,
+  }
+
+const AuthenticatedAppAudiosRouteWithChildren =
+  AuthenticatedAppAudiosRoute._addFileChildren(
+    AuthenticatedAppAudiosRouteChildren,
+  )
+
 interface AuthenticatedAppRevisaoRouteChildren {
   AuthenticatedAppRevisaoIdRoute: typeof AuthenticatedAppRevisaoIdRoute
 }
@@ -498,6 +531,7 @@ const AuthenticatedAppRevisaoRouteWithChildren =
   )
 
 interface AuthenticatedAppRouteChildren {
+  AuthenticatedAppAudiosRoute: typeof AuthenticatedAppAudiosRouteWithChildren
   AuthenticatedAppMeusUploadsRoute: typeof AuthenticatedAppMeusUploadsRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppRevisaoRoute: typeof AuthenticatedAppRevisaoRouteWithChildren
@@ -509,12 +543,11 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAdminLogsRoute: typeof AuthenticatedAppAdminLogsRoute
   AuthenticatedAppAdminTrabalhosRoute: typeof AuthenticatedAppAdminTrabalhosRoute
   AuthenticatedAppAdminUsuariosRoute: typeof AuthenticatedAppAdminUsuariosRoute
-  AuthenticatedAppAudiosIdRoute: typeof AuthenticatedAppAudiosIdRoute
-  AuthenticatedAppAudiosIndexRoute: typeof AuthenticatedAppAudiosIndexRoute
   AuthenticatedAppTrabalhosIdCheckinRoute: typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
 
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
+  AuthenticatedAppAudiosRoute: AuthenticatedAppAudiosRouteWithChildren,
   AuthenticatedAppMeusUploadsRoute: AuthenticatedAppMeusUploadsRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppRevisaoRoute: AuthenticatedAppRevisaoRouteWithChildren,
@@ -526,8 +559,6 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAdminLogsRoute: AuthenticatedAppAdminLogsRoute,
   AuthenticatedAppAdminTrabalhosRoute: AuthenticatedAppAdminTrabalhosRoute,
   AuthenticatedAppAdminUsuariosRoute: AuthenticatedAppAdminUsuariosRoute,
-  AuthenticatedAppAudiosIdRoute: AuthenticatedAppAudiosIdRoute,
-  AuthenticatedAppAudiosIndexRoute: AuthenticatedAppAudiosIndexRoute,
   AuthenticatedAppTrabalhosIdCheckinRoute:
     AuthenticatedAppTrabalhosIdCheckinRoute,
 }
@@ -558,3 +589,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
