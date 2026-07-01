@@ -1,35 +1,78 @@
-## Problema
+# Plano: Timestamps precisos com Deepgram + editor de tempos
 
-Ao clicar em um áudio na biblioteca (`/app/audios`), a URL muda para `/app/audios/<id>` mas a tela continua mostrando a lista. Não tem relação com status da transcrição nem com lentidão do servidor.
+## Objetivo
+Eliminar a dessincronização áudio↔transcrição substituindo o provedor de STT (Gemini → Deepgram) e dando ao revisor controle fino para corrigir `start`/`end` de cada segmento quando necessário.
 
-## Causa
+## Escopo (3 frentes)
 
-No TanStack Router, com a convenção de pontos:
+### 1. Novo provedor de transcrição: Deepgram
+- Adicionar secret `DEEPGRAM_API_KEY` (solicitado ao usuário no início da implantação).
+- Reescrever `supabase/functions/transcribe-audio/index.ts` para chamar `https://api.deepgram.com/v1/listen` com:
+  - `model=nova-2` (melhor custo/qualidade em pt-BR)
+  - `language=pt-BR`
+  - `smart_format=true`, `punctuate=true`, `paragraphs=true`, `utterances=true`
+  - `diarize=true` (opcional, mantém fala separada por interlocutor)
+- Mapear resposta Deepgram → estrutura atual de `audio_transcriptions.segments`:
+  - cada `utterance` vira um segmento `{ start, end, text, speaker? }`
+  - timestamps em segundos com precisão de ~100 ms (medidos, não estimados)
+- Manter `full_text` (concatenação dos segments) e `language`.
+- Adicionar campo `provider` em `audio_transcriptions` para rastrear origem (`gemini` vs `deepgram`).
 
-- `src/routes/_authenticated/app.audios.tsx` define a rota `/app/audios` (a biblioteca).
-- `src/routes/_authenticated/app.audios.$id.tsx` define `/app/audios/$id` (o detalhe).
+### 2. Re-transcrição sob demanda
+- Botão "Re-transcrever com Deepgram" na tela de detalhe do áudio (`/app/audios/$id`), visível para admins e usuários com permissão de edição.
+- Fluxo:
+  1. Confirma com modal ("isso substituirá a transcrição atual e revisões manuais serão preservadas como histórico").
+  2. Antes de sobrescrever, copia a transcrição atual para `transcription_revisions` com label `pre-redeepgram-{timestamp}`.
+  3. Cria novo `processing_jobs` apontando para a edge function `transcribe-audio` em modo `force=true`.
+  4. UI mostra status (queued → running → done) e atualiza tela ao concluir.
+- Áudios antigos (com `provider != 'deepgram'`) ganham um badge "timestamps estimados — re-transcrever recomendado".
 
-Por causa do prefixo comum `app.audios.`, o route tree gerado registra o **detalhe como filho da biblioteca** (confirmado em `src/routeTree.gen.ts`: `parentRoute: typeof AuthenticatedAppAudiosRoute`). Quando uma rota é pai, seu componente precisa renderizar `<Outlet />` para o filho aparecer — e a biblioteca não renderiza Outlet, ela renderiza a listagem inteira. Por isso o filho casa, mas nunca monta.
+### 3. Editor de timestamps
+- Estender `SyncedTranscript.tsx` (ou criar `EditableSyncedTranscript.tsx`) para o modo `editable`:
+  - Cada segmento ganha dois campos de tempo (`mm:ss.sss`) editáveis ao lado do texto.
+  - Botão "capturar tempo atual" do player → preenche `start` ou `end` do segmento focado.
+  - Atalhos: `[` define `start` no tempo atual, `]` define `end`.
+  - Validação: `start < end`, sem sobreposição com vizinhos (warning, não bloqueio).
+- Disponível em:
+  - `/app/revisao/$id` (revisão pública) — quem tem permissão de revisor
+  - `/app/audios/$id` (detalhe interno) — admins e uploader do áudio
+- Salvamento:
+  - Edição cria entrada em `transcription_revisions` (já existe a tabela) com `segments` atualizado
+  - Botão "Publicar como atual" promove a revisão ao `audio_transcriptions` ativo
 
-## Correção
+## Detalhes técnicos
 
-Renomear a página da biblioteca para um leaf `index` (padrão TanStack) e criar um layout vazio só com `<Outlet />`:
+### Banco de dados
+- `audio_transcriptions`: adicionar coluna `provider TEXT DEFAULT 'gemini'`.
+- Nenhuma mudança em RLS (políticas atuais já cobrem leitura/escrita).
 
-1. `mv src/routes/_authenticated/app.audios.tsx src/routes/_authenticated/app.audios.index.tsx`
-   - Ajustar `createFileRoute("/_authenticated/app/audios")` para `createFileRoute("/_authenticated/app/audios/")`.
-2. Criar `src/routes/_authenticated/app.audios.tsx` apenas como layout:
-   ```tsx
-   import { createFileRoute, Outlet } from "@tanstack/react-router";
-   export const Route = createFileRoute("/_authenticated/app/audios")({
-     component: () => <Outlet />,
-   });
-   ```
+### Edge function
+- Substituir chamada Gemini por Deepgram (fetch direto, sem SDK — Deepgram REST é simples).
+- Manter contrato de entrada (`{ audio_id }`) e saída (status no `processing_jobs`).
+- Erro tratado: se `DEEPGRAM_API_KEY` faltar → status `failed` com mensagem clara.
 
-O Vite plugin regenera `routeTree.gen.ts` automaticamente. Após isso:
-- `/app/audios` continua mostrando a biblioteca (via leaf `index`).
-- `/app/audios/<id>` monta o detalhe dentro do `<Outlet />` do layout.
+### UI
+- Novo componente `RetranscribeButton.tsx` (detalhe do áudio).
+- Refactor de `SyncedTranscript.tsx` para suportar `mode: 'view' | 'edit-text' | 'edit-text-and-timestamps'`.
+- Hook `useTranscriptEditor` para gerenciar estado local + diff vs original.
 
-## Verificação
+### Custo / performance
+- Deepgram nova-2 pt-BR: ~US$ 0,0043/min (~R$ 0,02/min). 1h de áudio ≈ R$ 1,30.
+- Latência: ~1/10 da duração do áudio (10 min de áudio → ~1 min de transcrição).
 
-- Clicar num card na biblioteca → URL muda E a tela do detalhe carrega.
-- Funciona tanto para áudios com status `ready` quanto `transcribing` (o detalhe já mostra "Transcrevendo automaticamente…" quando não está pronto).
+## Ordem de execução
+1. Migration: coluna `provider` em `audio_transcriptions`.
+2. Solicitar secret `DEEPGRAM_API_KEY`.
+3. Reescrever edge function `transcribe-audio` com Deepgram.
+4. Testar upload novo → verificar timestamps batem com áudio.
+5. Adicionar botão de re-transcrição + fluxo de backup em `transcription_revisions`.
+6. Implementar editor de timestamps no `SyncedTranscript`.
+7. Habilitar editor em `/app/revisao/$id` e `/app/audios/$id` com checagem de permissão.
+
+## Fora de escopo (por ora)
+- Re-transcrição automática em massa de todo o histórico.
+- Edição de palavras individuais (word-level) — fica no nível de segmento.
+- Diarização avançada (separação de speakers em UI distinta).
+
+## Quando começar
+Plano fica pronto e arquivado. Quando você disser "vamos implantar", começamos pela migration + secret.
