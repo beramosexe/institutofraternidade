@@ -52,8 +52,7 @@ Deno.serve(async (req) => {
     const form = new FormData();
     form.append("model", TRANSCRIPTION_MODEL);
     form.append("language", "pt");
-    form.append("response_format", "verbose_json");
-    form.append("timestamp_granularities[]", "segment");
+    form.append("response_format", "json");
     form.append("file", new Blob([arrayBuffer], { type: mime }), `audio.${extension}`);
 
     // Call Lovable AI Gateway (OpenAI-compatible audio transcriptions)
