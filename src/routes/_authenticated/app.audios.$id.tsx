@@ -91,7 +91,7 @@ function AudioDetail() {
     !!transcription &&
     (perms.includes("transcription.review") ||
       perms.includes("audio.edit_any") ||
-      (!!access?.profile?.id && audio.uploaded_by === access.profile.id));
+      (!!access?.userId && audio.uploaded_by === access.userId));
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-10">
