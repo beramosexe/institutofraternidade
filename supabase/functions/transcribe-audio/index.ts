@@ -74,6 +74,8 @@ Deno.serve(async (req) => {
     }
 
     const ai = await resp.json();
+    console.log("STT response keys:", Object.keys(ai));
+    console.log("STT response sample:", JSON.stringify(ai).slice(0, 1000));
     const rawSegments = ai.segments;
     const segments: Segment[] = Array.isArray(rawSegments)
       ? rawSegments.map((s: { start: number; end: number; text: string }) => ({
