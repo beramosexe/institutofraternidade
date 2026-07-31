@@ -135,6 +135,7 @@ function ReviewEditor() {
           src={stream.url}
           segments={segments}
           editable
+          editableTimestamps
           onChangeSegments={onChangeSegments}
         />
       )}
