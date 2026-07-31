@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, SkipBack, SkipForward, Repeat } from "lucide-react";
+import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 
@@ -12,15 +12,83 @@ function formatTime(s: number): string {
   return `${m}:${sec}`;
 }
 
+/** mm:ss.mmm for editing */
+function formatPrecise(s: number): string {
+  if (!isFinite(s) || s < 0) s = 0;
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60).toString().padStart(2, "0");
+  const ms = Math.round((s - Math.floor(s)) * 1000).toString().padStart(3, "0");
+  return `${m}:${sec}.${ms}`;
+}
+
+/** Accepts "mm:ss.mmm", "mm:ss", "ss.mmm" or plain seconds. Returns null when invalid. */
+function parsePrecise(v: string): number | null {
+  const raw = v.trim();
+  if (!raw) return null;
+  const m = raw.match(/^(?:(\d+):)?(\d{1,2})(?:[.,](\d{1,3}))?$/);
+  if (!m) return null;
+  const mins = m[1] ? parseInt(m[1], 10) : 0;
+  const secs = parseInt(m[2], 10);
+  const frac = m[3] ? parseInt(m[3].padEnd(3, "0"), 10) / 1000 : 0;
+  return mins * 60 + secs + frac;
+}
+
 interface Props {
   src: string;
   segments: Segment[];
   /** When provided, segments are editable inline and onChange fires after each edit. */
   editable?: boolean;
+  /** Enables the start/end timestamp editor (requires `editable`). */
+  editableTimestamps?: boolean;
   onChangeSegments?: (segments: Segment[]) => void;
 }
 
-export function SyncedTranscript({ src, segments, editable, onChangeSegments }: Props) {
+function TimeField({
+  value,
+  onCommit,
+  label,
+  invalid,
+  onFocus,
+}: {
+  value: number;
+  onCommit: (v: number) => void;
+  label: string;
+  invalid?: boolean;
+  onFocus?: () => void;
+}) {
+  const [draft, setDraft] = useState(formatPrecise(value));
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    if (!editing) setDraft(formatPrecise(value));
+  }, [value, editing]);
+
+  return (
+    <input
+      aria-label={label}
+      title={label}
+      value={draft}
+      onFocus={() => { setEditing(true); onFocus?.(); }}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        setEditing(false);
+        const parsed = parsePrecise(draft);
+        if (parsed === null) setDraft(formatPrecise(value));
+        else onCommit(parsed);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") { setDraft(formatPrecise(value)); setEditing(false); (e.target as HTMLInputElement).blur(); }
+      }}
+      className={[
+        "w-[86px] rounded border bg-background px-1.5 py-0.5 text-center font-mono text-[11px] tabular-nums focus:outline-none focus:ring-2 focus:ring-ring/30",
+        invalid ? "border-destructive text-destructive" : "border-input text-muted-foreground",
+      ].join(" ")}
+    />
+  );
+}
+
+export function SyncedTranscript({ src, segments, editable, editableTimestamps, onChangeSegments }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [time, setTime] = useState(0);
@@ -28,8 +96,13 @@ export function SyncedTranscript({ src, segments, editable, onChangeSegments }: 
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
   const [loopSegment, setLoopSegment] = useState(false);
+  const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
+  const timeRef = useRef(0);
 
+  const timeEditing = !!(editable && editableTimestamps);
   const activeIdx = segments.findIndex((s) => time >= s.start && time < s.end);
+
+  useEffect(() => { timeRef.current = time; }, [time]);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -82,6 +155,45 @@ export function SyncedTranscript({ src, segments, editable, onChangeSegments }: 
     onChangeSegments(next);
   }
 
+  function updateSegmentTime(i: number, field: "start" | "end", value: number) {
+    if (!onChangeSegments) return;
+    const v = Math.max(0, Math.round(value * 1000) / 1000);
+    if (segments[i][field] === v) return;
+    const next = segments.slice();
+    next[i] = { ...next[i], [field]: v };
+    onChangeSegments(next);
+  }
+
+  /** Shift every segment from `from` onwards by `delta` seconds. */
+  function shiftAll(delta: number, from = 0) {
+    if (!onChangeSegments) return;
+    const next = segments.map((s, i) =>
+      i < from ? s : {
+        ...s,
+        start: Math.max(0, Math.round((s.start + delta) * 1000) / 1000),
+        end: Math.max(0, Math.round((s.end + delta) * 1000) / 1000),
+      },
+    );
+    onChangeSegments(next);
+  }
+
+  // Keyboard shortcuts: [ sets start, ] sets end on focused segment
+  useEffect(() => {
+    if (!timeEditing) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "[" && e.key !== "]") return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return;
+      const idx = focusedIdx ?? activeIdx;
+      if (idx == null || idx < 0) return;
+      e.preventDefault();
+      updateSegmentTime(idx, e.key === "[" ? "start" : "end", timeRef.current);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeEditing, focusedIdx, activeIdx, segments]);
+
   return (
     <div className="flex flex-col gap-4">
       <audio ref={audioRef} src={src} preload="metadata" />
@@ -124,6 +236,21 @@ export function SyncedTranscript({ src, segments, editable, onChangeSegments }: 
             </Button>
           )}
         </div>
+
+        {timeEditing && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+            <span className="text-xs text-muted-foreground">Ajuste global de tempo:</span>
+            {[-1, -0.5, -0.25, 0.25, 0.5, 1].map((d) => (
+              <Button key={d} size="sm" variant="outline" onClick={() => shiftAll(d)}>
+                {d > 0 ? `+${d}` : d}s
+              </Button>
+            ))}
+            <span className="ml-auto text-xs text-muted-foreground">
+              Atalhos: <kbd className="rounded border border-border px-1">[</kbd> define início ·{" "}
+              <kbd className="rounded border border-border px-1">]</kbd> define fim (no segmento selecionado)
+            </span>
+          </div>
+        )}
       </div>
 
       <div
@@ -134,35 +261,92 @@ export function SyncedTranscript({ src, segments, editable, onChangeSegments }: 
           <p className="p-6 text-center text-sm text-muted-foreground">
             Transcrição indisponível.
           </p>
-        ) : segments.map((seg, i) => (
-          <div
-            key={i}
-            data-seg={i}
-            className={[
-              "group flex gap-3 rounded-md px-3 py-2 transition-colors",
-              i === activeIdx ? "bg-brand/15" : "hover:bg-accent/50",
-            ].join(" ")}
-          >
-            <button
-              type="button"
-              onClick={() => seek(seg.start)}
-              className="shrink-0 font-mono text-xs text-brand hover:underline"
-              title="Pular para este momento"
+        ) : segments.map((seg, i) => {
+          const invalid = seg.end <= seg.start;
+          const overlaps = i > 0 && seg.start < segments[i - 1].end;
+          return (
+            <div
+              key={i}
+              data-seg={i}
+              onClick={() => timeEditing && setFocusedIdx(i)}
+              className={[
+                "group flex gap-3 rounded-md px-3 py-2 transition-colors",
+                i === activeIdx ? "bg-brand/15" : "hover:bg-accent/50",
+                timeEditing && focusedIdx === i ? "ring-1 ring-brand/40" : "",
+              ].join(" ")}
             >
-              {formatTime(seg.start)}
-            </button>
-            {editable ? (
-              <textarea
-                value={seg.text}
-                onChange={(e) => updateSegmentText(i, e.target.value)}
-                rows={Math.max(1, Math.ceil(seg.text.length / 70))}
-                className="flex-1 resize-none rounded-md border border-transparent bg-transparent px-2 py-1 text-sm leading-relaxed text-foreground focus:border-input focus:outline-none focus:ring-2 focus:ring-ring/30"
-              />
-            ) : (
-              <p className="flex-1 text-sm leading-relaxed text-foreground">{seg.text}</p>
-            )}
-          </div>
-        ))}
+              {timeEditing ? (
+                <div className="flex shrink-0 flex-col gap-1">
+                  <div className="flex items-center gap-1">
+                    <TimeField
+                      label="Início do segmento"
+                      value={seg.start}
+                      invalid={invalid || overlaps}
+                      onFocus={() => setFocusedIdx(i)}
+                      onCommit={(v) => updateSegmentTime(i, "start", v)}
+                    />
+                    <Button
+                      size="icon" variant="ghost" className="h-6 w-6"
+                      title="Usar tempo atual do player como início"
+                      onClick={() => { setFocusedIdx(i); updateSegmentTime(i, "start", time); }}
+                    >
+                      <Crosshair className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <TimeField
+                      label="Fim do segmento"
+                      value={seg.end}
+                      invalid={invalid}
+                      onFocus={() => setFocusedIdx(i)}
+                      onCommit={(v) => updateSegmentTime(i, "end", v)}
+                    />
+                    <Button
+                      size="icon" variant="ghost" className="h-6 w-6"
+                      title="Usar tempo atual do player como fim"
+                      onClick={() => { setFocusedIdx(i); updateSegmentTime(i, "end", time); }}
+                    >
+                      <Crosshair className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => seek(seg.start)}
+                    className="text-[11px] text-brand hover:underline"
+                  >
+                    ouvir
+                  </button>
+                  {(invalid || overlaps) && (
+                    <span className="flex items-center gap-1 text-[10px] text-destructive">
+                      <AlertTriangle className="h-3 w-3" />
+                      {invalid ? "fim ≤ início" : "sobrepõe anterior"}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => seek(seg.start)}
+                  className="shrink-0 font-mono text-xs text-brand hover:underline"
+                  title="Pular para este momento"
+                >
+                  {formatTime(seg.start)}
+                </button>
+              )}
+              {editable ? (
+                <textarea
+                  value={seg.text}
+                  onFocus={() => setFocusedIdx(i)}
+                  onChange={(e) => updateSegmentText(i, e.target.value)}
+                  rows={Math.max(1, Math.ceil(seg.text.length / 70))}
+                  className="flex-1 resize-none rounded-md border border-transparent bg-transparent px-2 py-1 text-sm leading-relaxed text-foreground focus:border-input focus:outline-none focus:ring-2 focus:ring-ring/30"
+                />
+              ) : (
+                <p className="flex-1 text-sm leading-relaxed text-foreground">{seg.text}</p>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
