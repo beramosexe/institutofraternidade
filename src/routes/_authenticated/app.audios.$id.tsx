@@ -1,14 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, Loader2, Save } from "lucide-react";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { SyncedTranscript } from "@/components/app/SyncedTranscript";
+import { SyncedTranscript, type Segment } from "@/components/app/SyncedTranscript";
+import { useMyAccess } from "@/components/app/AppShell";
 import { getAudioStreamUrl } from "@/lib/audios.functions";
+import { saveTranscription } from "@/lib/transcriptions.functions";
 import { ACCESS_LEVEL_LABELS, AUDIO_STATUS_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/app/audios/$id")({
@@ -17,7 +22,10 @@ export const Route = createFileRoute("/_authenticated/app/audios/$id")({
 
 function AudioDetail() {
   const { id } = Route.useParams();
+  const qc = useQueryClient();
   const streamFn = useServerFn(getAudioStreamUrl);
+  const saveFn = useServerFn(saveTranscription);
+  const { data: access } = useMyAccess();
 
   const { data: audio, isLoading } = useQuery({
     queryKey: ["audio", id],
@@ -42,11 +50,48 @@ function AudioDetail() {
     staleTime: 50 * 60 * 1000,
   });
 
+  const transcription = audio
+    ? (Array.isArray(audio.audio_transcriptions) ? audio.audio_transcriptions[0] : audio.audio_transcriptions)
+    : null;
+
+  const [editing, setEditing] = useState(false);
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [dirty, setDirty] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setSegments((transcription?.segments as Segment[] | null) ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transcription?.id]);
+
+  const saveMutation = useMutation({
+    mutationFn: async (next: Segment[]) => {
+      if (!transcription) return;
+      await saveFn({ data: { transcription_id: transcription.id, segments: next } });
+    },
+    onSuccess: () => {
+      setDirty(false);
+      qc.invalidateQueries({ queryKey: ["audio", id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+  });
+
+  function onChangeSegments(next: Segment[]) {
+    setSegments(next);
+    setDirty(true);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => saveMutation.mutate(next), 1200);
+  }
+
   if (isLoading) return <div className="p-10 text-muted-foreground">Carregando…</div>;
   if (!audio) return <div className="p-10 text-muted-foreground">Áudio não encontrado.</div>;
 
-  const transcription = Array.isArray(audio.audio_transcriptions) ? audio.audio_transcriptions[0] : audio.audio_transcriptions;
-  const segments = (transcription?.segments as { start: number; end: number; text: string }[] | null) ?? [];
+  const perms: string[] = (access?.permissions as string[] | undefined) ?? [];
+  const canEditTimestamps =
+    !!transcription &&
+    (perms.includes("transcription.review") ||
+      perms.includes("audio.edit_any") ||
+      (!!access?.profile?.id && audio.uploaded_by === access.profile.id));
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-10">
@@ -98,7 +143,36 @@ function AudioDetail() {
               ⚠ Esta transcrição foi gerada automaticamente e ainda não foi revisada. Pode conter erros.
             </div>
           )}
-          <SyncedTranscript src={stream.url} segments={segments} />
+
+          {canEditTimestamps && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant={editing ? "default" : "outline"}
+                onClick={() => setEditing((v) => !v)}
+              >
+                <Clock className="mr-2 h-4 w-4" />
+                {editing ? "Sair do ajuste de tempos" : "Ajustar tempos e texto"}
+              </Button>
+              {editing && (dirty ? (
+                <Badge variant="outline" className="border-gold/40 bg-gold/10">
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Salvando…
+                </Badge>
+              ) : saveMutation.isSuccess ? (
+                <Badge variant="outline" className="border-brand/40 bg-brand/10">
+                  <Save className="mr-1 h-3 w-3" /> Salvo
+                </Badge>
+              ) : null)}
+            </div>
+          )}
+
+          <SyncedTranscript
+            src={stream.url}
+            segments={segments}
+            editable={editing}
+            editableTimestamps={editing}
+            onChangeSegments={onChangeSegments}
+          />
         </>
       )}
     </div>
