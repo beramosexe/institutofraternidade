@@ -1,5 +1,5 @@
-// Edge function: transcribes an audio using Lovable AI (Gemini 2.5 Flash with audio input).
-// Triggered after upload from src/lib/audios.functions.ts → registerAudio
+// Edge function: transcribes an audio using Lovable AI Speech-to-Text.
+// Triggered after upload from src/lib/audios.functions.ts -> registerAudio
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -12,12 +12,8 @@ interface Body { audio_id: string }
 
 interface Segment { start: number; end: number; text: string }
 
-const SYSTEM_PROMPT = `Você é um transcritor profissional de áudio em português brasileiro.
-Transcreva o áudio fielmente, mantendo a pontuação natural.
-Segmente em frases curtas (geralmente entre 5 e 25 palavras), com timestamps precisos.
-Responda SOMENTE com JSON válido no formato:
-{"language":"pt","segments":[{"start":0.0,"end":3.2,"text":"..."}, ...]}
-Sem comentários, sem markdown.`;
+const TRANSCRIPTION_MODEL = "openai/gpt-4o-mini-transcribe";
+const PROVIDER_LABEL = `lovable-ai:${TRANSCRIPTION_MODEL}`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -49,49 +45,50 @@ Deno.serve(async (req) => {
     if (dErr || !blob) throw new Error("Failed to download audio: " + (dErr?.message ?? "no blob"));
 
     const arrayBuffer = await blob.arrayBuffer();
-    const base64 = bytesToBase64(new Uint8Array(arrayBuffer));
     const mime = audio.mime_type || blob.type || "audio/mpeg";
+    const extension = mimeToExtension(mime);
 
-    // Call Lovable AI Gateway (OpenAI-compatible chat completions)
+    // Build multipart form data for STT endpoint
+    const form = new FormData();
+    form.append("model", TRANSCRIPTION_MODEL);
+    form.append("language", "pt");
+    form.append("response_format", "verbose_json");
+    form.append("timestamp_granularities[]", "segment");
+    form.append("file", new Blob([arrayBuffer], { type: mime }), `audio.${extension}`);
+
+    // Call Lovable AI Gateway (OpenAI-compatible audio transcriptions)
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`,
+        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Transcreva este áudio em pt-BR e retorne JSON conforme as instruções." },
-              { type: "input_audio", input_audio: { data: base64, format: mime.includes("wav") ? "wav" : "mp3" } },
-            ],
-          },
-        ],
-        response_format: { type: "json_object" },
-      }),
+      body: form,
     });
 
     if (!resp.ok) {
       const t = await resp.text();
-      throw new Error(`Gateway ${resp.status}: ${t.slice(0, 300)}`);
+      throw new Error(`Gateway ${resp.status}: ${t.slice(0, 500)}`);
     }
 
     const ai = await resp.json();
-    const content: string = ai.choices?.[0]?.message?.content ?? "{}";
-    let parsed: { language?: string; segments?: Segment[]; text?: string } = {};
-    try { parsed = JSON.parse(content); } catch {
-      const m = content.match(/\{[\s\S]*\}/);
-      parsed = m ? JSON.parse(m[0]) : { segments: [] };
+    const rawSegments = ai.segments;
+    const segments: Segment[] = Array.isArray(rawSegments)
+      ? rawSegments.map((s: { start: number; end: number; text: string }) => ({
+          start: Number(s.start),
+          end: Number(s.end),
+          text: String(s.text).trim(),
+        })).filter((s) => s.text.length > 0)
+      : [];
+
+    const text = ai.text || segments.map((s) => s.text).join(" ").trim();
+
+    if (!text) {
+      throw new Error("Transcription returned empty text");
     }
-    const segments: Segment[] = Array.isArray(parsed.segments) ? parsed.segments : [];
-    const text = segments.map((s) => s.text).join(" ").trim() || parsed.text || "";
 
     // Upsert transcription
     const { data: existing } = await supabase
@@ -99,20 +96,20 @@ Deno.serve(async (req) => {
 
     if (existing) {
       await supabase.from("audio_transcriptions").update({
-        text, segments: segments as never, language: parsed.language ?? "pt",
-        provider: "lovable-ai:google/gemini-2.5-flash", review_status: "unreviewed",
+        text, segments: segments as never, language: ai.language ?? "pt",
+        provider: PROVIDER_LABEL, review_status: "unreviewed",
       }).eq("id", existing.id);
     } else {
       await supabase.from("audio_transcriptions").insert({
-        audio_id, text, segments: segments as never, language: parsed.language ?? "pt",
-        provider: "lovable-ai:google/gemini-2.5-flash",
+        audio_id, text, segments: segments as never, language: ai.language ?? "pt",
+        provider: PROVIDER_LABEL,
       });
     }
 
     await supabase.from("audios").update({ status: "ready", error_message: null }).eq("id", audio_id);
     await supabase.from("processing_jobs").update({
       status: "done", finished_at: new Date().toISOString(),
-      result: { segments_count: segments.length } as never,
+      result: { segments_count: segments.length, duration: ai.duration, language: ai.language } as never,
     }).eq("audio_id", audio_id).eq("status", "running");
 
     return json({ ok: true, segments: segments.length });
@@ -134,13 +131,15 @@ Deno.serve(async (req) => {
   }
 });
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(bin);
+function mimeToExtension(mime: string): string {
+  if (mime.includes("wav")) return "wav";
+  if (mime.includes("mp4")) return "mp4";
+  if (mime.includes("mpeg")) return "mp3";
+  if (mime.includes("mp3")) return "mp3";
+  if (mime.includes("m4a")) return "m4a";
+  if (mime.includes("ogg")) return "ogg";
+  if (mime.includes("webm")) return "webm";
+  return "mp3";
 }
 
 function json(body: unknown, status = 200) {
