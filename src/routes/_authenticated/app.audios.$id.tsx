@@ -156,13 +156,55 @@ function AudioDetail() {
       </div>
 
       {audio.status !== "ready" ? (
-        <Card className="flex items-center gap-3 p-6 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          {audio.status === "transcribing" ? "Transcrevendo automaticamente. Aguarde alguns instantes…" :
-           audio.status === "error" ? `Erro no processamento: ${audio.error_message ?? "tente novamente."}` :
-           "Áudio em processamento."}
-        </Card>
+        audio.status === "error" ? (
+          <Card className="space-y-3 p-6">
+            <div className="flex items-start gap-3 text-foreground">
+              <AlertTriangle className="mt-0.5 h-4 w-4 text-gold" />
+              <div className="space-y-1">
+                <p className="font-medium">Não foi possível transcrever este áudio.</p>
+                <p className="text-sm text-muted-foreground">
+                  {audio.error_message ?? "Ocorreu um erro no processamento."}
+                </p>
+              </div>
+            </div>
+            {canReprocess && (
+              <Button
+                size="sm"
+                onClick={() => reprocessMutation.mutate()}
+                disabled={reprocessMutation.isPending}
+              >
+                {reprocessMutation.isPending
+                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  : <RefreshCw className="mr-2 h-4 w-4" />}
+                Transcrever novamente
+              </Button>
+            )}
+          </Card>
+        ) : (
+          <Card className="space-y-3 p-6">
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {audio.status === "transcribing"
+                ? "Transcrevendo automaticamente. Esta página atualiza sozinha quando terminar…"
+                : "Áudio em processamento."}
+            </div>
+            {canReprocess && audio.status === "transcribing" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => reprocessMutation.mutate()}
+                disabled={reprocessMutation.isPending}
+              >
+                {reprocessMutation.isPending
+                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  : <RefreshCw className="mr-2 h-4 w-4" />}
+                Reiniciar transcrição
+              </Button>
+            )}
+          </Card>
+        )
       ) : !stream ? (
+
         <Card className="p-6 text-muted-foreground">Preparando reprodução…</Card>
       ) : (
         <>
