@@ -113,7 +113,12 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
     const a = audioRef.current;
     if (!a) return;
     const onTime = () => setTime(a.currentTime);
-    const onDur = () => setDuration(a.duration || 0);
+    const onDur = () => {
+      const d = a.duration || 0;
+      setDuration(d);
+      if (d && isFinite(d)) onDurationKnownRef.current?.(d);
+    };
+
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
     a.addEventListener("timeupdate", onTime);
