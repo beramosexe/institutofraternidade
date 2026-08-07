@@ -226,13 +226,21 @@ export const reprocessAudio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    await context.supabase.from("audios").update({ status: "transcribing", error_message: null }).eq("id", data.id);
-    await context.supabase.from("processing_jobs").insert({
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // close any orphan job from a previous interrupted run
+    await supabaseAdmin.from("processing_jobs").update({
+      status: "error", error_message: "Substituído por novo reprocessamento.",
+      finished_at: new Date().toISOString(),
+    }).eq("audio_id", data.id).eq("status", "running");
+
+    await supabaseAdmin.from("audios").update({ status: "transcribing", error_message: null }).eq("id", data.id);
+    await supabaseAdmin.from("processing_jobs").insert({
       audio_id: data.id, job_type: "transcribe", status: "pending",
     });
-    await context.supabase.from("audit_logs").insert({
+    await supabaseAdmin.from("audit_logs").insert({
       actor_id: context.userId, entity: "audios", entity_id: data.id, action: "reprocess",
     });
+
     try {
       await context.supabase.functions.invoke("transcribe-audio", { body: { audio_id: data.id } });
     } catch (e) { console.error(e); }
