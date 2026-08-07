@@ -18,9 +18,15 @@ const PROVIDER_LABEL = `lovable-ai:${TRANSCRIPTION_MODEL}`;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Keep the id outside the try: req.clone() after reading the body fails,
+  // which previously made the failure handler a no-op.
+  let currentAudioId: string | null = null;
+
   try {
     const { audio_id } = (await req.json()) as Body;
     if (!audio_id) return json({ error: "audio_id required" }, 400);
+    currentAudioId = audio_id;
+
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
