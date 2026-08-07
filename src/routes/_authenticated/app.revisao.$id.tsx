@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SyncedTranscript, type Segment } from "@/components/app/SyncedTranscript";
 import { getAudioStreamUrl } from "@/lib/audios.functions";
 import { saveTranscription, markTranscriptionReviewed } from "@/lib/transcriptions.functions";
+import { segmentsFromText } from "@/lib/transcript-segments";
+
 
 export const Route = createFileRoute("/_authenticated/app/revisao/$id")({
   component: ReviewEditor,
