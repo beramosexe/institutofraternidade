@@ -112,11 +112,14 @@ function AudioDetail() {
   if (!audio) return <div className="p-10 text-muted-foreground">Áudio não encontrado.</div>;
 
   const perms: string[] = (access?.permissions as string[] | undefined) ?? [];
+  const isOwner = !!access?.userId && audio.uploaded_by === access.userId;
   const canEditTimestamps =
     !!transcription &&
     (perms.includes("transcription.review") ||
       perms.includes("audio.edit_any") ||
-      (!!access?.userId && audio.uploaded_by === access.userId));
+      isOwner);
+  const canReprocess = perms.includes("audio.reprocess") || perms.includes("audio.edit_any") || isOwner;
+
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-10">
