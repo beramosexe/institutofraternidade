@@ -44,6 +44,9 @@ function ReviewEditor() {
   const [segments, setSegments] = useState<Segment[]>(initialSegments);
   const [dirty, setDirty] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // durationchange can fire repeatedly; only auto-generate timings once.
+  const autoTimedRef = useRef<string | null>(null);
+
 
   useEffect(() => {
     if (t && segments.length === 0) setSegments((t.segments as Segment[] | null) ?? []);
