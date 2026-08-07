@@ -1,12 +1,25 @@
-# Diagnóstico: o áudio não está sendo transcrito
+# Diagnóstico: por que esse áudio travou
 
-Verifiquei o banco. Esse áudio (“Canalização S Zé - 05/08/2026”) está travado:
+Reconstruí a linha do tempo do áudio “Canalização S Zé - 05/08/2026” pelo banco:
 
-- Status do áudio: `transcribing` desde **05/08/2026 23:22**
-- Existe **um único** job de transcrição, criado em 05/08 23:22, com status `running`, `attempts = 0`, sem `finished_at` e sem `error_message`
-- **Nenhuma** linha de transcrição foi gravada para ele
+- 23:22:50 — áudio criado já com status `transcribing`
+- 23:22:53 — última atualização do áudio (`updated_at`)
+- 23:22:54 — a função de transcrição começou e gravou o job com status `running`
+- Depois disso: **nada**. Job segue `running`, sem `finished_at`, sem `error_message`, `attempts = 0`, e **nenhuma** transcrição foi gravada
+- Não há registro em `audit_logs` para esse upload (o último é de 31/07)
+- Não há logs da função no período (janela de retenção já expirou)
 
-Ou seja: a transcrição foi iniciada uma vez, o processo morreu no meio (provavelmente estouro de tempo/memória ao baixar e enviar o arquivo de ~3,8 MB) e ninguém marcou o job como erro. Como o app só mostra “Transcrevendo…” enquanto o status é `transcribing`, ele fica preso nesse estado para sempre.
+## Causa
+
+A função de transcrição foi **interrompida abruptamente no meio da execução**, sem passar pelo tratamento de erro. Prova disso é que ela conseguiu marcar o job como `running` (só ela faz isso, com chave de serviço) mas nunca marcou `done` nem `error` — o bloco `catch` nunca rodou. Isso é o padrão de morte por **limite de tempo/recursos** da função, não de erro da API: o arquivo tem ~3,8 MB e é baixado inteiro para a memória, remontado em `FormData` e enviado ao provedor de STT em uma única requisição, sem nenhum limite de tempo.
+
+Dois problemas estruturais reforçam o travamento:
+
+1. **Nada detecta job órfão.** Sem `catch`, o áudio fica em `transcribing` para sempre e a tela mostra “Transcrevendo…” eternamente.
+2. **O job inicial nunca é criado pelo app.** `registerAudio` tenta inserir em `processing_jobs` e em `audit_logs` com o cliente do usuário, mas essas tabelas bloqueiam `INSERT` por RLS. Os erros são ignorados (nenhum `error` é checado), então o upload “passa” sem trilha de auditoria e sem job de fila. Só existe o job que a própria função criou.
+
+Como o app só mostra “Transcrevendo…” enquanto o status é `transcribing`, ele fica preso nesse estado para sempre.
+
 
 ## O que fazer
 
@@ -28,9 +41,11 @@ Enquanto o status for `transcribing`, atualizar a tela automaticamente (a cada p
 ## Detalhes técnicos
 
 - Áudio: `007753a5-166b-45d6-87e4-5a0f21d62c0c`; job travado: `7a2f0b6d-342b-477d-a446-b67d9db6c1fc`
-- `supabase/functions/transcribe-audio/index.ts`: envolver o fluxo em proteção de tempo, sempre atualizar `processing_jobs` e `audios` em caso de falha, e registrar log do motivo
+- `supabase/functions/transcribe-audio/index.ts`: timeout explícito (`AbortSignal.timeout`) na chamada ao provedor, sempre atualizar `processing_jobs` e `audios` em caso de falha ou abort, e registrar o motivo no log
+- Corrigir `registerAudio` (`src/lib/audios.functions.ts`): criar o job e o registro de auditoria com o cliente administrativo (as tabelas bloqueiam `INSERT` por RLS) e checar os erros retornados em vez de ignorá-los
 - Regra de job obsoleto (`running` há mais de 15 min → `error`) aplicada na leitura do detalhe/biblioteca e no início de um novo reprocessamento
 - `src/routes/_authenticated/app.audios.$id.tsx`: exibir `error_message`, botão de reprocessar (`reprocessAudio`) para `audio.reprocess` / `audio.edit_any` / quem enviou, e `refetchInterval` enquanto `status === "transcribing"`
+
 
 ## Observação sobre timestamps
 
