@@ -41,7 +41,12 @@ interface Props {
   /** Enables the start/end timestamp editor (requires `editable`). */
   editableTimestamps?: boolean;
   onChangeSegments?: (segments: Segment[]) => void;
+  /** Shown when there are no segments (e.g. provider returned text only). */
+  fallbackText?: string;
+  /** Fires once the real audio duration is known. */
+  onDurationKnown?: (duration: number) => void;
 }
+
 
 function TimeField({
   value,
