@@ -255,7 +255,10 @@ function AudioDetail() {
             editable={editing}
             editableTimestamps={editing}
             onChangeSegments={onChangeSegments}
+            fallbackText={transcription?.text ?? undefined}
+            onDurationKnown={handleDurationKnown}
           />
+
         </>
       )}
     </div>
