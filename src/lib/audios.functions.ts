@@ -226,7 +226,20 @@ export const reprocessAudio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
+    // Authorize before using the admin client (which bypasses RLS).
+    const { data: audioRow } = await context.supabase
+      .from("audios").select("id, uploaded_by").eq("id", data.id).maybeSingle();
+    if (!audioRow) throw new Error("Áudio não encontrado ou sem acesso.");
+    if (audioRow.uploaded_by !== context.userId) {
+      const [{ data: canReprocess }, { data: canEdit }] = await Promise.all([
+        context.supabase.rpc("has_permission", { _user_id: context.userId, _permission: "audio.reprocess" }),
+        context.supabase.rpc("has_permission", { _user_id: context.userId, _permission: "audio.edit_any" }),
+      ]);
+      if (!canReprocess && !canEdit) throw new Error("Você não tem permissão para reprocessar este áudio.");
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     // close any orphan job from a previous interrupted run
     await supabaseAdmin.from("processing_jobs").update({
       status: "error", error_message: "Substituído por novo reprocessamento.",
