@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Clock, Loader2, Save } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock, Loader2, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { SyncedTranscript, type Segment } from "@/components/app/SyncedTranscript";
 import { useMyAccess } from "@/components/app/AppShell";
-import { getAudioStreamUrl } from "@/lib/audios.functions";
+import { getAudioStreamUrl, failStaleTranscriptions, reprocessAudio } from "@/lib/audios.functions";
 import { saveTranscription } from "@/lib/transcriptions.functions";
 import { ACCESS_LEVEL_LABELS, AUDIO_STATUS_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
 
@@ -25,6 +25,8 @@ function AudioDetail() {
   const qc = useQueryClient();
   const streamFn = useServerFn(getAudioStreamUrl);
   const saveFn = useServerFn(saveTranscription);
+  const failStaleFn = useServerFn(failStaleTranscriptions);
+  const reprocessFn = useServerFn(reprocessAudio);
   const { data: access } = useMyAccess();
 
   const { data: audio, isLoading } = useQuery({
@@ -41,6 +43,28 @@ function AudioDetail() {
       if (error) throw new Error(error.message);
       return data;
     },
+    // While transcribing, poll so the transcript appears without a reload.
+    refetchInterval: (q) => (q.state.data?.status === "transcribing" ? 8000 : false),
+  });
+
+  // A job that never finished must not keep the audio stuck on "Transcrevendo…".
+  useEffect(() => {
+    if (audio?.status !== "transcribing") return;
+    const stuckSince = Date.now() - new Date(audio.updated_at).getTime();
+    if (stuckSince < 15 * 60 * 1000) return;
+    failStaleFn({ data: { audio_id: id } })
+      .then((r) => { if (r.failed) qc.invalidateQueries({ queryKey: ["audio", id] }); })
+      .catch(() => { /* non-blocking */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audio?.status, audio?.updated_at, id]);
+
+  const reprocessMutation = useMutation({
+    mutationFn: () => reprocessFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Transcrição reiniciada. Isso pode levar alguns minutos.");
+      qc.invalidateQueries({ queryKey: ["audio", id] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao reprocessar"),
   });
 
   const { data: stream } = useQuery({
@@ -49,6 +73,7 @@ function AudioDetail() {
     enabled: !!audio && audio.status === "ready",
     staleTime: 50 * 60 * 1000,
   });
+
 
   const transcription = audio
     ? (Array.isArray(audio.audio_transcriptions) ? audio.audio_transcriptions[0] : audio.audio_transcriptions)
