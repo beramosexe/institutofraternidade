@@ -271,9 +271,19 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
         className="max-h-[60vh] overflow-y-auto rounded-lg border border-border bg-card p-3"
       >
         {segments.length === 0 ? (
-          <p className="p-6 text-center text-sm text-muted-foreground">
-            Transcrição indisponível.
-          </p>
+          fallbackText ? (
+            <div className="space-y-2 p-4">
+              <p className="text-xs text-muted-foreground">
+                Transcrição sem marcações de tempo — preparando sincronização…
+              </p>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{fallbackText}</p>
+            </div>
+          ) : (
+            <p className="p-6 text-center text-sm text-muted-foreground">
+              Transcrição indisponível.
+            </p>
+          )
+
         ) : segments.map((seg, i) => {
           const invalid = seg.end <= seg.start;
           const overlaps = i > 0 && seg.start < segments[i - 1].end;
