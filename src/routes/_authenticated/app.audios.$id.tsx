@@ -85,11 +85,14 @@ function AudioDetail() {
   const [segments, setSegments] = useState<Segment[]>([]);
   const [dirty, setDirty] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // durationchange can fire repeatedly; only auto-generate timings once.
+  const autoTimedRef = useRef<string | null>(null);
 
   useEffect(() => {
     setSegments((transcription?.segments as Segment[] | null) ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transcription?.id]);
+
 
   const saveMutation = useMutation({
     mutationFn: async (next: Segment[]) => {
