@@ -41,7 +41,12 @@ interface Props {
   /** Enables the start/end timestamp editor (requires `editable`). */
   editableTimestamps?: boolean;
   onChangeSegments?: (segments: Segment[]) => void;
+  /** Shown when there are no segments (e.g. provider returned text only). */
+  fallbackText?: string;
+  /** Fires once the real audio duration is known. */
+  onDurationKnown?: (duration: number) => void;
 }
+
 
 function TimeField({
   value,
@@ -88,7 +93,7 @@ function TimeField({
   );
 }
 
-export function SyncedTranscript({ src, segments, editable, editableTimestamps, onChangeSegments }: Props) {
+export function SyncedTranscript({ src, segments, editable, editableTimestamps, onChangeSegments, fallbackText, onDurationKnown }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [time, setTime] = useState(0);
@@ -98,6 +103,9 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
   const [loopSegment, setLoopSegment] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   const timeRef = useRef(0);
+  const onDurationKnownRef = useRef(onDurationKnown);
+  useEffect(() => { onDurationKnownRef.current = onDurationKnown; }, [onDurationKnown]);
+
 
   const timeEditing = !!(editable && editableTimestamps);
   const activeIdx = segments.findIndex((s) => time >= s.start && time < s.end);
@@ -108,7 +116,12 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
     const a = audioRef.current;
     if (!a) return;
     const onTime = () => setTime(a.currentTime);
-    const onDur = () => setDuration(a.duration || 0);
+    const onDur = () => {
+      const d = a.duration || 0;
+      setDuration(d);
+      if (d && isFinite(d)) onDurationKnownRef.current?.(d);
+    };
+
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
     a.addEventListener("timeupdate", onTime);
@@ -258,9 +271,19 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
         className="max-h-[60vh] overflow-y-auto rounded-lg border border-border bg-card p-3"
       >
         {segments.length === 0 ? (
-          <p className="p-6 text-center text-sm text-muted-foreground">
-            Transcrição indisponível.
-          </p>
+          fallbackText ? (
+            <div className="space-y-2 p-4">
+              <p className="text-xs text-muted-foreground">
+                Transcrição sem marcações de tempo — preparando sincronização…
+              </p>
+              <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{fallbackText}</p>
+            </div>
+          ) : (
+            <p className="p-6 text-center text-sm text-muted-foreground">
+              Transcrição indisponível.
+            </p>
+          )
+
         ) : segments.map((seg, i) => {
           const invalid = seg.end <= seg.start;
           const overlaps = i > 0 && seg.start < segments[i - 1].end;

@@ -51,13 +51,17 @@ export const registerAudio = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    await supabase.from("processing_jobs").insert({
+    // processing_jobs / audit_logs block INSERT via RLS — use the admin client.
+    const { error: jobErr } = await supabaseAdmin.from("processing_jobs").insert({
       audio_id: row.id, job_type: "transcribe", status: "pending",
     });
-    await supabase.from("audit_logs").insert({
+    if (jobErr) console.error("processing_jobs insert failed", jobErr.message);
+
+    const { error: auditErr } = await supabaseAdmin.from("audit_logs").insert({
       actor_id: userId, entity: "audios", entity_id: row.id, action: "upload",
       diff: { title: data.title, access_level: data.access_level } as never,
     });
+    if (auditErr) console.error("audit_logs insert failed", auditErr.message);
 
     // Fire-and-forget edge function invocation
     try {
@@ -68,6 +72,46 @@ export const registerAudio = createServerFn({ method: "POST" })
 
     return row;
   });
+
+/** Fails audios stuck in `transcribing` with a job running longer than the limit. */
+export const failStaleTranscriptions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { audio_id?: string | null }) =>
+    z.object({ audio_id: z.string().uuid().nullable().optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const STALE_MINUTES = 15;
+    const cutoff = new Date(Date.now() - STALE_MINUTES * 60 * 1000).toISOString();
+    const message =
+      `A transcrição foi interrompida antes de terminar (sem resposta há mais de ${STALE_MINUTES} minutos). Tente transcrever novamente.`;
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let q = supabaseAdmin
+      .from("audios")
+      .select("id, updated_at")
+      .eq("status", "transcribing")
+      .lt("updated_at", cutoff);
+    if (data.audio_id) q = q.eq("id", data.audio_id);
+
+    const { data: stuck, error } = await q;
+    if (error) throw new Error(error.message);
+    if (!stuck?.length) return { failed: 0 };
+
+    const ids = stuck.map((a) => a.id);
+    await supabaseAdmin
+      .from("audios")
+      .update({ status: "error", error_message: message })
+      .in("id", ids);
+    await supabaseAdmin
+      .from("processing_jobs")
+      .update({ status: "error", error_message: message, finished_at: new Date().toISOString() })
+      .in("audio_id", ids)
+      .eq("status", "running");
+
+    return { failed: ids.length };
+  });
+
 
 /** Returns a short-lived signed URL for a private audio file the user can access. */
 export const getAudioStreamUrl = createServerFn({ method: "POST" })
@@ -182,13 +226,34 @@ export const reprocessAudio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    await context.supabase.from("audios").update({ status: "transcribing", error_message: null }).eq("id", data.id);
-    await context.supabase.from("processing_jobs").insert({
+    // Authorize before using the admin client (which bypasses RLS).
+    const { data: audioRow } = await context.supabase
+      .from("audios").select("id, uploaded_by").eq("id", data.id).maybeSingle();
+    if (!audioRow) throw new Error("Áudio não encontrado ou sem acesso.");
+    if (audioRow.uploaded_by !== context.userId) {
+      const [{ data: canReprocess }, { data: canEdit }] = await Promise.all([
+        context.supabase.rpc("has_permission", { _user_id: context.userId, _permission: "audio.reprocess" }),
+        context.supabase.rpc("has_permission", { _user_id: context.userId, _permission: "audio.edit_any" }),
+      ]);
+      if (!canReprocess && !canEdit) throw new Error("Você não tem permissão para reprocessar este áudio.");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // close any orphan job from a previous interrupted run
+    await supabaseAdmin.from("processing_jobs").update({
+      status: "error", error_message: "Substituído por novo reprocessamento.",
+      finished_at: new Date().toISOString(),
+    }).eq("audio_id", data.id).eq("status", "running");
+
+    await supabaseAdmin.from("audios").update({ status: "transcribing", error_message: null }).eq("id", data.id);
+    await supabaseAdmin.from("processing_jobs").insert({
       audio_id: data.id, job_type: "transcribe", status: "pending",
     });
-    await context.supabase.from("audit_logs").insert({
+    await supabaseAdmin.from("audit_logs").insert({
       actor_id: context.userId, entity: "audios", entity_id: data.id, action: "reprocess",
     });
+
     try {
       await context.supabase.functions.invoke("transcribe-audio", { body: { audio_id: data.id } });
     } catch (e) { console.error(e); }
