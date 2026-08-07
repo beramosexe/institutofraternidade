@@ -44,6 +44,9 @@ function ReviewEditor() {
   const [segments, setSegments] = useState<Segment[]>(initialSegments);
   const [dirty, setDirty] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // durationchange can fire repeatedly; only auto-generate timings once.
+  const autoTimedRef = useRef<string | null>(null);
+
 
   useEffect(() => {
     if (t && segments.length === 0) setSegments((t.segments as Segment[] | null) ?? []);
@@ -80,11 +83,14 @@ function ReviewEditor() {
   // from the real audio duration so the reviewer has something to adjust.
   function handleDurationKnown(duration: number) {
     if (!t?.text || segments.length > 0) return;
+    if (autoTimedRef.current === t.id) return;
     const generated = segmentsFromText(t.text, duration);
     if (!generated.length) return;
+    autoTimedRef.current = t.id;
     setSegments(generated);
     saveMutation.mutate(generated);
   }
+
 
 
   const markMutation = useMutation({
