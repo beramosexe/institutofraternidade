@@ -34,8 +34,16 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (aErr || !audio) throw new Error("Audio not found");
 
-    // Mark job running
-    await supabase.from("audios").update({ status: "transcribing" }).eq("id", audio_id);
+    // Mark job running (close orphan jobs from previous interrupted runs first)
+    await supabase.from("processing_jobs").update({
+      status: "error", error_message: "Execução anterior interrompida.",
+      finished_at: new Date().toISOString(),
+    }).eq("audio_id", audio_id).eq("status", "running");
+
+    await supabase.from("audios").update({ status: "transcribing", error_message: null }).eq("id", audio_id);
+    await supabase.from("processing_jobs").update({
+      status: "done", finished_at: new Date().toISOString(),
+    }).eq("audio_id", audio_id).eq("status", "pending");
     await supabase.from("processing_jobs").insert({
       audio_id, job_type: "transcribe", status: "running", started_at: new Date().toISOString(),
     });
@@ -59,19 +67,36 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-      },
-      body: form,
-    });
+    console.log(`Transcribing ${audio_id} (${(arrayBuffer.byteLength / 1e6).toFixed(2)} MB, ${mime})`);
+
+    let resp: Response;
+    try {
+      resp = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+        },
+        body: form,
+        // Hard limit so the function never dies silently waiting on the provider.
+        signal: AbortSignal.timeout(4 * 60 * 1000),
+      });
+    } catch (e) {
+      const aborted = e instanceof DOMException && e.name === "TimeoutError";
+      throw new Error(
+        aborted
+          ? "A transcrição excedeu o tempo limite de 4 minutos. Tente novamente ou envie um arquivo menor."
+          : `Falha de rede ao chamar o serviço de transcrição: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
 
     if (!resp.ok) {
       const t = await resp.text();
+      if (resp.status === 429) throw new Error("Limite de uso do serviço de transcrição atingido. Tente novamente em alguns minutos.");
+      if (resp.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos para transcrever novos áudios.");
       throw new Error(`Gateway ${resp.status}: ${t.slice(0, 500)}`);
     }
+
 
     const ai = await resp.json();
     console.log("STT response keys:", Object.keys(ai));
