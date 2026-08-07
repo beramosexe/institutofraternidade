@@ -148,20 +148,24 @@ Deno.serve(async (req) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("transcribe-audio error", msg);
-    try {
-      const { audio_id } = (await req.clone().json()) as Body;
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      );
-      await supabase.from("audios").update({ status: "error", error_message: msg }).eq("id", audio_id);
-      await supabase.from("processing_jobs").update({
-        status: "error", finished_at: new Date().toISOString(), error_message: msg,
-      }).eq("audio_id", audio_id).eq("status", "running");
-    } catch (_) { /* ignore */ }
+    if (currentAudioId) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        await supabase.from("audios").update({ status: "error", error_message: msg }).eq("id", currentAudioId);
+        await supabase.from("processing_jobs").update({
+          status: "error", finished_at: new Date().toISOString(), error_message: msg,
+        }).eq("audio_id", currentAudioId).eq("status", "running");
+      } catch (inner) {
+        console.error("failed to record transcription error", inner);
+      }
+    }
     return json({ error: msg }, 500);
   }
 });
+
 
 function mimeToExtension(mime: string): string {
   if (mime.includes("wav")) return "wav";
