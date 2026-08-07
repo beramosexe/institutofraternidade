@@ -74,6 +74,17 @@ function ReviewEditor() {
     }, 1200);
   }
 
+  // Provider may return text without timestamps: build evenly spread segments
+  // from the real audio duration so the reviewer has something to adjust.
+  function handleDurationKnown(duration: number) {
+    if (!t?.text || segments.length > 0) return;
+    const generated = segmentsFromText(t.text, duration);
+    if (!generated.length) return;
+    setSegments(generated);
+    saveMutation.mutate(generated);
+  }
+
+
   const markMutation = useMutation({
     mutationFn: async (reviewed: boolean) => {
       if (!t) return;
