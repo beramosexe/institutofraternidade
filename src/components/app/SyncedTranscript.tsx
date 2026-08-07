@@ -103,6 +103,9 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
   const [loopSegment, setLoopSegment] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   const timeRef = useRef(0);
+  const onDurationKnownRef = useRef(onDurationKnown);
+  useEffect(() => { onDurationKnownRef.current = onDurationKnown; }, [onDurationKnown]);
+
 
   const timeEditing = !!(editable && editableTimestamps);
   const activeIdx = segments.findIndex((s) => time >= s.start && time < s.end);
