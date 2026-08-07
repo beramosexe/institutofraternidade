@@ -14,6 +14,8 @@ import { SyncedTranscript, type Segment } from "@/components/app/SyncedTranscrip
 import { useMyAccess } from "@/components/app/AppShell";
 import { getAudioStreamUrl, failStaleTranscriptions, reprocessAudio } from "@/lib/audios.functions";
 import { saveTranscription } from "@/lib/transcriptions.functions";
+import { segmentsFromText } from "@/lib/transcript-segments";
+
 import { ACCESS_LEVEL_LABELS, AUDIO_STATUS_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/app/audios/$id")({
