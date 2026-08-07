@@ -1,78 +1,37 @@
-# Plano: Timestamps precisos com Deepgram + editor de tempos
+# Diagnóstico: o áudio não está sendo transcrito
 
-## Objetivo
-Eliminar a dessincronização áudio↔transcrição substituindo o provedor de STT (Gemini → Deepgram) e dando ao revisor controle fino para corrigir `start`/`end` de cada segmento quando necessário.
+Verifiquei o banco. Esse áudio (“Canalização S Zé - 05/08/2026”) está travado:
 
-## Escopo (3 frentes)
+- Status do áudio: `transcribing` desde **05/08/2026 23:22**
+- Existe **um único** job de transcrição, criado em 05/08 23:22, com status `running`, `attempts = 0`, sem `finished_at` e sem `error_message`
+- **Nenhuma** linha de transcrição foi gravada para ele
 
-### 1. Novo provedor de transcrição: Deepgram
-- Adicionar secret `DEEPGRAM_API_KEY` (solicitado ao usuário no início da implantação).
-- Reescrever `supabase/functions/transcribe-audio/index.ts` para chamar `https://api.deepgram.com/v1/listen` com:
-  - `model=nova-2` (melhor custo/qualidade em pt-BR)
-  - `language=pt-BR`
-  - `smart_format=true`, `punctuate=true`, `paragraphs=true`, `utterances=true`
-  - `diarize=true` (opcional, mantém fala separada por interlocutor)
-- Mapear resposta Deepgram → estrutura atual de `audio_transcriptions.segments`:
-  - cada `utterance` vira um segmento `{ start, end, text, speaker? }`
-  - timestamps em segundos com precisão de ~100 ms (medidos, não estimados)
-- Manter `full_text` (concatenação dos segments) e `language`.
-- Adicionar campo `provider` em `audio_transcriptions` para rastrear origem (`gemini` vs `deepgram`).
+Ou seja: a transcrição foi iniciada uma vez, o processo morreu no meio (provavelmente estouro de tempo/memória ao baixar e enviar o arquivo de ~3,8 MB) e ninguém marcou o job como erro. Como o app só mostra “Transcrevendo…” enquanto o status é `transcribing`, ele fica preso nesse estado para sempre.
 
-### 2. Re-transcrição sob demanda
-- Botão "Re-transcrever com Deepgram" na tela de detalhe do áudio (`/app/audios/$id`), visível para admins e usuários com permissão de edição.
-- Fluxo:
-  1. Confirma com modal ("isso substituirá a transcrição atual e revisões manuais serão preservadas como histórico").
-  2. Antes de sobrescrever, copia a transcrição atual para `transcription_revisions` com label `pre-redeepgram-{timestamp}`.
-  3. Cria novo `processing_jobs` apontando para a edge function `transcribe-audio` em modo `force=true`.
-  4. UI mostra status (queued → running → done) e atualiza tela ao concluir.
-- Áudios antigos (com `provider != 'deepgram'`) ganham um badge "timestamps estimados — re-transcrever recomendado".
+## O que fazer
 
-### 3. Editor de timestamps
-- Estender `SyncedTranscript.tsx` (ou criar `EditableSyncedTranscript.tsx`) para o modo `editable`:
-  - Cada segmento ganha dois campos de tempo (`mm:ss.sss`) editáveis ao lado do texto.
-  - Botão "capturar tempo atual" do player → preenche `start` ou `end` do segmento focado.
-  - Atalhos: `[` define `start` no tempo atual, `]` define `end`.
-  - Validação: `start < end`, sem sobreposição com vizinhos (warning, não bloqueio).
-- Disponível em:
-  - `/app/revisao/$id` (revisão pública) — quem tem permissão de revisor
-  - `/app/audios/$id` (detalhe interno) — admins e uploader do áudio
-- Salvamento:
-  - Edição cria entrada em `transcription_revisions` (já existe a tabela) com `segments` atualizado
-  - Botão "Publicar como atual" promove a revisão ao `audio_transcriptions` ativo
+### 1. Destravar este áudio agora
+Reprocessar a transcrição desse áudio e acompanhar o resultado. Se falhar de novo, o erro passará a ficar visível (item 2).
+
+### 2. Nunca mais ficar preso em “Transcrevendo…”
+- Marcar como erro qualquer job `running` que passe de um tempo limite (ex.: 15 minutos), colocando o áudio em `error` com mensagem clara
+- Garantir que o processamento sempre registre falha no job e no áudio, inclusive quando o processo é interrompido
+
+### 3. Botão de “Transcrever novamente” onde ele falta
+Hoje o reprocessamento só existe na administração de áudios. Adicionar a ação também:
+- Na página de detalhe do áudio, quando o status for `error` ou estiver travado
+- Com aviso visível do motivo do erro, para quem tem permissão
+
+### 4. Feedback de progresso
+Enquanto o status for `transcribing`, atualizar a tela automaticamente (a cada poucos segundos) para que a transcrição apareça sozinha quando terminar, sem recarregar a página.
 
 ## Detalhes técnicos
 
-### Banco de dados
-- `audio_transcriptions`: adicionar coluna `provider TEXT DEFAULT 'gemini'`.
-- Nenhuma mudança em RLS (políticas atuais já cobrem leitura/escrita).
+- Áudio: `007753a5-166b-45d6-87e4-5a0f21d62c0c`; job travado: `7a2f0b6d-342b-477d-a446-b67d9db6c1fc`
+- `supabase/functions/transcribe-audio/index.ts`: envolver o fluxo em proteção de tempo, sempre atualizar `processing_jobs` e `audios` em caso de falha, e registrar log do motivo
+- Regra de job obsoleto (`running` há mais de 15 min → `error`) aplicada na leitura do detalhe/biblioteca e no início de um novo reprocessamento
+- `src/routes/_authenticated/app.audios.$id.tsx`: exibir `error_message`, botão de reprocessar (`reprocessAudio`) para `audio.reprocess` / `audio.edit_any` / quem enviou, e `refetchInterval` enquanto `status === "transcribing"`
 
-### Edge function
-- Substituir chamada Gemini por Deepgram (fetch direto, sem SDK — Deepgram REST é simples).
-- Manter contrato de entrada (`{ audio_id }`) e saída (status no `processing_jobs`).
-- Erro tratado: se `DEEPGRAM_API_KEY` faltar → status `failed` com mensagem clara.
+## Observação sobre timestamps
 
-### UI
-- Novo componente `RetranscribeButton.tsx` (detalhe do áudio).
-- Refactor de `SyncedTranscript.tsx` para suportar `mode: 'view' | 'edit-text' | 'edit-text-and-timestamps'`.
-- Hook `useTranscriptEditor` para gerenciar estado local + diff vs original.
-
-### Custo / performance
-- Deepgram nova-2 pt-BR: ~US$ 0,0043/min (~R$ 0,02/min). 1h de áudio ≈ R$ 1,30.
-- Latência: ~1/10 da duração do áudio (10 min de áudio → ~1 min de transcrição).
-
-## Ordem de execução
-1. Migration: coluna `provider` em `audio_transcriptions`.
-2. Solicitar secret `DEEPGRAM_API_KEY`.
-3. Reescrever edge function `transcribe-audio` com Deepgram.
-4. Testar upload novo → verificar timestamps batem com áudio.
-5. Adicionar botão de re-transcrição + fluxo de backup em `transcription_revisions`.
-6. Implementar editor de timestamps no `SyncedTranscript`.
-7. Habilitar editor em `/app/revisao/$id` e `/app/audios/$id` com checagem de permissão.
-
-## Fora de escopo (por ora)
-- Re-transcrição automática em massa de todo o histórico.
-- Edição de palavras individuais (word-level) — fica no nível de segmento.
-- Diarização avançada (separação de speakers em UI distinta).
-
-## Quando começar
-Plano fica pronto e arquivado. Quando você disser "vamos implantar", começamos pela migration + secret.
+Independente disso, o modelo atual não devolve timestamps medidos — a sincronia continua dependendo do editor manual de tempos já implementado. Trocar de provedor (Deepgram/AssemblyAI) segue como caminho futuro.
