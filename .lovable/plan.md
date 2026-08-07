@@ -41,9 +41,11 @@ Enquanto o status for `transcribing`, atualizar a tela automaticamente (a cada p
 ## Detalhes técnicos
 
 - Áudio: `007753a5-166b-45d6-87e4-5a0f21d62c0c`; job travado: `7a2f0b6d-342b-477d-a446-b67d9db6c1fc`
-- `supabase/functions/transcribe-audio/index.ts`: envolver o fluxo em proteção de tempo, sempre atualizar `processing_jobs` e `audios` em caso de falha, e registrar log do motivo
+- `supabase/functions/transcribe-audio/index.ts`: timeout explícito (`AbortSignal.timeout`) na chamada ao provedor, sempre atualizar `processing_jobs` e `audios` em caso de falha ou abort, e registrar o motivo no log
+- Corrigir `registerAudio` (`src/lib/audios.functions.ts`): criar o job e o registro de auditoria com o cliente administrativo (as tabelas bloqueiam `INSERT` por RLS) e checar os erros retornados em vez de ignorá-los
 - Regra de job obsoleto (`running` há mais de 15 min → `error`) aplicada na leitura do detalhe/biblioteca e no início de um novo reprocessamento
 - `src/routes/_authenticated/app.audios.$id.tsx`: exibir `error_message`, botão de reprocessar (`reprocessAudio`) para `audio.reprocess` / `audio.edit_any` / quem enviou, e `refetchInterval` enquanto `status === "transcribing"`
+
 
 ## Observação sobre timestamps
 
