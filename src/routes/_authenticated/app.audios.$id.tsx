@@ -108,6 +108,17 @@ function AudioDetail() {
     saveTimer.current = setTimeout(() => saveMutation.mutate(next), 1200);
   }
 
+  // Provider may return text without timestamps: build evenly spread segments
+  // from the real audio duration so the synced view (and editor) still works.
+  function handleDurationKnown(duration: number) {
+    if (!transcription?.text || segments.length > 0) return;
+    const generated = segmentsFromText(transcription.text, duration);
+    if (!generated.length) return;
+    setSegments(generated);
+    saveMutation.mutate(generated);
+  }
+
+
   if (isLoading) return <div className="p-10 text-muted-foreground">Carregando…</div>;
   if (!audio) return <div className="p-10 text-muted-foreground">Áudio não encontrado.</div>;
 
