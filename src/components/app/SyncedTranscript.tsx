@@ -93,7 +93,7 @@ function TimeField({
   );
 }
 
-export function SyncedTranscript({ src, segments, editable, editableTimestamps, onChangeSegments }: Props) {
+export function SyncedTranscript({ src, segments, editable, editableTimestamps, onChangeSegments, fallbackText, onDurationKnown }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [time, setTime] = useState(0);
