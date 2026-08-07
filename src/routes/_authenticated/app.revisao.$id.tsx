@@ -150,7 +150,10 @@ function ReviewEditor() {
           editable
           editableTimestamps
           onChangeSegments={onChangeSegments}
+          fallbackText={t?.text ?? undefined}
+          onDurationKnown={handleDurationKnown}
         />
+
       )}
     </div>
   );
