@@ -28,6 +28,8 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "user.manage": "Gerenciar usuários",
   "role.manage": "Gerenciar cargos",
   "logs.view": "Visualizar logs de auditoria",
+  "attendance.manage": "Controle de presença (acolhimento)",
+
 };
 
 export const ACCESS_LEVEL_LABELS = {
