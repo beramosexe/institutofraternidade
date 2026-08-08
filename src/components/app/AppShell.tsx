@@ -25,23 +25,43 @@ export function useMyAccess() {
   });
 }
 
-type NavItem = { to: string; label: string; icon: typeof Home; need?: string };
+type NavItem = { to: string; label: string; icon: typeof Home; need?: string; adminOnly?: boolean };
+type NavSection = { label: string; items: NavItem[]; comingSoon?: boolean };
 
-const NAV: NavItem[] = [
-  { to: "/app", label: "Painel", icon: Home },
-  { to: "/app/audios", label: "Áudios", icon: Headphones },
-  { to: "/app/upload", label: "Enviar áudio", icon: Upload, need: "audio.upload" },
-  { to: "/app/meus-uploads", label: "Meus uploads", icon: FileText, need: "audio.upload" },
-  { to: "/app/revisao", label: "Revisão", icon: ListChecks, need: "transcription.review" },
-];
-
-const ADMIN_NAV: NavItem[] = [
-  { to: "/app/admin/trabalhos", label: "Trabalhos", icon: Calendar, need: "work.manage" },
-  { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
-  { to: "/app/admin/entidades", label: "Entidades", icon: ShieldCheck, need: "user.manage" },
-  { to: "/app/admin/usuarios", label: "Usuários", icon: UsersIcon, need: "user.manage" },
-  { to: "/app/admin/cargos", label: "Cargos", icon: ShieldCheck, need: "role.manage" },
-  { to: "/app/admin/logs", label: "Logs", icon: History, need: "logs.view" },
+const SECTIONS: NavSection[] = [
+  {
+    label: "Geral",
+    items: [
+      { to: "/app", label: "Painel", icon: Home },
+      { to: "/app/audios", label: "Áudios", icon: Headphones },
+      { to: "/app/trabalhos", label: "Trabalhos", icon: Calendar },
+    ],
+  },
+  {
+    label: "Gestão Áudios e Revisão",
+    items: [
+      { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
+    ],
+  },
+  {
+    label: "Acolhimento",
+    items: [
+      { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
+    ],
+  },
+  { label: "Estoque", items: [], comingSoon: true },
+  { label: "Manutenção", items: [], comingSoon: true },
+  { label: "Financeiro", items: [], comingSoon: true },
+  { label: "Mídias", items: [], comingSoon: true },
+  {
+    label: "Administração",
+    items: [
+      { to: "/app/admin", label: "Admin", icon: ShieldCheck, adminOnly: true },
+      { to: "/app/admin/trabalhos", label: "Gestão dos trabalhos e eventos", icon: Calendar, need: "work.manage" },
+      { to: "/app/admin/logs", label: "Logs", icon: History, need: "logs.view" },
+      { to: "/app/admin/usuarios", label: "Usuários", icon: UsersIcon, need: "user.manage" },
+    ],
+  },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -58,59 +78,60 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   }
 
-  const can = (need?: string) => !need || (access?.permissions ?? []).includes(need) || access?.isAdmin;
+  const can = (item: NavItem) => {
+    if (item.adminOnly) return !!access?.isAdmin;
+    if (!item.need) return true;
+    return (access?.permissions ?? []).includes(item.need) || !!access?.isAdmin;
+  };
+
+  const isActive = (to: string) => {
+    if (to === "/app") return path === "/app";
+    if (to === "/app/admin") return path === "/app/admin";
+    return path === to || path.startsWith(`${to}/`);
+  };
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="space-y-1">
-      {NAV.filter((i) => can(i.need)).map((i) => {
-        const Icon = i.icon;
-        const active = path === i.to || (i.to !== "/app" && path.startsWith(i.to));
+    <nav className="space-y-5">
+      {SECTIONS.map((section) => {
+        const items = section.items.filter(can);
+        if (items.length === 0 && !section.comingSoon) return null;
         return (
-          <Link
-            key={i.to}
-            to={i.to}
-            onClick={onClick}
-            className={[
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-              active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-            ].join(" ")}
-          >
-            <Icon className="h-4 w-4" />
-            {i.label}
-          </Link>
+          <div key={section.label}>
+            <div className="px-3 pb-1 text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
+              {section.label}
+            </div>
+            {items.length === 0 ? (
+              <div className="px-3 py-1.5 text-xs italic text-sidebar-foreground/40">Em breve</div>
+            ) : (
+              <div className="space-y-1">
+                {items.map((i) => {
+                  const Icon = i.icon;
+                  const active = isActive(i.to);
+                  return (
+                    <Link
+                      key={i.to}
+                      to={i.to}
+                      onClick={onClick}
+                      className={[
+                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                        active
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                      ].join(" ")}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="min-w-0 truncate">{i.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         );
       })}
-      {ADMIN_NAV.some((i) => can(i.need)) && (
-        <>
-          <div className="mt-6 px-3 text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
-            Administração
-          </div>
-          {ADMIN_NAV.filter((i) => can(i.need)).map((i) => {
-            const Icon = i.icon;
-            const active = path.startsWith(i.to);
-            return (
-              <Link
-                key={i.to}
-                to={i.to}
-                onClick={onClick}
-                className={[
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-                ].join(" ")}
-              >
-                <Icon className="h-4 w-4" />
-                {i.label}
-              </Link>
-            );
-          })}
-        </>
-      )}
     </nav>
   );
+
 
   return (
     <div className="flex min-h-screen bg-background">
