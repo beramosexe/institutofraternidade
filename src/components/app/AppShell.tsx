@@ -27,7 +27,7 @@ export function useMyAccess() {
 }
 
 type NavItem = { to: string; label: string; icon: typeof Home; need?: string; adminOnly?: boolean };
-type NavSection = { label: string; items: NavItem[]; comingSoon?: boolean };
+type NavSection = { label: string; items: NavItem[]; comingSoon?: boolean; labelColor?: string };
 
 const SECTIONS: NavSection[] = [
   {
@@ -40,20 +40,22 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Gestão Áudios e Revisão",
+    labelColor: "text-blue-600",
     items: [
       { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
     ],
   },
   {
     label: "Acolhimento",
+    labelColor: "text-emerald-600",
     items: [
       { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
     ],
   },
-  { label: "Estoque", items: [], comingSoon: true },
-  { label: "Manutenção", items: [], comingSoon: true },
-  { label: "Financeiro", items: [], comingSoon: true },
-  { label: "Mídias", items: [], comingSoon: true },
+  { label: "Estoque", labelColor: "text-amber-600", items: [], comingSoon: true },
+  { label: "Manutenção", labelColor: "text-slate-500", items: [], comingSoon: true },
+  { label: "Financeiro", labelColor: "text-green-700", items: [], comingSoon: true },
+  { label: "Mídias", labelColor: "text-violet-600", items: [], comingSoon: true },
   {
     label: "Administração",
     items: [
