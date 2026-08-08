@@ -23,6 +23,7 @@ import { Route as AuthenticatedAppRevisaoRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
 import { Route as AuthenticatedAppMeusUploadsRouteImport } from './routes/_authenticated/app.meus-uploads'
 import { Route as AuthenticatedAppAudiosRouteImport } from './routes/_authenticated/app.audios'
+import { Route as AuthenticatedAppTrabalhosIndexRouteImport } from './routes/_authenticated/app.trabalhos.index'
 import { Route as AuthenticatedAppAudiosIndexRouteImport } from './routes/_authenticated/app.audios.index'
 import { Route as AuthenticatedAppAdminIndexRouteImport } from './routes/_authenticated/app.admin.index'
 import { Route as AuthenticatedAppRevisaoIdRouteImport } from './routes/_authenticated/app.revisao.$id'
@@ -105,6 +106,12 @@ const AuthenticatedAppAudiosRoute = AuthenticatedAppAudiosRouteImport.update({
   path: '/audios',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppTrabalhosIndexRoute =
+  AuthenticatedAppTrabalhosIndexRouteImport.update({
+    id: '/trabalhos/',
+    path: '/trabalhos/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppAudiosIndexRoute =
   AuthenticatedAppAudiosIndexRouteImport.update({
     id: '/',
@@ -196,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
   '/app/admin/': typeof AuthenticatedAppAdminIndexRoute
   '/app/audios/': typeof AuthenticatedAppAudiosIndexRoute
+  '/app/trabalhos/': typeof AuthenticatedAppTrabalhosIndexRoute
   '/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
 export interface FileRoutesByTo {
@@ -220,6 +228,7 @@ export interface FileRoutesByTo {
   '/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
   '/app/admin': typeof AuthenticatedAppAdminIndexRoute
   '/app/audios': typeof AuthenticatedAppAudiosIndexRoute
+  '/app/trabalhos': typeof AuthenticatedAppTrabalhosIndexRoute
   '/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
 export interface FileRoutesById {
@@ -248,6 +257,7 @@ export interface FileRoutesById {
   '/_authenticated/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
   '/_authenticated/app/admin/': typeof AuthenticatedAppAdminIndexRoute
   '/_authenticated/app/audios/': typeof AuthenticatedAppAudiosIndexRoute
+  '/_authenticated/app/trabalhos/': typeof AuthenticatedAppTrabalhosIndexRoute
   '/_authenticated/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
 export interface FileRouteTypes {
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/app/revisao/$id'
     | '/app/admin/'
     | '/app/audios/'
+    | '/app/trabalhos/'
     | '/app/trabalhos/$id/checkin'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -300,6 +311,7 @@ export interface FileRouteTypes {
     | '/app/revisao/$id'
     | '/app/admin'
     | '/app/audios'
+    | '/app/trabalhos'
     | '/app/trabalhos/$id/checkin'
   id:
     | '__root__'
@@ -327,6 +339,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/revisao/$id'
     | '/_authenticated/app/admin/'
     | '/_authenticated/app/audios/'
+    | '/_authenticated/app/trabalhos/'
     | '/_authenticated/app/trabalhos/$id/checkin'
   fileRoutesById: FileRoutesById
 }
@@ -438,6 +451,13 @@ declare module '@tanstack/react-router' {
       path: '/audios'
       fullPath: '/app/audios'
       preLoaderRoute: typeof AuthenticatedAppAudiosRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/trabalhos/': {
+      id: '/_authenticated/app/trabalhos/'
+      path: '/trabalhos'
+      fullPath: '/app/trabalhos/'
+      preLoaderRoute: typeof AuthenticatedAppTrabalhosIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/audios/': {
@@ -564,6 +584,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAdminTrabalhosRoute: typeof AuthenticatedAppAdminTrabalhosRoute
   AuthenticatedAppAdminUsuariosRoute: typeof AuthenticatedAppAdminUsuariosRoute
   AuthenticatedAppAdminIndexRoute: typeof AuthenticatedAppAdminIndexRoute
+  AuthenticatedAppTrabalhosIndexRoute: typeof AuthenticatedAppTrabalhosIndexRoute
   AuthenticatedAppTrabalhosIdCheckinRoute: typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
 
@@ -581,6 +602,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAdminTrabalhosRoute: AuthenticatedAppAdminTrabalhosRoute,
   AuthenticatedAppAdminUsuariosRoute: AuthenticatedAppAdminUsuariosRoute,
   AuthenticatedAppAdminIndexRoute: AuthenticatedAppAdminIndexRoute,
+  AuthenticatedAppTrabalhosIndexRoute: AuthenticatedAppTrabalhosIndexRoute,
   AuthenticatedAppTrabalhosIdCheckinRoute:
     AuthenticatedAppTrabalhosIdCheckinRoute,
 }
