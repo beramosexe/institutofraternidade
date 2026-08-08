@@ -1,9 +1,10 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Calendar, FileText, Headphones, Home, LogOut, Settings, Upload,
-  Users as UsersIcon, ListChecks, History, ShieldCheck, Menu, X,
+  Calendar, CalendarCheck, Headphones, Home, LogOut, Settings,
+  Users as UsersIcon, History, ShieldCheck, Menu, X,
 } from "lucide-react";
+
 import { useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
