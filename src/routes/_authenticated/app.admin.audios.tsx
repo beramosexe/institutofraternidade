@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { RefreshCw, Archive, Trash, ExternalLink } from "lucide-react";
+import { RefreshCw, Archive, Trash, ExternalLink, Upload, ListChecks, FileText, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,10 +53,27 @@ function AdminAudios() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-10">
-      <div>
-        <p className="text-xs uppercase tracking-[0.22em] text-brand">Administração</p>
-        <h1 className="mt-1 font-display text-3xl text-foreground">Gestão de áudios</h1>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-brand">Gestão Áudios e Revisão</p>
+          <h1 className="mt-1 font-display text-3xl text-foreground">Gestão de áudios</h1>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link to="/app/upload"><Upload className="mr-2 h-4 w-4" /> Enviar áudio</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/app/revisao"><ListChecks className="mr-2 h-4 w-4" /> Revisão</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/app/meus-uploads"><FileText className="mr-2 h-4 w-4" /> Meus uploads</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/app/admin/entidades"><ShieldCheck className="mr-2 h-4 w-4" /> Entidades</Link>
+          </Button>
+        </div>
       </div>
+
 
       <div className="grid gap-3">
         {(data?.length ?? 0) === 0 ? (

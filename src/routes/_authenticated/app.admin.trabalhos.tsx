@@ -96,7 +96,7 @@ function AdminWorks() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-brand">Administração</p>
-          <h1 className="mt-1 font-display text-3xl text-foreground">Trabalhos / Agenda</h1>
+          <h1 className="mt-1 font-display text-3xl text-foreground">Gestão dos trabalhos e eventos</h1>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>

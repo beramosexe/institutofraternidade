@@ -28,7 +28,7 @@ export const getMyAccess = createServerFn({ method: "GET" })
       [
         "audio.upload","audio.edit_any","audio.delete","audio.publish","audio.reprocess",
         "transcription.review","transcription.approve","work.manage","user.manage",
-        "role.manage","logs.view",
+        "role.manage","logs.view","attendance.manage",
       ].forEach((p) => permSet.add(p));
     } else {
       for (const ur of userRoles ?? []) {
