@@ -10,6 +10,8 @@ export const ALL_PERMISSIONS = [
   "user.manage",
   "role.manage",
   "logs.view",
+  "attendance.manage",
+
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];
