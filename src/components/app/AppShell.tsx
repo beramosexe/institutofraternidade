@@ -100,7 +100,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (items.length === 0 && !section.comingSoon) return null;
         return (
           <div key={section.label}>
-            <div className="px-3 pb-1 text-[11px] uppercase tracking-wider text-sidebar-foreground/50">
+            <div className={[
+              "px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider",
+              section.labelColor || "text-sidebar-foreground/80",
+            ].join(" ")}>
               {section.label}
             </div>
             {items.length === 0 ? (
