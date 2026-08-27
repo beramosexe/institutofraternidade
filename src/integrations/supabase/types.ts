@@ -1041,8 +1041,16 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_associate: { Args: { _user_id: string }; Returns: boolean }
+      is_critical_permission: {
+        Args: { _permission: Database["public"]["Enums"]["app_permission"] }
+        Returns: boolean
+      }
       is_work_responsible: {
         Args: { _user_id: string; _work_id: string }
+        Returns: boolean
+      }
+      role_has_critical_permission: {
+        Args: { _role_id: string }
         Returns: boolean
       }
       was_active_at: {
@@ -1069,6 +1077,15 @@ export type Database = {
         | "class.manage"
         | "member.role_assign"
         | "stock.manage"
+        | "maintenance.request"
+        | "maintenance.manage"
+        | "purchase.manage"
+        | "finance.view"
+        | "finance.approve"
+        | "media.manage"
+        | "options.manage"
+        | "record.delete"
+        | "notification.manage"
       audio_access_level:
         | "public"
         | "associates"
@@ -1236,6 +1253,15 @@ export const Constants = {
         "class.manage",
         "member.role_assign",
         "stock.manage",
+        "maintenance.request",
+        "maintenance.manage",
+        "purchase.manage",
+        "finance.view",
+        "finance.approve",
+        "media.manage",
+        "options.manage",
+        "record.delete",
+        "notification.manage",
       ],
       audio_access_level: [
         "public",
