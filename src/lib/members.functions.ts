@@ -334,3 +334,15 @@ export const setPermissionCritical = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+/** Contagem de cadastros aguardando validação. */
+export const countPendingMembers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { count, error } = await context.supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("membership_status", "pending");
+    if (error) return { count: 0 };
+    return { count: count ?? 0 };
+  });

@@ -59,6 +59,13 @@ function AuthPage() {
         </div>
 
         <GoogleButton />
+
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Ainda não tenho conta —{" "}
+          <Link to="/associados/cadastro" className="text-brand hover:underline">
+            cadastrar como associado
+          </Link>
+        </p>
       </Card>
       <Link to="/" className="mt-6 text-sm text-muted-foreground hover:text-foreground">
         ← Voltar ao site

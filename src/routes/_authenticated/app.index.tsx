@@ -1,6 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Headphones, Upload, ListChecks } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Calendar, Headphones, Upload, ListChecks, UserCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { countPendingMembers } from "@/lib/members.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +18,15 @@ export const Route = createFileRoute("/_authenticated/app/")({
 function Dashboard() {
   const { data: access } = useMyAccess();
   const can = (p: string) => access?.isAdmin || access?.permissions.includes(p);
+  const canManageMembers = !!can("member.manage") || !!can("member.validate");
+
+  const pendingFn = useServerFn(countPendingMembers);
+  const { data: pending } = useQuery({
+    queryKey: ["pending-members-count"],
+    queryFn: () => pendingFn(),
+    enabled: canManageMembers,
+    staleTime: 30_000,
+  });
 
   const { data: recentAudios } = useQuery({
     queryKey: ["dashboard", "recent-audios"],
@@ -41,6 +53,8 @@ function Dashboard() {
     },
   });
 
+  if (access?.isPending) return <Navigate to="/app/pendente" replace />;
+
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6 md:p-10">
       <div>
@@ -52,6 +66,25 @@ function Dashboard() {
           Bem-vindo à área restrita do Instituto.
         </p>
       </div>
+
+      {canManageMembers && (pending?.count ?? 0) > 0 && (
+        <Link to="/app/associados">
+          <Card className="flex flex-wrap items-center justify-between gap-3 border-brand/40 bg-brand-soft/40 p-5 transition-colors hover:bg-brand-soft/60">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-soft text-brand">
+                <UserCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Cadastros pendentes</p>
+                <p className="text-xs text-muted-foreground">
+                  Há associados aguardando validação da equipe.
+                </p>
+              </div>
+            </div>
+            <Badge>{pending?.count}</Badge>
+          </Card>
+        </Link>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <QuickAction to="/app/audios" icon={Headphones} title="Biblioteca de áudios" />

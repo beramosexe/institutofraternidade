@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Users as UsersIcon, History, Headphones } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { RolesManager } from "@/components/app/RolesManager";
+import { SignupPinCard } from "@/components/app/SignupPinCard";
 import { listRoles } from "@/lib/roles.functions";
 
 export const Route = createFileRoute("/_authenticated/app/admin/")({
@@ -37,6 +38,8 @@ function AdminHome() {
         <Shortcut to="/app/admin/audios" icon={Headphones} title="Gestão de áudios" desc="Biblioteca e revisão" />
         <Shortcut to="/app/admin/logs" icon={History} title="Logs" desc="Auditoria do sistema" />
       </div>
+
+      <SignupPinCard />
 
       <RolesManager />
     </div>

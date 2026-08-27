@@ -8,8 +8,18 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { listMembers, validateMember } from "@/lib/members.functions";
-import { MEMBERSHIP_STATUS_LABELS } from "@/lib/permissions";
+import { listClasses } from "@/lib/classes.functions";
+import { listRoles } from "@/lib/roles.functions";
+import { MEMBERSHIP_STATUS_LABELS, CRITICAL_PERMISSIONS } from "@/lib/permissions";
+import { useMyAccess } from "@/components/app/AppShell";
 
 export const Route = createFileRoute("/_authenticated/app/associados/")({
   head: () => ({
@@ -26,19 +36,49 @@ export const Route = createFileRoute("/_authenticated/app/associados/")({
 function MembersPage() {
   const listFn = useServerFn(listMembers);
   const validateFn = useServerFn(validateMember);
+  const classesFn = useServerFn(listClasses);
+  const rolesFn = useServerFn(listRoles);
   const qc = useQueryClient();
+  const { data: access } = useMyAccess();
   const [q, setQ] = useState("");
 
   const { data: members, isLoading } = useQuery({ queryKey: ["members"], queryFn: () => listFn() });
+  const { data: classes } = useQuery({ queryKey: ["classes"], queryFn: () => classesFn() });
+  const { data: roles } = useQuery({ queryKey: ["roles-list"], queryFn: () => rolesFn() });
+
+  const [target, setTarget] = useState<any | null>(null);
+  const [classId, setClassId] = useState("");
+  const [purpose, setPurpose] = useState("");
+  const [roleIds, setRoleIds] = useState<string[]>([]);
+
+  const openValidate = (m: any) => {
+    setTarget(m);
+    setClassId("");
+    setPurpose("");
+    setRoleIds([]);
+  };
 
   const validate = useMutation({
-    mutationFn: (user_id: string) => validateFn({ data: { user_id } }),
+    mutationFn: () =>
+      validateFn({
+        data: {
+          user_id: target.id,
+          class_id: classId || null,
+          purpose: purpose || undefined,
+          role_ids: roleIds,
+        },
+      }),
     onSuccess: () => {
       toast.success("Cadastro validado.");
+      setTarget(null);
       qc.invalidateQueries({ queryKey: ["members"] });
+      qc.invalidateQueries({ queryKey: ["pending-members-count"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const isCriticalRole = (r: any) =>
+    r.slug === "admin" || (r.permissions ?? []).some((p: string) => (CRITICAL_PERMISSIONS as string[]).includes(p));
 
   const pending = useMemo(
     () => (members ?? []).filter((m: any) => m.membership_status === "pending"),
@@ -86,7 +126,7 @@ function MembersPage() {
                 <p className="text-xs text-muted-foreground">{m.email}{m.phone ? ` · ${m.phone}` : ""}</p>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => validate.mutate(m.id)} disabled={validate.isPending}>
+                <Button size="sm" onClick={() => openValidate(m)}>
                   <UserCheck className="mr-2 h-4 w-4" /> Validar
                 </Button>
                 <Button asChild size="sm" variant="outline">
@@ -155,6 +195,89 @@ function MembersPage() {
           </table>
         </Card>
       </section>
+
+      <Dialog open={!!target} onOpenChange={(o) => !o && setTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Validar cadastro</DialogTitle>
+            <DialogDescription>
+              {target?.full_name ?? "Associado"} — defina turma e funções iniciais. Tudo fica
+              registrado na linha do tempo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Turma inicial (opcional)</Label>
+              <Select value={classId} onValueChange={setClassId}>
+                <SelectTrigger><SelectValue placeholder="Sem turma por enquanto" /></SelectTrigger>
+                <SelectContent>
+                  {(classes ?? []).map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}{c.level_name ? ` · ${c.level_name}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="purpose">Finalidade do vínculo (opcional)</Label>
+              <Input
+                id="purpose"
+                placeholder="Ex.: cursando o Básico"
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Funções iniciais</Label>
+              <div className="max-h-52 space-y-1 overflow-y-auto rounded-md border border-border p-2">
+                {(roles ?? []).map((r: any) => {
+                  const critical = isCriticalRole(r);
+                  const locked = critical && !access?.isAdmin;
+                  return (
+                    <label
+                      key={r.id}
+                      className={[
+                        "flex items-start gap-2 rounded-md p-2 text-sm",
+                        locked ? "opacity-60" : "cursor-pointer hover:bg-accent/40",
+                      ].join(" ")}
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-1"
+                        disabled={locked}
+                        checked={roleIds.includes(r.id)}
+                        onChange={(e) =>
+                          setRoleIds((prev) =>
+                            e.target.checked ? [...prev, r.id] : prev.filter((x) => x !== r.id),
+                          )
+                        }
+                      />
+                      <span>
+                        <span className="font-medium text-foreground">{r.name}</span>
+                        {critical && <Badge variant="outline" className="ml-2">Crítico</Badge>}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Cargos com permissões críticas só podem ser atribuídos pela administração.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setTarget(null)}>Cancelar</Button>
+            <Button onClick={() => validate.mutate()} disabled={validate.isPending}>
+              Validar e ativar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
