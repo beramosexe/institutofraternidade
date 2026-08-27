@@ -90,6 +90,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   }
 
+  const isPending = !!access?.isPending;
+
+  const PENDING_SECTIONS: NavSection[] = [
+    {
+      label: "Geral",
+      items: [
+        { to: "/app/pendente", label: "Cadastro em análise", icon: Clock },
+        { to: "/app/perfil", label: "Meus dados", icon: Settings },
+      ],
+    },
+  ];
+
   const can = (item: NavItem) => {
     if (item.adminOnly) return !!access?.isAdmin;
     if (!item.need) return true;
@@ -99,12 +111,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isActive = (to: string) => {
     if (to === "/app") return path === "/app";
     if (to === "/app/admin") return path === "/app/admin";
+    if (to === "/app/associados") return path === "/app/associados";
     return path === to || path.startsWith(`${to}/`);
   };
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
     <nav className="space-y-5">
-      {SECTIONS.map((section) => {
+      {(isPending ? PENDING_SECTIONS : SECTIONS).map((section) => {
         const items = section.items.filter(can);
         if (items.length === 0 && !section.comingSoon) return null;
         return (
