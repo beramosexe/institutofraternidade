@@ -24,6 +24,7 @@ import { Route as AuthenticatedAppRevisaoRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
 import { Route as AuthenticatedAppPendenteRouteImport } from './routes/_authenticated/app.pendente'
 import { Route as AuthenticatedAppMeusUploadsRouteImport } from './routes/_authenticated/app.meus-uploads'
+import { Route as AuthenticatedAppEstoqueRouteImport } from './routes/_authenticated/app.estoque'
 import { Route as AuthenticatedAppContaRouteImport } from './routes/_authenticated/app.conta'
 import { Route as AuthenticatedAppAudiosRouteImport } from './routes/_authenticated/app.audios'
 import { Route as AuthenticatedAppAcolhimentoRouteImport } from './routes/_authenticated/app.acolhimento'
@@ -119,6 +120,11 @@ const AuthenticatedAppMeusUploadsRoute =
     path: '/meus-uploads',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppEstoqueRoute = AuthenticatedAppEstoqueRouteImport.update({
+  id: '/estoque',
+  path: '/estoque',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppContaRoute = AuthenticatedAppContaRouteImport.update({
   id: '/conta',
   path: '/conta',
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/app/conta': typeof AuthenticatedAppContaRoute
+  '/app/estoque': typeof AuthenticatedAppEstoqueRoute
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
   '/app/pendente': typeof AuthenticatedAppPendenteRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/associados/cadastro': typeof AssociadosCadastroRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/conta': typeof AuthenticatedAppContaRoute
+  '/app/estoque': typeof AuthenticatedAppEstoqueRoute
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
   '/app/pendente': typeof AuthenticatedAppPendenteRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/_authenticated/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/_authenticated/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/_authenticated/app/conta': typeof AuthenticatedAppContaRoute
+  '/_authenticated/app/estoque': typeof AuthenticatedAppEstoqueRoute
   '/_authenticated/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
   '/_authenticated/app/pendente': typeof AuthenticatedAppPendenteRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
@@ -342,6 +351,7 @@ export interface FileRouteTypes {
     | '/app/acolhimento'
     | '/app/audios'
     | '/app/conta'
+    | '/app/estoque'
     | '/app/meus-uploads'
     | '/app/pendente'
     | '/app/perfil'
@@ -374,6 +384,7 @@ export interface FileRouteTypes {
     | '/associados/cadastro'
     | '/app/acolhimento'
     | '/app/conta'
+    | '/app/estoque'
     | '/app/meus-uploads'
     | '/app/pendente'
     | '/app/perfil'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/acolhimento'
     | '/_authenticated/app/audios'
     | '/_authenticated/app/conta'
+    | '/_authenticated/app/estoque'
     | '/_authenticated/app/meus-uploads'
     | '/_authenticated/app/pendente'
     | '/_authenticated/app/perfil'
@@ -548,6 +560,13 @@ declare module '@tanstack/react-router' {
       path: '/meus-uploads'
       fullPath: '/app/meus-uploads'
       preLoaderRoute: typeof AuthenticatedAppMeusUploadsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/estoque': {
+      id: '/_authenticated/app/estoque'
+      path: '/estoque'
+      fullPath: '/app/estoque'
+      preLoaderRoute: typeof AuthenticatedAppEstoqueRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/conta': {
@@ -713,6 +732,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAcolhimentoRoute: typeof AuthenticatedAppAcolhimentoRoute
   AuthenticatedAppAudiosRoute: typeof AuthenticatedAppAudiosRouteWithChildren
   AuthenticatedAppContaRoute: typeof AuthenticatedAppContaRoute
+  AuthenticatedAppEstoqueRoute: typeof AuthenticatedAppEstoqueRoute
   AuthenticatedAppMeusUploadsRoute: typeof AuthenticatedAppMeusUploadsRoute
   AuthenticatedAppPendenteRoute: typeof AuthenticatedAppPendenteRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
@@ -737,6 +757,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAcolhimentoRoute: AuthenticatedAppAcolhimentoRoute,
   AuthenticatedAppAudiosRoute: AuthenticatedAppAudiosRouteWithChildren,
   AuthenticatedAppContaRoute: AuthenticatedAppContaRoute,
+  AuthenticatedAppEstoqueRoute: AuthenticatedAppEstoqueRoute,
   AuthenticatedAppMeusUploadsRoute: AuthenticatedAppMeusUploadsRoute,
   AuthenticatedAppPendenteRoute: AuthenticatedAppPendenteRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
