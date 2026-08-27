@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteHeader, SiteFooter } from "@/components/site/SiteLayout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,7 +69,8 @@ function SignupPage() {
   });
 
   return (
-    <SiteLayout>
+    <>
+      <SiteHeader />
       <section className="mx-auto max-w-lg px-6 py-16">
         <p className="text-xs uppercase tracking-[0.22em] text-brand">Associados</p>
         <h1 className="mt-1 font-display text-3xl text-foreground">Cadastro de associados</h1>
@@ -158,6 +159,7 @@ function SignupPage() {
           </p>
         </Card>
       </section>
-    </SiteLayout>
+      <SiteFooter />
+    </>
   );
 }
