@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useMyAccess } from "@/components/app/AppShell";
@@ -29,8 +30,18 @@ function PendingPage() {
           validação da equipe de gestão de associados. Assim que for validado, suas áreas aparecerão aqui.
         </p>
         <p className="mt-4 text-sm text-muted-foreground">
-          Se precisar corrigir alguma informação, fale com a equipe do Instituto.
+          A validação costuma acontecer em até alguns dias, conforme as reuniões da equipe de
+          acolhimento. Se precisar corrigir alguma informação ou tiver pressa, fale com a equipe
+          do Instituto pela página de contato.
         </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/app/perfil">Editar meus dados</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/contato">Falar com a equipe</Link>
+          </Button>
+        </div>
       </Card>
     </div>
   );

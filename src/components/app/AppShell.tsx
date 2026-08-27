@@ -13,6 +13,8 @@ import { getMyAccess } from "@/lib/me.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
+import { Badge } from "@/components/ui/badge";
+import { countPendingMembers } from "@/lib/members.functions";
 
 export function useMyAccess() {
   const fn = useServerFn(getMyAccess);
@@ -83,6 +85,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const canManageMembers =
+    !!access?.isAdmin ||
+    (access?.permissions ?? []).some((p) => p === "member.manage" || p === "member.validate");
+  const pendingFn = useServerFn(countPendingMembers);
+  const { data: pendingMembers } = useQuery({
+    queryKey: ["pending-members-count"],
+    queryFn: () => pendingFn(),
+    enabled: canManageMembers,
+    staleTime: 30_000,
+    retry: false,
+  });
+
   async function signOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
@@ -148,7 +162,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                       ].join(" ")}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
-                      <span className="min-w-0 truncate">{i.label}</span>
+                      <span className="min-w-0 flex-1 truncate">{i.label}</span>
+                      {i.to === "/app/associados" && (pendingMembers?.count ?? 0) > 0 && (
+                        <Badge className="shrink-0">{pendingMembers?.count}</Badge>
+                      )}
                     </Link>
                   );
                 })}
