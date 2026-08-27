@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AssociadosCadastroRouteImport } from './routes/associados.cadastro'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppUploadRouteImport } from './routes/_authenticated/app.upload'
@@ -69,6 +70,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssociadosCadastroRoute = AssociadosCadastroRouteImport.update({
+  id: '/associados/cadastro',
+  path: '/associados/cadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/associados/cadastro': typeof AssociadosCadastroRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
@@ -221,6 +228,7 @@ export interface FileRoutesByTo {
   '/canalizacoes': typeof CanalizacoesRoute
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
+  '/associados/cadastro': typeof AssociadosCadastroRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/associados/cadastro': typeof AssociadosCadastroRoute
   '/_authenticated/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/_authenticated/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/_authenticated/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/quem-somos'
     | '/app'
+    | '/associados/cadastro'
     | '/app/acolhimento'
     | '/app/audios'
     | '/app/meus-uploads'
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/canalizacoes'
     | '/contato'
     | '/quem-somos'
+    | '/associados/cadastro'
     | '/app/acolhimento'
     | '/app/meus-uploads'
     | '/app/perfil'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/contato'
     | '/quem-somos'
     | '/_authenticated/app'
+    | '/associados/cadastro'
     | '/_authenticated/app/acolhimento'
     | '/_authenticated/app/audios'
     | '/_authenticated/app/meus-uploads'
@@ -364,6 +376,7 @@ export interface RootRouteChildren {
   CanalizacoesRoute: typeof CanalizacoesRoute
   ContatoRoute: typeof ContatoRoute
   QuemSomosRoute: typeof QuemSomosRoute
+  AssociadosCadastroRoute: typeof AssociadosCadastroRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -415,6 +428,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/associados/cadastro': {
+      id: '/associados/cadastro'
+      path: '/associados/cadastro'
+      fullPath: '/associados/cadastro'
+      preLoaderRoute: typeof AssociadosCadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app': {
@@ -651,6 +671,7 @@ const rootRouteChildren: RootRouteChildren = {
   CanalizacoesRoute: CanalizacoesRoute,
   ContatoRoute: ContatoRoute,
   QuemSomosRoute: QuemSomosRoute,
+  AssociadosCadastroRoute: AssociadosCadastroRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
