@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import { useQuery } from "@tanstack/react-query";
 import {
   Calendar, CalendarCheck, Headphones, Home, LogOut, Settings,
-  Users as UsersIcon, History, ShieldCheck, Menu, X,
+  Users as UsersIcon, History, ShieldCheck, Menu, X, UserCircle, GraduationCap, Clock,
 } from "lucide-react";
 
 import { useState, type ReactNode } from "react";
