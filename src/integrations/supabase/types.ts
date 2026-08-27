@@ -261,6 +261,220 @@ export type Database = {
         }
         Relationships: []
       }
+      class_members: {
+        Row: {
+          changed_by: string | null
+          class_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          joined_at: string
+          left_at: string | null
+          notes: string | null
+          purpose: string | null
+          status: Database["public"]["Enums"]["class_member_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          class_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          joined_at?: string
+          left_at?: string | null
+          notes?: string | null
+          purpose?: string | null
+          status?: Database["public"]["Enums"]["class_member_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          class_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          joined_at?: string
+          left_at?: string | null
+          notes?: string | null
+          purpose?: string | null
+          status?: Database["public"]["Enums"]["class_member_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_members_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          level_id: string | null
+          name: string
+          notes: string | null
+          opened_at: string | null
+          period: string | null
+          status: Database["public"]["Enums"]["class_status"]
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level_id?: string | null
+          name: string
+          notes?: string | null
+          opened_at?: string | null
+          period?: string | null
+          status?: Database["public"]["Enums"]["class_status"]
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level_id?: string | null
+          name?: string
+          notes?: string | null
+          opened_at?: string | null
+          period?: string | null
+          status?: Database["public"]["Enums"]["class_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "formation_levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      critical_permissions: {
+        Row: {
+          created_at: string
+          note: string | null
+          permission: Database["public"]["Enums"]["app_permission"]
+        }
+        Insert: {
+          created_at?: string
+          note?: string | null
+          permission: Database["public"]["Enums"]["app_permission"]
+        }
+        Update: {
+          created_at?: string
+          note?: string | null
+          permission?: Database["public"]["Enums"]["app_permission"]
+        }
+        Relationships: []
+      }
+      formation_levels: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      member_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          kind: string
+          occurred_at: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          kind: string
+          occurred_at?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          kind?: string
+          occurred_at?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      member_status_periods: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          ended_on: string | null
+          id: string
+          reason: string | null
+          started_on: string
+          status: Database["public"]["Enums"]["membership_status"]
+          user_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          ended_on?: string | null
+          id?: string
+          reason?: string | null
+          started_on?: string
+          status: Database["public"]["Enums"]["membership_status"]
+          user_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          ended_on?: string | null
+          id?: string
+          reason?: string | null
+          started_on?: string
+          status?: Database["public"]["Enums"]["membership_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       pending_invites: {
         Row: {
           consumed_at: string | null
@@ -441,6 +655,27 @@ export type Database = {
           name?: string
           slug?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
         }
         Relationships: []
       }
@@ -690,6 +925,8 @@ export type Database = {
         Args: { _audio_id: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_classes: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_members: { Args: { _user_id: string }; Returns: boolean }
       get_profile_display: {
         Args: { _user_id: string }
         Returns: {
@@ -713,6 +950,10 @@ export type Database = {
       is_associate: { Args: { _user_id: string }; Returns: boolean }
       is_work_responsible: {
         Args: { _user_id: string; _work_id: string }
+        Returns: boolean
+      }
+      was_active_at: {
+        Args: { _at: string; _user_id: string }
         Returns: boolean
       }
     }
