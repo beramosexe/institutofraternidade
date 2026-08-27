@@ -37,6 +37,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "member.manage": "Gerenciar associados (dados, status, funções)",
   "class.manage": "Gerenciar turmas e níveis",
   "member.role_assign": "Atribuir cargos a associados",
+  "stock.manage": "Gerenciar estoque",
 };
 
 /** Permissões críticas: somente a administração pode concedê-las. */
