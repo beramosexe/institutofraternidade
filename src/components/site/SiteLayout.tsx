@@ -39,7 +39,12 @@ export function SiteHeader() {
           {user ? (
             <Button asChild size="sm"><Link to="/app">Área do associado</Link></Button>
           ) : (
-            <Button asChild size="sm" variant="outline"><Link to="/auth">Entrar</Link></Button>
+            <div className="flex items-center gap-2">
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/associados/cadastro">Quero me associar</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline"><Link to="/auth">Entrar</Link></Button>
+            </div>
           )}
         </div>
 
@@ -72,6 +77,15 @@ export function SiteHeader() {
             >
               {user ? "Área do associado" : "Entrar"}
             </Link>
+            {!user && (
+              <Link
+                to="/associados/cadastro"
+                onClick={() => setOpen(false)}
+                className="rounded-md border border-border px-3 py-2 text-center text-sm font-medium text-foreground"
+              >
+                Quero me associar
+              </Link>
+            )}
           </div>
         </div>
       )}
@@ -104,7 +118,8 @@ export function SiteFooter() {
           <h4 className="font-display text-sm tracking-wide text-foreground">Associados</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li><Link to="/auth" className="hover:text-foreground">Entrar na área restrita</Link></li>
-            <li><Link to="/contato" className="hover:text-foreground">Quero me associar</Link></li>
+            <li><Link to="/associados/cadastro" className="hover:text-foreground">Quero me associar</Link></li>
+            <li><Link to="/contato" className="hover:text-foreground">Falar com a equipe</Link></li>
           </ul>
         </div>
       </div>
