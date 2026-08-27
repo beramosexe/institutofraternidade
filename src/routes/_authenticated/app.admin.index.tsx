@@ -39,6 +39,8 @@ function AdminHome() {
         <Shortcut to="/app/admin/logs" icon={History} title="Logs" desc="Auditoria do sistema" />
       </div>
 
+      <SignupPinCard />
+
       <RolesManager />
     </div>
   );
