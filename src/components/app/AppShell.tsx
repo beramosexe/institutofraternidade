@@ -34,8 +34,17 @@ const SECTIONS: NavSection[] = [
     label: "Geral",
     items: [
       { to: "/app", label: "Painel", icon: Home },
+      { to: "/app/conta", label: "Minha conta", icon: UserCircle },
       { to: "/app/audios", label: "Áudios", icon: Headphones },
       { to: "/app/trabalhos", label: "Trabalhos", icon: Calendar },
+    ],
+  },
+  {
+    label: "Associados",
+    labelColor: "text-rose-600",
+    items: [
+      { to: "/app/associados", label: "Gestão de associados", icon: UsersIcon, need: "member.manage" },
+      { to: "/app/associados/turmas", label: "Turmas e níveis", icon: GraduationCap, need: "class.manage" },
     ],
   },
   {
