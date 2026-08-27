@@ -15,6 +15,7 @@ export const ALL_PERMISSIONS = [
   "member.manage",
   "class.manage",
   "member.role_assign",
+  "stock.manage",
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];
@@ -36,6 +37,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "member.manage": "Gerenciar associados (dados, status, funções)",
   "class.manage": "Gerenciar turmas e níveis",
   "member.role_assign": "Atribuir cargos a associados",
+  "stock.manage": "Gerenciar estoque",
 };
 
 /** Permissões críticas: somente a administração pode concedê-las. */
