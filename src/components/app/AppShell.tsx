@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import { useQuery } from "@tanstack/react-query";
 import {
   Calendar, CalendarCheck, Headphones, Home, LogOut, Settings,
-  Users as UsersIcon, History, ShieldCheck, Menu, X, UserCircle, GraduationCap, Clock,
+  Users as UsersIcon, History, ShieldCheck, Menu, X, UserCircle, GraduationCap, Clock, Package,
 } from "lucide-react";
 
 import { useState, type ReactNode } from "react";
@@ -63,7 +63,13 @@ const SECTIONS: NavSection[] = [
       { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
     ],
   },
-  { label: "Estoque", labelColor: "text-amber-600", items: [], comingSoon: true },
+  {
+    label: "Estoque",
+    labelColor: "text-amber-600",
+    items: [
+      { to: "/app/estoque", label: "Gestão de estoque", icon: Package, need: "stock.manage" },
+    ],
+  },
   { label: "Manutenção", labelColor: "text-slate-500", items: [], comingSoon: true },
   { label: "Financeiro", labelColor: "text-green-700", items: [], comingSoon: true },
   { label: "Mídias", labelColor: "text-violet-600", items: [], comingSoon: true },
