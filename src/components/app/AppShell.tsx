@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import { useQuery } from "@tanstack/react-query";
 import {
   Calendar, CalendarCheck, Headphones, Home, LogOut, Settings,
-  Users as UsersIcon, History, ShieldCheck, Menu, X,
+  Users as UsersIcon, History, ShieldCheck, Menu, X, UserCircle, GraduationCap, Clock,
 } from "lucide-react";
 
 import { useState, type ReactNode } from "react";
@@ -34,8 +34,17 @@ const SECTIONS: NavSection[] = [
     label: "Geral",
     items: [
       { to: "/app", label: "Painel", icon: Home },
+      { to: "/app/conta", label: "Minha conta", icon: UserCircle },
       { to: "/app/audios", label: "Áudios", icon: Headphones },
       { to: "/app/trabalhos", label: "Trabalhos", icon: Calendar },
+    ],
+  },
+  {
+    label: "Associados",
+    labelColor: "text-rose-600",
+    items: [
+      { to: "/app/associados", label: "Gestão de associados", icon: UsersIcon, need: "member.manage" },
+      { to: "/app/associados/turmas", label: "Turmas e níveis", icon: GraduationCap, need: "class.manage" },
     ],
   },
   {
@@ -81,6 +90,18 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   }
 
+  const isPending = !!access?.isPending;
+
+  const PENDING_SECTIONS: NavSection[] = [
+    {
+      label: "Geral",
+      items: [
+        { to: "/app/pendente", label: "Cadastro em análise", icon: Clock },
+        { to: "/app/perfil", label: "Meus dados", icon: Settings },
+      ],
+    },
+  ];
+
   const can = (item: NavItem) => {
     if (item.adminOnly) return !!access?.isAdmin;
     if (!item.need) return true;
@@ -90,12 +111,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isActive = (to: string) => {
     if (to === "/app") return path === "/app";
     if (to === "/app/admin") return path === "/app/admin";
+    if (to === "/app/associados") return path === "/app/associados";
     return path === to || path.startsWith(`${to}/`);
   };
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
     <nav className="space-y-5">
-      {SECTIONS.map((section) => {
+      {(isPending ? PENDING_SECTIONS : SECTIONS).map((section) => {
         const items = section.items.filter(can);
         if (items.length === 0 && !section.comingSoon) return null;
         return (

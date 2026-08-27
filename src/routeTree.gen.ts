@@ -16,19 +16,25 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AssociadosCadastroRouteImport } from './routes/associados.cadastro'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppUploadRouteImport } from './routes/_authenticated/app.upload'
 import { Route as AuthenticatedAppRevisaoRouteImport } from './routes/_authenticated/app.revisao'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
+import { Route as AuthenticatedAppPendenteRouteImport } from './routes/_authenticated/app.pendente'
 import { Route as AuthenticatedAppMeusUploadsRouteImport } from './routes/_authenticated/app.meus-uploads'
+import { Route as AuthenticatedAppContaRouteImport } from './routes/_authenticated/app.conta'
 import { Route as AuthenticatedAppAudiosRouteImport } from './routes/_authenticated/app.audios'
 import { Route as AuthenticatedAppAcolhimentoRouteImport } from './routes/_authenticated/app.acolhimento'
 import { Route as AuthenticatedAppTrabalhosIndexRouteImport } from './routes/_authenticated/app.trabalhos.index'
 import { Route as AuthenticatedAppAudiosIndexRouteImport } from './routes/_authenticated/app.audios.index'
+import { Route as AuthenticatedAppAssociadosIndexRouteImport } from './routes/_authenticated/app.associados.index'
 import { Route as AuthenticatedAppAdminIndexRouteImport } from './routes/_authenticated/app.admin.index'
 import { Route as AuthenticatedAppRevisaoIdRouteImport } from './routes/_authenticated/app.revisao.$id'
 import { Route as AuthenticatedAppAudiosIdRouteImport } from './routes/_authenticated/app.audios.$id'
+import { Route as AuthenticatedAppAssociadosTurmasRouteImport } from './routes/_authenticated/app.associados.turmas'
+import { Route as AuthenticatedAppAssociadosIdRouteImport } from './routes/_authenticated/app.associados.$id'
 import { Route as AuthenticatedAppAdminUsuariosRouteImport } from './routes/_authenticated/app.admin.usuarios'
 import { Route as AuthenticatedAppAdminTrabalhosRouteImport } from './routes/_authenticated/app.admin.trabalhos'
 import { Route as AuthenticatedAppAdminLogsRouteImport } from './routes/_authenticated/app.admin.logs'
@@ -71,6 +77,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssociadosCadastroRoute = AssociadosCadastroRouteImport.update({
+  id: '/associados/cadastro',
+  path: '/associados/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   id: '/app',
   path: '/app',
@@ -96,12 +107,23 @@ const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppPendenteRoute =
+  AuthenticatedAppPendenteRouteImport.update({
+    id: '/pendente',
+    path: '/pendente',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppMeusUploadsRoute =
   AuthenticatedAppMeusUploadsRouteImport.update({
     id: '/meus-uploads',
     path: '/meus-uploads',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppContaRoute = AuthenticatedAppContaRouteImport.update({
+  id: '/conta',
+  path: '/conta',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
 const AuthenticatedAppAudiosRoute = AuthenticatedAppAudiosRouteImport.update({
   id: '/audios',
   path: '/audios',
@@ -125,6 +147,12 @@ const AuthenticatedAppAudiosIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAppAudiosRoute,
   } as any)
+const AuthenticatedAppAssociadosIndexRoute =
+  AuthenticatedAppAssociadosIndexRouteImport.update({
+    id: '/associados/',
+    path: '/associados/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppAdminIndexRoute =
   AuthenticatedAppAdminIndexRouteImport.update({
     id: '/admin/',
@@ -142,6 +170,18 @@ const AuthenticatedAppAudiosIdRoute =
     id: '/$id',
     path: '/$id',
     getParentRoute: () => AuthenticatedAppAudiosRoute,
+  } as any)
+const AuthenticatedAppAssociadosTurmasRoute =
+  AuthenticatedAppAssociadosTurmasRouteImport.update({
+    id: '/associados/turmas',
+    path: '/associados/turmas',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
+const AuthenticatedAppAssociadosIdRoute =
+  AuthenticatedAppAssociadosIdRouteImport.update({
+    id: '/associados/$id',
+    path: '/associados/$id',
+    getParentRoute: () => AuthenticatedAppRoute,
   } as any)
 const AuthenticatedAppAdminUsuariosRoute =
   AuthenticatedAppAdminUsuariosRouteImport.update({
@@ -194,9 +234,12 @@ export interface FileRoutesByFullPath {
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
+  '/associados/cadastro': typeof AssociadosCadastroRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
+  '/app/conta': typeof AuthenticatedAppContaRoute
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
+  '/app/pendente': typeof AuthenticatedAppPendenteRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
   '/app/upload': typeof AuthenticatedAppUploadRoute
@@ -207,9 +250,12 @@ export interface FileRoutesByFullPath {
   '/app/admin/logs': typeof AuthenticatedAppAdminLogsRoute
   '/app/admin/trabalhos': typeof AuthenticatedAppAdminTrabalhosRoute
   '/app/admin/usuarios': typeof AuthenticatedAppAdminUsuariosRoute
+  '/app/associados/$id': typeof AuthenticatedAppAssociadosIdRoute
+  '/app/associados/turmas': typeof AuthenticatedAppAssociadosTurmasRoute
   '/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
   '/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
   '/app/admin/': typeof AuthenticatedAppAdminIndexRoute
+  '/app/associados/': typeof AuthenticatedAppAssociadosIndexRoute
   '/app/audios/': typeof AuthenticatedAppAudiosIndexRoute
   '/app/trabalhos/': typeof AuthenticatedAppTrabalhosIndexRoute
   '/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
@@ -221,8 +267,11 @@ export interface FileRoutesByTo {
   '/canalizacoes': typeof CanalizacoesRoute
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
+  '/associados/cadastro': typeof AssociadosCadastroRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
+  '/app/conta': typeof AuthenticatedAppContaRoute
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
+  '/app/pendente': typeof AuthenticatedAppPendenteRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
   '/app/upload': typeof AuthenticatedAppUploadRoute
@@ -233,9 +282,12 @@ export interface FileRoutesByTo {
   '/app/admin/logs': typeof AuthenticatedAppAdminLogsRoute
   '/app/admin/trabalhos': typeof AuthenticatedAppAdminTrabalhosRoute
   '/app/admin/usuarios': typeof AuthenticatedAppAdminUsuariosRoute
+  '/app/associados/$id': typeof AuthenticatedAppAssociadosIdRoute
+  '/app/associados/turmas': typeof AuthenticatedAppAssociadosTurmasRoute
   '/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
   '/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
   '/app/admin': typeof AuthenticatedAppAdminIndexRoute
+  '/app/associados': typeof AuthenticatedAppAssociadosIndexRoute
   '/app/audios': typeof AuthenticatedAppAudiosIndexRoute
   '/app/trabalhos': typeof AuthenticatedAppTrabalhosIndexRoute
   '/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
@@ -250,9 +302,12 @@ export interface FileRoutesById {
   '/contato': typeof ContatoRoute
   '/quem-somos': typeof QuemSomosRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
+  '/associados/cadastro': typeof AssociadosCadastroRoute
   '/_authenticated/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/_authenticated/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
+  '/_authenticated/app/conta': typeof AuthenticatedAppContaRoute
   '/_authenticated/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
+  '/_authenticated/app/pendente': typeof AuthenticatedAppPendenteRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
   '/_authenticated/app/upload': typeof AuthenticatedAppUploadRoute
@@ -263,9 +318,12 @@ export interface FileRoutesById {
   '/_authenticated/app/admin/logs': typeof AuthenticatedAppAdminLogsRoute
   '/_authenticated/app/admin/trabalhos': typeof AuthenticatedAppAdminTrabalhosRoute
   '/_authenticated/app/admin/usuarios': typeof AuthenticatedAppAdminUsuariosRoute
+  '/_authenticated/app/associados/$id': typeof AuthenticatedAppAssociadosIdRoute
+  '/_authenticated/app/associados/turmas': typeof AuthenticatedAppAssociadosTurmasRoute
   '/_authenticated/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
   '/_authenticated/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
   '/_authenticated/app/admin/': typeof AuthenticatedAppAdminIndexRoute
+  '/_authenticated/app/associados/': typeof AuthenticatedAppAssociadosIndexRoute
   '/_authenticated/app/audios/': typeof AuthenticatedAppAudiosIndexRoute
   '/_authenticated/app/trabalhos/': typeof AuthenticatedAppTrabalhosIndexRoute
   '/_authenticated/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
@@ -280,9 +338,12 @@ export interface FileRouteTypes {
     | '/contato'
     | '/quem-somos'
     | '/app'
+    | '/associados/cadastro'
     | '/app/acolhimento'
     | '/app/audios'
+    | '/app/conta'
     | '/app/meus-uploads'
+    | '/app/pendente'
     | '/app/perfil'
     | '/app/revisao'
     | '/app/upload'
@@ -293,9 +354,12 @@ export interface FileRouteTypes {
     | '/app/admin/logs'
     | '/app/admin/trabalhos'
     | '/app/admin/usuarios'
+    | '/app/associados/$id'
+    | '/app/associados/turmas'
     | '/app/audios/$id'
     | '/app/revisao/$id'
     | '/app/admin/'
+    | '/app/associados/'
     | '/app/audios/'
     | '/app/trabalhos/'
     | '/app/trabalhos/$id/checkin'
@@ -307,8 +371,11 @@ export interface FileRouteTypes {
     | '/canalizacoes'
     | '/contato'
     | '/quem-somos'
+    | '/associados/cadastro'
     | '/app/acolhimento'
+    | '/app/conta'
     | '/app/meus-uploads'
+    | '/app/pendente'
     | '/app/perfil'
     | '/app/revisao'
     | '/app/upload'
@@ -319,9 +386,12 @@ export interface FileRouteTypes {
     | '/app/admin/logs'
     | '/app/admin/trabalhos'
     | '/app/admin/usuarios'
+    | '/app/associados/$id'
+    | '/app/associados/turmas'
     | '/app/audios/$id'
     | '/app/revisao/$id'
     | '/app/admin'
+    | '/app/associados'
     | '/app/audios'
     | '/app/trabalhos'
     | '/app/trabalhos/$id/checkin'
@@ -335,9 +405,12 @@ export interface FileRouteTypes {
     | '/contato'
     | '/quem-somos'
     | '/_authenticated/app'
+    | '/associados/cadastro'
     | '/_authenticated/app/acolhimento'
     | '/_authenticated/app/audios'
+    | '/_authenticated/app/conta'
     | '/_authenticated/app/meus-uploads'
+    | '/_authenticated/app/pendente'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/revisao'
     | '/_authenticated/app/upload'
@@ -348,9 +421,12 @@ export interface FileRouteTypes {
     | '/_authenticated/app/admin/logs'
     | '/_authenticated/app/admin/trabalhos'
     | '/_authenticated/app/admin/usuarios'
+    | '/_authenticated/app/associados/$id'
+    | '/_authenticated/app/associados/turmas'
     | '/_authenticated/app/audios/$id'
     | '/_authenticated/app/revisao/$id'
     | '/_authenticated/app/admin/'
+    | '/_authenticated/app/associados/'
     | '/_authenticated/app/audios/'
     | '/_authenticated/app/trabalhos/'
     | '/_authenticated/app/trabalhos/$id/checkin'
@@ -364,6 +440,7 @@ export interface RootRouteChildren {
   CanalizacoesRoute: typeof CanalizacoesRoute
   ContatoRoute: typeof ContatoRoute
   QuemSomosRoute: typeof QuemSomosRoute
+  AssociadosCadastroRoute: typeof AssociadosCadastroRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -417,6 +494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/associados/cadastro': {
+      id: '/associados/cadastro'
+      path: '/associados/cadastro'
+      fullPath: '/associados/cadastro'
+      preLoaderRoute: typeof AssociadosCadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app': {
       id: '/_authenticated/app'
       path: '/app'
@@ -452,11 +536,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPerfilRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/pendente': {
+      id: '/_authenticated/app/pendente'
+      path: '/pendente'
+      fullPath: '/app/pendente'
+      preLoaderRoute: typeof AuthenticatedAppPendenteRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/meus-uploads': {
       id: '/_authenticated/app/meus-uploads'
       path: '/meus-uploads'
       fullPath: '/app/meus-uploads'
       preLoaderRoute: typeof AuthenticatedAppMeusUploadsRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/conta': {
+      id: '/_authenticated/app/conta'
+      path: '/conta'
+      fullPath: '/app/conta'
+      preLoaderRoute: typeof AuthenticatedAppContaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/audios': {
@@ -487,6 +585,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAudiosIndexRouteImport
       parentRoute: typeof AuthenticatedAppAudiosRoute
     }
+    '/_authenticated/app/associados/': {
+      id: '/_authenticated/app/associados/'
+      path: '/associados'
+      fullPath: '/app/associados/'
+      preLoaderRoute: typeof AuthenticatedAppAssociadosIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/admin/': {
       id: '/_authenticated/app/admin/'
       path: '/admin'
@@ -507,6 +612,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/audios/$id'
       preLoaderRoute: typeof AuthenticatedAppAudiosIdRouteImport
       parentRoute: typeof AuthenticatedAppAudiosRoute
+    }
+    '/_authenticated/app/associados/turmas': {
+      id: '/_authenticated/app/associados/turmas'
+      path: '/associados/turmas'
+      fullPath: '/app/associados/turmas'
+      preLoaderRoute: typeof AuthenticatedAppAssociadosTurmasRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/associados/$id': {
+      id: '/_authenticated/app/associados/$id'
+      path: '/associados/$id'
+      fullPath: '/app/associados/$id'
+      preLoaderRoute: typeof AuthenticatedAppAssociadosIdRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/admin/usuarios': {
       id: '/_authenticated/app/admin/usuarios'
@@ -593,7 +712,9 @@ const AuthenticatedAppRevisaoRouteWithChildren =
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAcolhimentoRoute: typeof AuthenticatedAppAcolhimentoRoute
   AuthenticatedAppAudiosRoute: typeof AuthenticatedAppAudiosRouteWithChildren
+  AuthenticatedAppContaRoute: typeof AuthenticatedAppContaRoute
   AuthenticatedAppMeusUploadsRoute: typeof AuthenticatedAppMeusUploadsRoute
+  AuthenticatedAppPendenteRoute: typeof AuthenticatedAppPendenteRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppRevisaoRoute: typeof AuthenticatedAppRevisaoRouteWithChildren
   AuthenticatedAppUploadRoute: typeof AuthenticatedAppUploadRoute
@@ -604,7 +725,10 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAdminLogsRoute: typeof AuthenticatedAppAdminLogsRoute
   AuthenticatedAppAdminTrabalhosRoute: typeof AuthenticatedAppAdminTrabalhosRoute
   AuthenticatedAppAdminUsuariosRoute: typeof AuthenticatedAppAdminUsuariosRoute
+  AuthenticatedAppAssociadosIdRoute: typeof AuthenticatedAppAssociadosIdRoute
+  AuthenticatedAppAssociadosTurmasRoute: typeof AuthenticatedAppAssociadosTurmasRoute
   AuthenticatedAppAdminIndexRoute: typeof AuthenticatedAppAdminIndexRoute
+  AuthenticatedAppAssociadosIndexRoute: typeof AuthenticatedAppAssociadosIndexRoute
   AuthenticatedAppTrabalhosIndexRoute: typeof AuthenticatedAppTrabalhosIndexRoute
   AuthenticatedAppTrabalhosIdCheckinRoute: typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
@@ -612,7 +736,9 @@ interface AuthenticatedAppRouteChildren {
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAcolhimentoRoute: AuthenticatedAppAcolhimentoRoute,
   AuthenticatedAppAudiosRoute: AuthenticatedAppAudiosRouteWithChildren,
+  AuthenticatedAppContaRoute: AuthenticatedAppContaRoute,
   AuthenticatedAppMeusUploadsRoute: AuthenticatedAppMeusUploadsRoute,
+  AuthenticatedAppPendenteRoute: AuthenticatedAppPendenteRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppRevisaoRoute: AuthenticatedAppRevisaoRouteWithChildren,
   AuthenticatedAppUploadRoute: AuthenticatedAppUploadRoute,
@@ -623,7 +749,10 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAdminLogsRoute: AuthenticatedAppAdminLogsRoute,
   AuthenticatedAppAdminTrabalhosRoute: AuthenticatedAppAdminTrabalhosRoute,
   AuthenticatedAppAdminUsuariosRoute: AuthenticatedAppAdminUsuariosRoute,
+  AuthenticatedAppAssociadosIdRoute: AuthenticatedAppAssociadosIdRoute,
+  AuthenticatedAppAssociadosTurmasRoute: AuthenticatedAppAssociadosTurmasRoute,
   AuthenticatedAppAdminIndexRoute: AuthenticatedAppAdminIndexRoute,
+  AuthenticatedAppAssociadosIndexRoute: AuthenticatedAppAssociadosIndexRoute,
   AuthenticatedAppTrabalhosIndexRoute: AuthenticatedAppTrabalhosIndexRoute,
   AuthenticatedAppTrabalhosIdCheckinRoute:
     AuthenticatedAppTrabalhosIdCheckinRoute,
@@ -651,6 +780,7 @@ const rootRouteChildren: RootRouteChildren = {
   CanalizacoesRoute: CanalizacoesRoute,
   ContatoRoute: ContatoRoute,
   QuemSomosRoute: QuemSomosRoute,
+  AssociadosCadastroRoute: AssociadosCadastroRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
