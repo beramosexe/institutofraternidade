@@ -210,7 +210,7 @@ async function setMemberRolesInternal(
         throw new Error("Cargos com permissões críticas só podem ser atribuídos pela administração.");
       }
     }
-    for (const rid of currentIds) {
+    for (const rid of currentIds as Set<string>) {
       if (criticalRoleIds.has(rid) && !roleIds.includes(rid)) {
         throw new Error("Cargos com permissões críticas só podem ser alterados pela administração.");
       }
