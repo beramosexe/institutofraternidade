@@ -22,6 +22,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppUploadRouteImport } from './routes/_authenticated/app.upload'
 import { Route as AuthenticatedAppRevisaoRouteImport } from './routes/_authenticated/app.revisao'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
+import { Route as AuthenticatedAppPendenteRouteImport } from './routes/_authenticated/app.pendente'
 import { Route as AuthenticatedAppMeusUploadsRouteImport } from './routes/_authenticated/app.meus-uploads'
 import { Route as AuthenticatedAppAudiosRouteImport } from './routes/_authenticated/app.audios'
 import { Route as AuthenticatedAppAcolhimentoRouteImport } from './routes/_authenticated/app.acolhimento'
@@ -102,6 +103,12 @@ const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
+const AuthenticatedAppPendenteRoute =
+  AuthenticatedAppPendenteRouteImport.update({
+    id: '/pendente',
+    path: '/pendente',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppMeusUploadsRoute =
   AuthenticatedAppMeusUploadsRouteImport.update({
     id: '/meus-uploads',
@@ -204,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
+  '/app/pendente': typeof AuthenticatedAppPendenteRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
   '/app/upload': typeof AuthenticatedAppUploadRoute
@@ -231,6 +239,7 @@ export interface FileRoutesByTo {
   '/associados/cadastro': typeof AssociadosCadastroRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
+  '/app/pendente': typeof AuthenticatedAppPendenteRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
   '/app/upload': typeof AuthenticatedAppUploadRoute
@@ -262,6 +271,7 @@ export interface FileRoutesById {
   '/_authenticated/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/_authenticated/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/_authenticated/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
+  '/_authenticated/app/pendente': typeof AuthenticatedAppPendenteRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
   '/_authenticated/app/upload': typeof AuthenticatedAppUploadRoute
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/app/acolhimento'
     | '/app/audios'
     | '/app/meus-uploads'
+    | '/app/pendente'
     | '/app/perfil'
     | '/app/revisao'
     | '/app/upload'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/associados/cadastro'
     | '/app/acolhimento'
     | '/app/meus-uploads'
+    | '/app/pendente'
     | '/app/perfil'
     | '/app/revisao'
     | '/app/upload'
@@ -350,6 +362,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/acolhimento'
     | '/_authenticated/app/audios'
     | '/_authenticated/app/meus-uploads'
+    | '/_authenticated/app/pendente'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/revisao'
     | '/_authenticated/app/upload'
@@ -470,6 +483,13 @@ declare module '@tanstack/react-router' {
       path: '/perfil'
       fullPath: '/app/perfil'
       preLoaderRoute: typeof AuthenticatedAppPerfilRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/_authenticated/app/pendente': {
+      id: '/_authenticated/app/pendente'
+      path: '/pendente'
+      fullPath: '/app/pendente'
+      preLoaderRoute: typeof AuthenticatedAppPendenteRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
     '/_authenticated/app/meus-uploads': {
@@ -614,6 +634,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAcolhimentoRoute: typeof AuthenticatedAppAcolhimentoRoute
   AuthenticatedAppAudiosRoute: typeof AuthenticatedAppAudiosRouteWithChildren
   AuthenticatedAppMeusUploadsRoute: typeof AuthenticatedAppMeusUploadsRoute
+  AuthenticatedAppPendenteRoute: typeof AuthenticatedAppPendenteRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppRevisaoRoute: typeof AuthenticatedAppRevisaoRouteWithChildren
   AuthenticatedAppUploadRoute: typeof AuthenticatedAppUploadRoute
@@ -633,6 +654,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAcolhimentoRoute: AuthenticatedAppAcolhimentoRoute,
   AuthenticatedAppAudiosRoute: AuthenticatedAppAudiosRouteWithChildren,
   AuthenticatedAppMeusUploadsRoute: AuthenticatedAppMeusUploadsRoute,
+  AuthenticatedAppPendenteRoute: AuthenticatedAppPendenteRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppRevisaoRoute: AuthenticatedAppRevisaoRouteWithChildren,
   AuthenticatedAppUploadRoute: AuthenticatedAppUploadRoute,
