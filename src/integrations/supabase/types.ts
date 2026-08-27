@@ -359,8 +359,11 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          membership_status: Database["public"]["Enums"]["membership_status"]
           phone: string | null
           updated_at: string
+          validated_at: string | null
+          validated_by: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -368,8 +371,11 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          membership_status?: Database["public"]["Enums"]["membership_status"]
           phone?: string | null
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -377,8 +383,11 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          membership_status?: Database["public"]["Enums"]["membership_status"]
           phone?: string | null
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Relationships: []
       }
@@ -721,6 +730,10 @@ export type Database = {
         | "role.manage"
         | "logs.view"
         | "attendance.manage"
+        | "member.validate"
+        | "member.manage"
+        | "class.manage"
+        | "member.role_assign"
       audio_access_level:
         | "public"
         | "associates"
@@ -734,8 +747,11 @@ export type Database = {
         | "error"
         | "archived"
       audio_type: "canalizacao" | "outro"
+      class_member_status: "active" | "ended" | "removed"
+      class_status: "planned" | "open" | "ongoing" | "closed" | "cancelled"
       job_status: "pending" | "running" | "done" | "error"
       job_type: "convert" | "transcribe"
+      membership_status: "pending" | "active" | "inactive"
       review_status: "unreviewed" | "in_review" | "reviewed"
       work_status: "draft" | "published" | "completed" | "archived"
       work_visibility: "public" | "internal"
@@ -879,6 +895,10 @@ export const Constants = {
         "role.manage",
         "logs.view",
         "attendance.manage",
+        "member.validate",
+        "member.manage",
+        "class.manage",
+        "member.role_assign",
       ],
       audio_access_level: [
         "public",
@@ -895,8 +915,11 @@ export const Constants = {
         "archived",
       ],
       audio_type: ["canalizacao", "outro"],
+      class_member_status: ["active", "ended", "removed"],
+      class_status: ["planned", "open", "ongoing", "closed", "cancelled"],
       job_status: ["pending", "running", "done", "error"],
       job_type: ["convert", "transcribe"],
+      membership_status: ["pending", "active", "inactive"],
       review_status: ["unreviewed", "in_review", "reviewed"],
       work_status: ["draft", "published", "completed", "archived"],
       work_visibility: ["public", "internal"],
