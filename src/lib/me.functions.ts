@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { ALL_PERMISSIONS } from "@/lib/permissions";
 
 /** Returns current user's roles + flat permission set + profile. */
 export const getMyAccess = createServerFn({ method: "GET" })
@@ -25,11 +26,7 @@ export const getMyAccess = createServerFn({ method: "GET" })
     const permSet = new Set<string>();
     const isAdmin = roles.some((r) => r.slug === "admin");
     if (isAdmin) {
-      [
-        "audio.upload","audio.edit_any","audio.delete","audio.publish","audio.reprocess",
-        "transcription.review","transcription.approve","work.manage","user.manage",
-        "role.manage","logs.view","attendance.manage",
-      ].forEach((p) => permSet.add(p));
+      ALL_PERMISSIONS.forEach((p) => permSet.add(p));
     } else {
       for (const ur of userRoles ?? []) {
         for (const rp of ur.roles.role_permissions ?? []) {
@@ -38,14 +35,50 @@ export const getMyAccess = createServerFn({ method: "GET" })
       }
     }
 
+    const membershipStatus = (profile?.membership_status ?? "pending") as
+      | "pending" | "active" | "inactive";
+
     return {
       userId,
       profile: profile ?? null,
       roles,
       isAdmin,
-      permissions: Array.from(permSet),
+      membershipStatus,
+      isPending: !isAdmin && membershipStatus === "pending",
+      permissions: isAdmin || membershipStatus === "active" ? Array.from(permSet) : [],
     };
   });
+
+/** Minha formação: turmas, períodos de atividade e linha do tempo. */
+export const getMyMembership = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const [{ data: memberships }, { data: periods }, { data: events }] = await Promise.all([
+      supabase
+        .from("class_members")
+        .select("id, is_primary, purpose, joined_at, left_at, status, notes, classes(id, name, period, status, formation_levels(name))")
+        .eq("user_id", userId)
+        .order("joined_at", { ascending: false }),
+      supabase
+        .from("member_status_periods")
+        .select("id, status, started_on, ended_on, reason")
+        .eq("user_id", userId)
+        .order("started_on", { ascending: false }),
+      supabase
+        .from("member_events")
+        .select("id, kind, title, details, occurred_at")
+        .eq("user_id", userId)
+        .order("occurred_at", { ascending: false })
+        .limit(100),
+    ]);
+    return {
+      memberships: memberships ?? [],
+      periods: periods ?? [],
+      events: events ?? [],
+    };
+  });
+
 
 /** Update own profile */
 export const updateMyProfile = createServerFn({ method: "POST" })
