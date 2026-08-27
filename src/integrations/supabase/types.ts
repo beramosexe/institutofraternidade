@@ -975,6 +975,7 @@ export type Database = {
         | "member.manage"
         | "class.manage"
         | "member.role_assign"
+        | "stock.manage"
       audio_access_level:
         | "public"
         | "associates"
@@ -1140,6 +1141,7 @@ export const Constants = {
         "member.manage",
         "class.manage",
         "member.role_assign",
+        "stock.manage",
       ],
       audio_access_level: [
         "public",
