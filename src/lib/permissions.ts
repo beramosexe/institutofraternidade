@@ -15,6 +15,7 @@ export const ALL_PERMISSIONS = [
   "member.manage",
   "class.manage",
   "member.role_assign",
+  "stock.manage",
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];
