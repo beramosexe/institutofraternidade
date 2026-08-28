@@ -130,14 +130,18 @@ export type Database = {
           error_message: string | null
           file_size_bytes: number | null
           id: string
+          is_featured: boolean
+          keywords: string[]
           message_entity_id: string | null
           message_source: string | null
           mime_type: string | null
+          play_count: number
           published_at: string | null
           recorded_at: string | null
           status: Database["public"]["Enums"]["audio_status"]
           storage_path: string
           stream_path: string | null
+          summary: string | null
           title: string
           updated_at: string
           uploaded_by: string | null
@@ -152,14 +156,18 @@ export type Database = {
           error_message?: string | null
           file_size_bytes?: number | null
           id?: string
+          is_featured?: boolean
+          keywords?: string[]
           message_entity_id?: string | null
           message_source?: string | null
           mime_type?: string | null
+          play_count?: number
           published_at?: string | null
           recorded_at?: string | null
           status?: Database["public"]["Enums"]["audio_status"]
           storage_path: string
           stream_path?: string | null
+          summary?: string | null
           title: string
           updated_at?: string
           uploaded_by?: string | null
@@ -174,14 +182,18 @@ export type Database = {
           error_message?: string | null
           file_size_bytes?: number | null
           id?: string
+          is_featured?: boolean
+          keywords?: string[]
           message_entity_id?: string | null
           message_source?: string | null
           mime_type?: string | null
+          play_count?: number
           published_at?: string | null
           recorded_at?: string | null
           status?: Database["public"]["Enums"]["audio_status"]
           storage_path?: string
           stream_path?: string | null
+          summary?: string | null
           title?: string
           updated_at?: string
           uploaded_by?: string | null
@@ -409,6 +421,151 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_quotes: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          description: string | null
+          document_path: string | null
+          id: string
+          notes: string | null
+          status: string
+          supplier: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          description?: string | null
+          document_path?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          supplier: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          description?: string | null
+          document_path?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          supplier?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_quotes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_ticket_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          ticket_id: string
+          to_status: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          ticket_id: string
+          to_status?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          ticket_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_ticket_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          location: string | null
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_events: {
         Row: {
           actor_id: string | null
@@ -472,6 +629,102 @@ export type Database = {
           started_on?: string
           status?: Database["public"]["Enums"]["membership_status"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          email: boolean
+          internal: boolean
+          push: boolean
+          updated_at: string
+          user_id: string
+          whatsapp: boolean
+        }
+        Insert: {
+          email?: boolean
+          internal?: boolean
+          push?: boolean
+          updated_at?: string
+          user_id: string
+          whatsapp?: boolean
+        }
+        Update: {
+          email?: boolean
+          internal?: boolean
+          push?: boolean
+          updated_at?: string
+          user_id?: string
+          whatsapp?: boolean
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      options: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          label: string
+          list: string
+          sort_order: number
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          list: string
+          sort_order?: number
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          list?: string
+          sort_order?: number
+          updated_at?: string
+          value?: string
         }
         Relationships: []
       }
@@ -605,6 +858,241 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_documents: {
+        Row: {
+          ai_suggestion: Json | null
+          created_at: string
+          id: string
+          kind: string
+          mime_type: string | null
+          purchase_id: string
+          storage_path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          ai_suggestion?: Json | null
+          created_at?: string
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          purchase_id: string
+          storage_path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          ai_suggestion?: Json | null
+          created_at?: string
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          purchase_id?: string
+          storage_path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_documents_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string | null
+          name: string
+          purchase_id: string
+          quantity: number
+          total_price: number
+          unit: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          name: string
+          purchase_id: string
+          quantity?: number
+          total_price?: number
+          unit?: string
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          name?: string
+          purchase_id?: string
+          quantity?: number
+          total_price?: number
+          unit?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_request_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string | null
+          name: string
+          notes: string | null
+          quantity: number
+          request_id: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          name: string
+          notes?: string | null
+          quantity?: number
+          request_id: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          name?: string
+          notes?: string | null
+          quantity?: number
+          request_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_request_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          id: string
+          justification: string | null
+          needs_finance: boolean
+          notes: string | null
+          priority: string
+          requested_by: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          justification?: string | null
+          needs_finance?: boolean
+          notes?: string | null
+          priority?: string
+          requested_by?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          justification?: string | null
+          needs_finance?: boolean
+          notes?: string | null
+          priority?: string
+          requested_by?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          applied_to_stock: boolean
+          created_at: string
+          id: string
+          notes: string | null
+          purchased_by: string | null
+          purchased_on: string
+          request_id: string | null
+          supplier: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          applied_to_stock?: boolean
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchased_by?: string | null
+          purchased_on?: string
+          request_id?: string | null
+          supplier?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          applied_to_stock?: boolean
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchased_by?: string | null
+          purchased_on?: string
+          request_id?: string | null
+          supplier?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           permission: Database["public"]["Enums"]["app_permission"]
@@ -669,6 +1157,8 @@ export type Database = {
           min_quantity: number
           name: string
           notes: string | null
+          package_content: string | null
+          package_size: number | null
           quantity: number
           unit: string
           updated_at: string
@@ -683,6 +1173,8 @@ export type Database = {
           min_quantity?: number
           name: string
           notes?: string | null
+          package_content?: string | null
+          package_size?: number | null
           quantity?: number
           unit?: string
           updated_at?: string
@@ -697,6 +1189,8 @@ export type Database = {
           min_quantity?: number
           name?: string
           notes?: string | null
+          package_content?: string | null
+          package_size?: number | null
           quantity?: number
           unit?: string
           updated_at?: string
@@ -926,6 +1420,7 @@ export type Database = {
       }
       works: {
         Row: {
+          color: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -945,6 +1440,7 @@ export type Database = {
           visibility: Database["public"]["Enums"]["work_visibility"]
         }
         Insert: {
+          color?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -964,6 +1460,7 @@ export type Database = {
           visibility?: Database["public"]["Enums"]["work_visibility"]
         }
         Update: {
+          color?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -1049,6 +1546,17 @@ export type Database = {
         Args: { _user_id: string; _work_id: string }
         Returns: boolean
       }
+      notify_permission: {
+        Args: {
+          _body: string
+          _kind: string
+          _link: string
+          _permission: Database["public"]["Enums"]["app_permission"]
+          _title: string
+        }
+        Returns: undefined
+      }
+      register_audio_play: { Args: { _audio_id: string }; Returns: undefined }
       role_has_critical_permission: {
         Args: { _role_id: string }
         Returns: boolean
