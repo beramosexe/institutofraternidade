@@ -112,7 +112,7 @@ export const updatePurchaseRequest = createServerFn({ method: "POST" })
       update["decided_by"] = context.userId;
       update["decided_at"] = new Date().toISOString();
     }
-    const { error } = await context.supabase.from("purchase_requests").update(update).eq("id", id);
+    const { error } = await context.supabase.from("purchase_requests").update(update as never).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
