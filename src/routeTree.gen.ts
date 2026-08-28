@@ -26,6 +26,7 @@ import { Route as AuthenticatedAppPendenteRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppMeusUploadsRouteImport } from './routes/_authenticated/app.meus-uploads'
 import { Route as AuthenticatedAppEstoqueRouteImport } from './routes/_authenticated/app.estoque'
 import { Route as AuthenticatedAppContaRouteImport } from './routes/_authenticated/app.conta'
+import { Route as AuthenticatedAppCasaRouteImport } from './routes/_authenticated/app.casa'
 import { Route as AuthenticatedAppAudiosRouteImport } from './routes/_authenticated/app.audios'
 import { Route as AuthenticatedAppAcolhimentoRouteImport } from './routes/_authenticated/app.acolhimento'
 import { Route as AuthenticatedAppTrabalhosIndexRouteImport } from './routes/_authenticated/app.trabalhos.index'
@@ -128,6 +129,11 @@ const AuthenticatedAppEstoqueRoute = AuthenticatedAppEstoqueRouteImport.update({
 const AuthenticatedAppContaRoute = AuthenticatedAppContaRouteImport.update({
   id: '/conta',
   path: '/conta',
+  getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const AuthenticatedAppCasaRoute = AuthenticatedAppCasaRouteImport.update({
+  id: '/casa',
+  path: '/casa',
   getParentRoute: () => AuthenticatedAppRoute,
 } as any)
 const AuthenticatedAppAudiosRoute = AuthenticatedAppAudiosRouteImport.update({
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/associados/cadastro': typeof AssociadosCadastroRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
+  '/app/casa': typeof AuthenticatedAppCasaRoute
   '/app/conta': typeof AuthenticatedAppContaRoute
   '/app/estoque': typeof AuthenticatedAppEstoqueRoute
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
@@ -276,6 +283,7 @@ export interface FileRoutesByTo {
   '/quem-somos': typeof QuemSomosRoute
   '/associados/cadastro': typeof AssociadosCadastroRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
+  '/app/casa': typeof AuthenticatedAppCasaRoute
   '/app/conta': typeof AuthenticatedAppContaRoute
   '/app/estoque': typeof AuthenticatedAppEstoqueRoute
   '/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
@@ -313,6 +321,7 @@ export interface FileRoutesById {
   '/associados/cadastro': typeof AssociadosCadastroRoute
   '/_authenticated/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/_authenticated/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
+  '/_authenticated/app/casa': typeof AuthenticatedAppCasaRoute
   '/_authenticated/app/conta': typeof AuthenticatedAppContaRoute
   '/_authenticated/app/estoque': typeof AuthenticatedAppEstoqueRoute
   '/_authenticated/app/meus-uploads': typeof AuthenticatedAppMeusUploadsRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/associados/cadastro'
     | '/app/acolhimento'
     | '/app/audios'
+    | '/app/casa'
     | '/app/conta'
     | '/app/estoque'
     | '/app/meus-uploads'
@@ -383,6 +393,7 @@ export interface FileRouteTypes {
     | '/quem-somos'
     | '/associados/cadastro'
     | '/app/acolhimento'
+    | '/app/casa'
     | '/app/conta'
     | '/app/estoque'
     | '/app/meus-uploads'
@@ -419,6 +430,7 @@ export interface FileRouteTypes {
     | '/associados/cadastro'
     | '/_authenticated/app/acolhimento'
     | '/_authenticated/app/audios'
+    | '/_authenticated/app/casa'
     | '/_authenticated/app/conta'
     | '/_authenticated/app/estoque'
     | '/_authenticated/app/meus-uploads'
@@ -576,6 +588,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppContaRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/casa': {
+      id: '/_authenticated/app/casa'
+      path: '/casa'
+      fullPath: '/app/casa'
+      preLoaderRoute: typeof AuthenticatedAppCasaRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/audios': {
       id: '/_authenticated/app/audios'
       path: '/audios'
@@ -731,6 +750,7 @@ const AuthenticatedAppRevisaoRouteWithChildren =
 interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAcolhimentoRoute: typeof AuthenticatedAppAcolhimentoRoute
   AuthenticatedAppAudiosRoute: typeof AuthenticatedAppAudiosRouteWithChildren
+  AuthenticatedAppCasaRoute: typeof AuthenticatedAppCasaRoute
   AuthenticatedAppContaRoute: typeof AuthenticatedAppContaRoute
   AuthenticatedAppEstoqueRoute: typeof AuthenticatedAppEstoqueRoute
   AuthenticatedAppMeusUploadsRoute: typeof AuthenticatedAppMeusUploadsRoute
@@ -756,6 +776,7 @@ interface AuthenticatedAppRouteChildren {
 const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAcolhimentoRoute: AuthenticatedAppAcolhimentoRoute,
   AuthenticatedAppAudiosRoute: AuthenticatedAppAudiosRouteWithChildren,
+  AuthenticatedAppCasaRoute: AuthenticatedAppCasaRoute,
   AuthenticatedAppContaRoute: AuthenticatedAppContaRoute,
   AuthenticatedAppEstoqueRoute: AuthenticatedAppEstoqueRoute,
   AuthenticatedAppMeusUploadsRoute: AuthenticatedAppMeusUploadsRoute,
