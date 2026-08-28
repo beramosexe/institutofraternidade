@@ -215,6 +215,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {i.to === "/app/associados" && (pendingMembers?.count ?? 0) > 0 && (
                         <Badge className="shrink-0">{pendingMembers?.count}</Badge>
                       )}
+                      {i.to === "/app/notificacoes" && (unread?.count ?? 0) > 0 && (
+                        <Badge className="shrink-0">{unread?.count}</Badge>
+                      )}
+
                     </Link>
                   );
                 })}
