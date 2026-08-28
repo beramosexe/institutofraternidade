@@ -136,6 +136,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     retry: false,
   });
 
+  const unreadFn = useServerFn(countUnreadNotifications);
+  const { data: unread } = useQuery({
+    queryKey: ["notifications-unread"],
+    queryFn: () => unreadFn(),
+    enabled: !!access,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+
   async function signOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
