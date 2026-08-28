@@ -16,6 +16,15 @@ export const ALL_PERMISSIONS = [
   "class.manage",
   "member.role_assign",
   "stock.manage",
+  "maintenance.request",
+  "maintenance.manage",
+  "purchase.manage",
+  "finance.view",
+  "finance.approve",
+  "media.manage",
+  "options.manage",
+  "record.delete",
+  "notification.manage",
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];
@@ -38,14 +47,65 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "class.manage": "Gerenciar turmas e níveis",
   "member.role_assign": "Atribuir cargos a associados",
   "stock.manage": "Gerenciar estoque",
+  "maintenance.request": "Abrir chamados de manutenção",
+  "maintenance.manage": "Gerenciar chamados de manutenção",
+  "purchase.manage": "Gerenciar compras e pedidos",
+  "finance.view": "Visualizar financeiro",
+  "finance.approve": "Aprovar financeiro",
+  "media.manage": "Gerenciar mídias",
+  "options.manage": "Gerenciar opções configuráveis",
+  "record.delete": "Excluir registros definitivamente",
+  "notification.manage": "Gerenciar notificações",
 };
 
 /** Permissões críticas: somente a administração pode concedê-las. */
 export const CRITICAL_PERMISSIONS: Permission[] = [
-  "audio.delete",
-  "logs.view",
   "role.manage",
+  "user.manage",
+  "member.role_assign",
+  "logs.view",
+  "audio.delete",
+  "record.delete",
+  "finance.approve",
 ];
+
+export const MAINTENANCE_STATUS_LABELS = {
+  open: "Aberto",
+  analysis: "Em análise",
+  awaiting_quote: "Aguardando orçamento",
+  quote_received: "Orçamento recebido",
+  sent_to_finance: "Enviado ao financeiro",
+  in_approval: "Em aprovação",
+  approved: "Aprovado",
+  in_progress: "Em execução",
+  done: "Concluído",
+  rejected: "Não aprovado",
+  postponed: "Postergado",
+  cancelled: "Cancelado",
+  returned: "Devolvido",
+} as const;
+
+export type MaintenanceStatus = keyof typeof MAINTENANCE_STATUS_LABELS;
+
+export const PRIORITY_LABELS = {
+  low: "Baixa",
+  normal: "Normal",
+  high: "Alta",
+  urgent: "Urgente",
+} as const;
+
+export const PURCHASE_REQUEST_STATUS_LABELS = {
+  open: "Aberto",
+  in_finance: "No financeiro",
+  approved: "Aprovado",
+  rejected: "Não aprovado",
+  postponed: "Postergado",
+  returned: "Devolvido",
+  purchased: "Comprado",
+  cancelled: "Cancelado",
+} as const;
+
+
 
 export const MEMBERSHIP_STATUS_LABELS = {
   pending: "Pendente de validação",
