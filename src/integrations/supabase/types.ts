@@ -120,6 +120,59 @@ export type Database = {
           },
         ]
       }
+      audio_upload_tokens: {
+        Row: {
+          created_at: string
+          default_access_level: Database["public"]["Enums"]["audio_access_level"]
+          default_work_id: string | null
+          id: string
+          label: string
+          last_used_at: string | null
+          revoked_at: string | null
+          token_hash: string
+          token_prefix: string
+          updated_at: string
+          use_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_access_level?: Database["public"]["Enums"]["audio_access_level"]
+          default_work_id?: string | null
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          token_hash: string
+          token_prefix: string
+          updated_at?: string
+          use_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_access_level?: Database["public"]["Enums"]["audio_access_level"]
+          default_work_id?: string | null
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+          token_prefix?: string
+          updated_at?: string
+          use_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_upload_tokens_default_work_id_fkey"
+            columns: ["default_work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audios: {
         Row: {
           access_level: Database["public"]["Enums"]["audio_access_level"]
