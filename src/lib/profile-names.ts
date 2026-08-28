@@ -1,6 +1,13 @@
+type DisplayRpcClient = {
+  rpc: (
+    fn: "get_profile_display",
+    args: { _user_id: string },
+  ) => PromiseLike<{ data: unknown }>;
+};
+
 /** Resolve nomes de exibição (profiles são restritos; usa RPC segura). */
 export async function resolveDisplayNames(
-  supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> },
+  supabase: DisplayRpcClient,
   ids: Array<string | null | undefined>,
 ): Promise<Record<string, string>> {
   const unique = [...new Set(ids.filter(Boolean) as string[])];
