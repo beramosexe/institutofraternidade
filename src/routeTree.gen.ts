@@ -30,6 +30,7 @@ import { Route as AuthenticatedAppCasaRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAppAudiosRouteImport } from './routes/_authenticated/app.audios'
 import { Route as AuthenticatedAppAcolhimentoRouteImport } from './routes/_authenticated/app.acolhimento'
 import { Route as AuthenticatedAppTrabalhosIndexRouteImport } from './routes/_authenticated/app.trabalhos.index'
+import { Route as AuthenticatedAppManutencaoIndexRouteImport } from './routes/_authenticated/app.manutencao.index'
 import { Route as AuthenticatedAppAudiosIndexRouteImport } from './routes/_authenticated/app.audios.index'
 import { Route as AuthenticatedAppAssociadosIndexRouteImport } from './routes/_authenticated/app.associados.index'
 import { Route as AuthenticatedAppAdminIndexRouteImport } from './routes/_authenticated/app.admin.index'
@@ -153,6 +154,12 @@ const AuthenticatedAppTrabalhosIndexRoute =
     path: '/trabalhos/',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppManutencaoIndexRoute =
+  AuthenticatedAppManutencaoIndexRouteImport.update({
+    id: '/manutencao/',
+    path: '/manutencao/',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppAudiosIndexRoute =
   AuthenticatedAppAudiosIndexRouteImport.update({
     id: '/',
@@ -271,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/': typeof AuthenticatedAppAdminIndexRoute
   '/app/associados/': typeof AuthenticatedAppAssociadosIndexRoute
   '/app/audios/': typeof AuthenticatedAppAudiosIndexRoute
+  '/app/manutencao/': typeof AuthenticatedAppManutencaoIndexRoute
   '/app/trabalhos/': typeof AuthenticatedAppTrabalhosIndexRoute
   '/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
@@ -305,6 +313,7 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AuthenticatedAppAdminIndexRoute
   '/app/associados': typeof AuthenticatedAppAssociadosIndexRoute
   '/app/audios': typeof AuthenticatedAppAudiosIndexRoute
+  '/app/manutencao': typeof AuthenticatedAppManutencaoIndexRoute
   '/app/trabalhos': typeof AuthenticatedAppTrabalhosIndexRoute
   '/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
@@ -343,6 +352,7 @@ export interface FileRoutesById {
   '/_authenticated/app/admin/': typeof AuthenticatedAppAdminIndexRoute
   '/_authenticated/app/associados/': typeof AuthenticatedAppAssociadosIndexRoute
   '/_authenticated/app/audios/': typeof AuthenticatedAppAudiosIndexRoute
+  '/_authenticated/app/manutencao/': typeof AuthenticatedAppManutencaoIndexRoute
   '/_authenticated/app/trabalhos/': typeof AuthenticatedAppTrabalhosIndexRoute
   '/_authenticated/app/trabalhos/$id/checkin': typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/app/admin/'
     | '/app/associados/'
     | '/app/audios/'
+    | '/app/manutencao/'
     | '/app/trabalhos/'
     | '/app/trabalhos/$id/checkin'
   fileRoutesByTo: FileRoutesByTo
@@ -415,6 +426,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/associados'
     | '/app/audios'
+    | '/app/manutencao'
     | '/app/trabalhos'
     | '/app/trabalhos/$id/checkin'
   id:
@@ -452,6 +464,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/admin/'
     | '/_authenticated/app/associados/'
     | '/_authenticated/app/audios/'
+    | '/_authenticated/app/manutencao/'
     | '/_authenticated/app/trabalhos/'
     | '/_authenticated/app/trabalhos/$id/checkin'
   fileRoutesById: FileRoutesById
@@ -616,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppTrabalhosIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/manutencao/': {
+      id: '/_authenticated/app/manutencao/'
+      path: '/manutencao'
+      fullPath: '/app/manutencao/'
+      preLoaderRoute: typeof AuthenticatedAppManutencaoIndexRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/audios/': {
       id: '/_authenticated/app/audios/'
       path: '/'
@@ -769,6 +789,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAssociadosTurmasRoute: typeof AuthenticatedAppAssociadosTurmasRoute
   AuthenticatedAppAdminIndexRoute: typeof AuthenticatedAppAdminIndexRoute
   AuthenticatedAppAssociadosIndexRoute: typeof AuthenticatedAppAssociadosIndexRoute
+  AuthenticatedAppManutencaoIndexRoute: typeof AuthenticatedAppManutencaoIndexRoute
   AuthenticatedAppTrabalhosIndexRoute: typeof AuthenticatedAppTrabalhosIndexRoute
   AuthenticatedAppTrabalhosIdCheckinRoute: typeof AuthenticatedAppTrabalhosIdCheckinRoute
 }
@@ -795,6 +816,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAssociadosTurmasRoute: AuthenticatedAppAssociadosTurmasRoute,
   AuthenticatedAppAdminIndexRoute: AuthenticatedAppAdminIndexRoute,
   AuthenticatedAppAssociadosIndexRoute: AuthenticatedAppAssociadosIndexRoute,
+  AuthenticatedAppManutencaoIndexRoute: AuthenticatedAppManutencaoIndexRoute,
   AuthenticatedAppTrabalhosIndexRoute: AuthenticatedAppTrabalhosIndexRoute,
   AuthenticatedAppTrabalhosIdCheckinRoute:
     AuthenticatedAppTrabalhosIdCheckinRoute,
