@@ -236,11 +236,19 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Sidebar desktop */}
       <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
         <div className="p-5"><Link to="/"><Logo /></Link></div>
-        <div className="flex-1 px-3 py-2"><NavLinks /></div>
+        <div className="flex-1 overflow-y-auto px-3 py-2"><NavLinks /></div>
         <div className="border-t border-sidebar-border p-3">
           <div className="mb-2 px-3 text-xs text-sidebar-foreground/70 truncate">
             {access?.profile?.full_name ?? "Carregando…"}
           </div>
+          {access?.membershipStatus === "inactive" && (
+            <div className="mb-2 px-3">
+              <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
+                Associado inativo
+              </Badge>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <Link to="/app/perfil" className="flex-1">
               <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
