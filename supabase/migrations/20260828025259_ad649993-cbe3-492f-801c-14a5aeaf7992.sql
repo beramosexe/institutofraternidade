@@ -1,0 +1,11 @@
+REVOKE EXECUTE ON FUNCTION public.audit_row_change() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.audit_profile_membership() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.guard_critical_role_permission() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.guard_user_role_assignment() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.is_critical_permission(public.app_permission) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.role_has_critical_permission(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.notify_permission(public.app_permission, text, text, text, text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_notify_new_maintenance_ticket() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_notify_new_purchase_request() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_notify_low_stock() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.tg_notify_pending_member() FROM PUBLIC;
