@@ -140,7 +140,7 @@ export const updateMaintenanceTicket = createServerFn({ method: "POST" })
 
     const update: Record<string, unknown> = { ...patch };
     if (patch.status === "done") update["closed_at"] = new Date().toISOString();
-    const { error } = await context.supabase.from("maintenance_tickets").update(update).eq("id", id);
+    const { error } = await context.supabase.from("maintenance_tickets").update(update as never).eq("id", id);
     if (error) throw new Error(error.message);
 
     if (patch.status || note) {
