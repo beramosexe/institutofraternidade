@@ -1,8 +1,9 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Calendar, CalendarCheck, Headphones, Home, LogOut, Settings,
-  Users as UsersIcon, History, ShieldCheck, Menu, X, UserCircle, GraduationCap, Clock, Package,
+  Bell, Calendar, CalendarCheck, Headphones, Home, LogOut, Settings, ShoppingCart,
+  Users as UsersIcon, History, ShieldCheck, Menu, X, UserCircle, GraduationCap, Clock,
+  Package, Wrench, Banknote, HeartHandshake, ListChecks,
 } from "lucide-react";
 
 import { useState, type ReactNode } from "react";
@@ -15,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { countPendingMembers } from "@/lib/members.functions";
+import { countUnreadNotifications } from "@/lib/notifications.functions";
 
 export function useMyAccess() {
   const fn = useServerFn(getMyAccess);
@@ -33,12 +35,27 @@ type NavSection = { label: string; items: NavItem[]; comingSoon?: boolean; label
 
 const SECTIONS: NavSection[] = [
   {
-    label: "Geral",
+    label: "Área do Associado",
     items: [
       { to: "/app", label: "Painel", icon: Home },
-      { to: "/app/conta", label: "Minha conta", icon: UserCircle },
       { to: "/app/audios", label: "Áudios", icon: Headphones },
-      { to: "/app/trabalhos", label: "Trabalhos", icon: Calendar },
+      { to: "/app/trabalhos", label: "Agenda dos trabalhos", icon: Calendar },
+      { to: "/app/notificacoes", label: "Notificações", icon: Bell },
+    ],
+  },
+  {
+    label: "Painel da Casa",
+    labelColor: "text-teal-600",
+    items: [
+      { to: "/app/casa", label: "Cuidar da casa", icon: HeartHandshake },
+    ],
+  },
+  {
+    label: "Minha Conta",
+    labelColor: "text-indigo-600",
+    items: [
+      { to: "/app/conta", label: "Minha conta e formação", icon: UserCircle },
+      { to: "/app/perfil", label: "Meus dados", icon: Settings },
     ],
   },
   {
@@ -54,6 +71,7 @@ const SECTIONS: NavSection[] = [
     labelColor: "text-blue-600",
     items: [
       { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
+      { to: "/app/revisao", label: "Revisão de transcrições", icon: ListChecks, need: "transcription.review" },
     ],
   },
   {
@@ -64,25 +82,40 @@ const SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Estoque",
+    label: "Estoque e Compras",
     labelColor: "text-amber-600",
     items: [
       { to: "/app/estoque", label: "Gestão de estoque", icon: Package, need: "stock.manage" },
+      { to: "/app/compras", label: "Compras e pedidos", icon: ShoppingCart, need: "purchase.manage" },
     ],
   },
-  { label: "Manutenção", labelColor: "text-slate-500", items: [], comingSoon: true },
-  { label: "Financeiro", labelColor: "text-green-700", items: [], comingSoon: true },
+  {
+    label: "Manutenção",
+    labelColor: "text-slate-500",
+    items: [
+      { to: "/app/manutencao", label: "Chamados da casa", icon: Wrench, need: "maintenance.manage" },
+    ],
+  },
+  {
+    label: "Financeiro",
+    labelColor: "text-green-700",
+    items: [
+      { to: "/app/financeiro", label: "Aprovações financeiras", icon: Banknote, need: "finance.view" },
+    ],
+  },
   { label: "Mídias", labelColor: "text-violet-600", items: [], comingSoon: true },
   {
     label: "Administração",
     items: [
       { to: "/app/admin", label: "Admin", icon: ShieldCheck, adminOnly: true },
       { to: "/app/admin/trabalhos", label: "Gestão dos trabalhos e eventos", icon: Calendar, need: "work.manage" },
+      { to: "/app/admin/listas", label: "Listas configuráveis", icon: ListChecks, need: "options.manage" },
       { to: "/app/admin/logs", label: "Logs", icon: History, need: "logs.view" },
       { to: "/app/admin/usuarios", label: "Usuários", icon: UsersIcon, need: "user.manage" },
     ],
   },
 ];
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: access, isLoading } = useMyAccess();
