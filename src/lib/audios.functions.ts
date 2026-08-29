@@ -259,3 +259,32 @@ export const reprocessAudio = createServerFn({ method: "POST" })
     } catch (e) { console.error(e); }
     return { ok: true };
   });
+
+/** Conta uma reprodução (usado pelo player). */
+export const registerAudioPlay = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.rpc("register_audio_play", { _audio_id: data.id });
+    if (error) console.error("register_audio_play failed", error.message);
+    return { ok: true };
+  });
+
+/** Marca/desmarca um áudio como destaque da biblioteca. */
+export const setAudioFeatured = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; featured: boolean }) =>
+    z.object({ id: z.string().uuid(), featured: z.boolean() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: canEdit } = await context.supabase.rpc("has_permission", {
+      _user_id: context.userId, _permission: "audio.edit_any",
+    });
+    if (!canEdit) throw new Error("Você não tem permissão para destacar áudios.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("audios").update({ is_featured: data.featured }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
