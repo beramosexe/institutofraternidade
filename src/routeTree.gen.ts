@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssociadosCadastroRouteImport } from './routes/associados.cadastro'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as ApiPublicAudioUploadRouteImport } from './routes/api/public/audio-upload'
 import { Route as AuthenticatedAppUploadRouteImport } from './routes/_authenticated/app.upload'
 import { Route as AuthenticatedAppRevisaoRouteImport } from './routes/_authenticated/app.revisao'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
@@ -99,6 +100,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAppRoute,
+} as any)
+const ApiPublicAudioUploadRoute = ApiPublicAudioUploadRouteImport.update({
+  id: '/api/public/audio-upload',
+  path: '/api/public/audio-upload',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppUploadRoute = AuthenticatedAppUploadRouteImport.update({
   id: '/upload',
@@ -301,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
   '/app/upload': typeof AuthenticatedAppUploadRoute
+  '/api/public/audio-upload': typeof ApiPublicAudioUploadRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/admin/audios': typeof AuthenticatedAppAdminAudiosRoute
   '/app/admin/cargos': typeof AuthenticatedAppAdminCargosRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByTo {
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
   '/app/upload': typeof AuthenticatedAppUploadRoute
+  '/api/public/audio-upload': typeof ApiPublicAudioUploadRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/admin/audios': typeof AuthenticatedAppAdminAudiosRoute
   '/app/admin/cargos': typeof AuthenticatedAppAdminCargosRoute
@@ -385,6 +393,7 @@ export interface FileRoutesById {
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/revisao': typeof AuthenticatedAppRevisaoRouteWithChildren
   '/_authenticated/app/upload': typeof AuthenticatedAppUploadRoute
+  '/api/public/audio-upload': typeof ApiPublicAudioUploadRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/admin/audios': typeof AuthenticatedAppAdminAudiosRoute
   '/_authenticated/app/admin/cargos': typeof AuthenticatedAppAdminCargosRoute
@@ -429,6 +438,7 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/revisao'
     | '/app/upload'
+    | '/api/public/audio-upload'
     | '/app/'
     | '/app/admin/audios'
     | '/app/admin/cargos'
@@ -469,6 +479,7 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/revisao'
     | '/app/upload'
+    | '/api/public/audio-upload'
     | '/app'
     | '/app/admin/audios'
     | '/app/admin/cargos'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/revisao'
     | '/_authenticated/app/upload'
+    | '/api/public/audio-upload'
     | '/_authenticated/app/'
     | '/_authenticated/app/admin/audios'
     | '/_authenticated/app/admin/cargos'
@@ -542,6 +554,7 @@ export interface RootRouteChildren {
   ContatoRoute: typeof ContatoRoute
   QuemSomosRoute: typeof QuemSomosRoute
   AssociadosCadastroRoute: typeof AssociadosCadastroRoute
+  ApiPublicAudioUploadRoute: typeof ApiPublicAudioUploadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -615,6 +628,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedAppRoute
+    }
+    '/api/public/audio-upload': {
+      id: '/api/public/audio-upload'
+      path: '/api/public/audio-upload'
+      fullPath: '/api/public/audio-upload'
+      preLoaderRoute: typeof ApiPublicAudioUploadRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/upload': {
       id: '/_authenticated/app/upload'
@@ -954,6 +974,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContatoRoute: ContatoRoute,
   QuemSomosRoute: QuemSomosRoute,
   AssociadosCadastroRoute: AssociadosCadastroRoute,
+  ApiPublicAudioUploadRoute: ApiPublicAudioUploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
