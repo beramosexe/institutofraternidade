@@ -314,8 +314,11 @@ export function SyncedTranscript({
 
       <div
         ref={listRef}
-        className="max-h-[60vh] overflow-y-auto rounded-lg border border-border bg-card p-3"
+        hidden={hideTranscript}
+        style={{ maxHeight: listMaxHeight ?? "60vh" }}
+        className="overflow-y-auto rounded-lg border border-border bg-card p-3"
       >
+
         {segments.length === 0 ? (
           fallbackText ? (
             <div className="space-y-2 p-4">
