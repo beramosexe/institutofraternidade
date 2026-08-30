@@ -184,25 +184,34 @@ function AudioDetail() {
       perms.includes("audio.edit_any") ||
       isOwner);
   const canReprocess = perms.includes("audio.reprocess") || perms.includes("audio.edit_any") || isOwner;
-
+  const canFeature = perms.includes("audio.edit_any");
+  const accent = (audio.works as { color?: string | null } | null)?.color || "hsl(var(--brand))";
+  const restricted = audio.access_level !== "public";
+  const keywords = (audio.keywords as string[] | null) ?? [];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-10">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-10">
       <Link to="/app/audios" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Voltar à biblioteca
       </Link>
 
       <div>
-        <p className="text-xs uppercase tracking-[0.22em] text-brand">{audio.message_source ?? "Mensagem"}</p>
-        <h1 className="mt-1 font-display text-3xl text-foreground">{audio.title}</h1>
+        <p className="text-xs uppercase tracking-[0.22em]" style={{ color: accent }}>
+          {audio.message_source ?? "Mensagem"}
+        </p>
+        <h1 className="mt-1 font-display text-2xl text-foreground md:text-3xl">{audio.title}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           {audio.works?.name && <span>{audio.works.name}</span>}
           {audio.recorded_at && (
-            <span>· Gravada em {format(new Date(audio.recorded_at), "d 'de' MMM 'de' yyyy", { locale: ptBR })}</span>
+            <span>· Gravada em {format(new Date(`${audio.recorded_at}T12:00:00`), "d 'de' MMM 'de' yyyy", { locale: ptBR })}</span>
           )}
+          {(audio.play_count ?? 0) > 0 && <span>· {audio.play_count} reproduções</span>}
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Badge variant="secondary">{ACCESS_LEVEL_LABELS[audio.access_level]}</Badge>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Badge variant={restricted ? "secondary" : "outline"} className="gap-1">
+            {restricted ? <Lock className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
+            {ACCESS_LEVEL_LABELS[audio.access_level]}
+          </Badge>
           <Badge variant="outline">{AUDIO_STATUS_LABELS[audio.status]}</Badge>
           {transcription && (
             <Badge
@@ -214,7 +223,20 @@ function AudioDetail() {
               Transcrição: {REVIEW_STATUS_LABELS[transcription.review_status as keyof typeof REVIEW_STATUS_LABELS]}
             </Badge>
           )}
+          {canFeature && (
+            <Button
+              size="sm"
+              variant={audio.is_featured ? "default" : "outline"}
+              className="h-7"
+              disabled={featuredMutation.isPending}
+              onClick={() => featuredMutation.mutate(!audio.is_featured)}
+            >
+              <Star className="mr-1 h-3 w-3" />
+              {audio.is_featured ? "Em destaque" : "Destacar"}
+            </Button>
+          )}
         </div>
+
         {audio.description && (
           <p className="mt-4 whitespace-pre-line text-muted-foreground">{audio.description}</p>
         )}
