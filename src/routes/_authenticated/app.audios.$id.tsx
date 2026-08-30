@@ -242,6 +242,52 @@ function AudioDetail() {
         )}
       </div>
 
+      {(audio.summary || keywords.length > 0 || canReprocess) && audio.status === "ready" && (
+        <Card className="space-y-3 p-5" style={{ borderLeft: `4px solid ${accent}` }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 font-display text-lg text-foreground">
+              <Sparkles className="h-4 w-4" style={{ color: accent }} /> Resumo
+            </h2>
+            {canReprocess && (
+              <Button
+                size="sm" variant="outline"
+                disabled={insightsMutation.isPending}
+                onClick={() => insightsMutation.mutate(true)}
+              >
+                {insightsMutation.isPending
+                  ? <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  : <RefreshCw className="mr-2 h-3 w-3" />}
+                {audio.summary ? "Gerar novamente" : "Gerar resumo"}
+              </Button>
+            )}
+          </div>
+
+          {audio.summary ? (
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{audio.summary}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {insightsMutation.isPending
+                ? "Gerando resumo descritivo com IA…"
+                : "Resumo ainda não gerado para este áudio."}
+            </p>
+          )}
+
+          {keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {keywords.map((k) => (
+                <Badge key={k} variant="outline" className="text-[11px]">{k}</Badge>
+              ))}
+            </div>
+          )}
+
+          <p className="pt-1 text-xs text-muted-foreground">
+            Síntese descritiva gerada por IA a partir da transcrição — sem interpretações
+            nem identificação de quem falou.
+          </p>
+        </Card>
+      )}
+
+
       {audio.status !== "ready" ? (
         audio.status === "error" ? (
           <Card className="space-y-3 p-6">
