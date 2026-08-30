@@ -45,7 +45,16 @@ interface Props {
   fallbackText?: string;
   /** Fires once the real audio duration is known. */
   onDurationKnown?: (duration: number) => void;
+  /** Fires na primeira reprodução (para contabilizar audiência). */
+  onFirstPlay?: () => void;
+  /** Cor do trabalho, usada nos destaques do player. */
+  accentColor?: string;
+  /** Oculta a lista de transcrição (quando o pai controla a exibição). */
+  hideTranscript?: boolean;
+  /** Altura máxima da lista de transcrição. */
+  listMaxHeight?: string;
 }
+
 
 
 function TimeField({
@@ -93,7 +102,10 @@ function TimeField({
   );
 }
 
-export function SyncedTranscript({ src, segments, editable, editableTimestamps, onChangeSegments, fallbackText, onDurationKnown }: Props) {
+export function SyncedTranscript({
+  src, segments, editable, editableTimestamps, onChangeSegments, fallbackText,
+  onDurationKnown, onFirstPlay, accentColor, hideTranscript, listMaxHeight,
+}: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [time, setTime] = useState(0);
@@ -105,6 +117,11 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
   const timeRef = useRef(0);
   const onDurationKnownRef = useRef(onDurationKnown);
   useEffect(() => { onDurationKnownRef.current = onDurationKnown; }, [onDurationKnown]);
+  const firstPlayRef = useRef(false);
+  const onFirstPlayRef = useRef(onFirstPlay);
+  useEffect(() => { onFirstPlayRef.current = onFirstPlay; }, [onFirstPlay]);
+  const accent = accentColor || "hsl(var(--brand))";
+
 
 
   const timeEditing = !!(editable && editableTimestamps);
@@ -122,8 +139,15 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
       if (d && isFinite(d)) onDurationKnownRef.current?.(d);
     };
 
-    const onPlay = () => setPlaying(true);
+    const onPlay = () => {
+      setPlaying(true);
+      if (!firstPlayRef.current) {
+        firstPlayRef.current = true;
+        onFirstPlayRef.current?.();
+      }
+    };
     const onPause = () => setPlaying(false);
+
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("durationchange", onDur);
     a.addEventListener("play", onPlay);
@@ -211,30 +235,51 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
     <div className="flex flex-col gap-4">
       <audio ref={audioRef} src={src} preload="metadata" />
 
-      <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <Button size="icon" variant="outline" onClick={() => seek(Math.max(0, time - 5))}><SkipBack className="h-4 w-4" /></Button>
-          <Button size="icon" onClick={toggle} className="h-12 w-12 rounded-full">
-            {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-          </Button>
-          <Button size="icon" variant="outline" onClick={() => seek(Math.min(duration, time + 5))}><SkipForward className="h-4 w-4" /></Button>
-          <div className="ml-2 min-w-0 flex-1">
-            <Slider
-              value={[time]} min={0} max={duration || 1} step={0.1}
-              onValueChange={(v) => seek(v[0])}
-            />
-            <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-              <span>{formatTime(time)}</span>
-              <span>{formatTime(duration)}</span>
-            </div>
-          </div>
+      <div
+        className="sticky top-2 z-10 rounded-xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur"
+        style={{ borderTop: `3px solid ${accent}` }}
+      >
+        <Slider
+          value={[time]} min={0} max={duration || 1} step={0.1}
+          onValueChange={(v) => seek(v[0])}
+        />
+        <div className="mt-1 flex justify-between text-xs tabular-nums text-muted-foreground">
+          <span>{formatTime(time)}</span>
+          <span>-{formatTime(Math.max(0, duration - time))}</span>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Velocidade:</span>
-          {[0.75, 1, 1.25, 1.5].map((r) => (
+
+        <div className="mt-3 flex items-center justify-center gap-4">
+          <Button
+            size="icon" variant="outline" className="h-11 w-11"
+            aria-label="Voltar 15 segundos"
+            onClick={() => seek(Math.max(0, time - 15))}
+          >
+            <SkipBack className="h-5 w-5" />
+          </Button>
+          <Button
+            onClick={toggle}
+            aria-label={playing ? "Pausar" : "Reproduzir"}
+            className="h-14 w-14 rounded-full"
+            style={{ backgroundColor: accent }}
+          >
+            {playing ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+          </Button>
+          <Button
+            size="icon" variant="outline" className="h-11 w-11"
+            aria-label="Avançar 15 segundos"
+            onClick={() => seek(Math.min(duration, time + 15))}
+          >
+            <SkipForward className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+          <span className="text-xs text-muted-foreground">Velocidade</span>
+          {[0.75, 1, 1.25, 1.5, 2].map((r) => (
             <Button
               key={r} size="sm"
               variant={rate === r ? "default" : "outline"}
+              className="h-8 px-2.5 text-xs"
               onClick={() => setRate(r)}
             >{r}x</Button>
           ))}
@@ -243,12 +288,13 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
               size="sm"
               variant={loopSegment ? "default" : "outline"}
               onClick={() => setLoopSegment((v) => !v)}
-              className="ml-2"
+              className="h-8"
             >
               <Repeat className="mr-1 h-3 w-3" /> Repetir segmento
             </Button>
           )}
         </div>
+
 
         {timeEditing && (
           <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
@@ -268,8 +314,11 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
 
       <div
         ref={listRef}
-        className="max-h-[60vh] overflow-y-auto rounded-lg border border-border bg-card p-3"
+        hidden={hideTranscript}
+        style={{ maxHeight: listMaxHeight ?? "60vh" }}
+        className="overflow-y-auto rounded-lg border border-border bg-card p-3"
       >
+
         {segments.length === 0 ? (
           fallbackText ? (
             <div className="space-y-2 p-4">

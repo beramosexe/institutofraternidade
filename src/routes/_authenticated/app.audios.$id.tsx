@@ -4,7 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AlertTriangle, ArrowLeft, Clock, Loader2, RefreshCw, Save } from "lucide-react";
+import {
+  AlertTriangle, ArrowLeft, Clock, Loader2, RefreshCw, Save, Sparkles,
+  Star, ChevronDown, ChevronUp, Lock, Globe,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +15,16 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { SyncedTranscript, type Segment } from "@/components/app/SyncedTranscript";
 import { useMyAccess } from "@/components/app/AppShell";
-import { getAudioStreamUrl, failStaleTranscriptions, reprocessAudio } from "@/lib/audios.functions";
+import {
+  getAudioStreamUrl, failStaleTranscriptions, reprocessAudio,
+  registerAudioPlay, setAudioFeatured,
+} from "@/lib/audios.functions";
+import { generateAudioInsights } from "@/lib/audio-insights.functions";
 import { saveTranscription } from "@/lib/transcriptions.functions";
 import { segmentsFromText } from "@/lib/transcript-segments";
 
 import { ACCESS_LEVEL_LABELS, AUDIO_STATUS_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
+
 
 export const Route = createFileRoute("/_authenticated/app/audios/$id")({
   component: AudioDetail,
@@ -29,7 +37,11 @@ function AudioDetail() {
   const saveFn = useServerFn(saveTranscription);
   const failStaleFn = useServerFn(failStaleTranscriptions);
   const reprocessFn = useServerFn(reprocessAudio);
+  const insightsFn = useServerFn(generateAudioInsights);
+  const playFn = useServerFn(registerAudioPlay);
+  const featuredFn = useServerFn(setAudioFeatured);
   const { data: access } = useMyAccess();
+  const [transcriptView, setTranscriptView] = useState<"closed" | "partial" | "full">("partial");
 
   const { data: audio, isLoading } = useQuery({
     queryKey: ["audio", id],
@@ -37,9 +49,10 @@ function AudioDetail() {
       const { data, error } = await supabase
         .from("audios")
         .select(`
-          *, works(name),
+          *, works(name, color),
           audio_transcriptions(id, text, segments, review_status, reviewed_at)
         `)
+
         .eq("id", id)
         .maybeSingle();
       if (error) throw new Error(error.message);
@@ -68,6 +81,39 @@ function AudioDetail() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao reprocessar"),
   });
+
+  const insightsMutation = useMutation({
+    mutationFn: (force: boolean) => insightsFn({ data: { audio_id: id, force } }),
+    onSuccess: (r) => {
+      if (!r.skipped) toast.success("Resumo e palavras-chave gerados pela IA.");
+      qc.invalidateQueries({ queryKey: ["audio", id] });
+      qc.invalidateQueries({ queryKey: ["library-audios"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao gerar resumo"),
+  });
+
+  const featuredMutation = useMutation({
+    mutationFn: (featured: boolean) => featuredFn({ data: { id, featured } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["audio", id] });
+      qc.invalidateQueries({ queryKey: ["library-audios"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao destacar"),
+  });
+
+  // Gera o resumo automaticamente na primeira vez que a transcrição fica pronta.
+  const insightsTriedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!audio || audio.status !== "ready" || audio.summary) return;
+    const t = Array.isArray(audio.audio_transcriptions) ? audio.audio_transcriptions[0] : audio.audio_transcriptions;
+    const text = (t as { text?: string } | null)?.text;
+    if (!text || text.trim().length < 40) return;
+    if (insightsTriedRef.current === id) return;
+    insightsTriedRef.current = id;
+    insightsMutation.mutate(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audio?.status, audio?.summary, id]);
+
 
   const { data: stream } = useQuery({
     queryKey: ["audio-stream", id],
@@ -138,25 +184,34 @@ function AudioDetail() {
       perms.includes("audio.edit_any") ||
       isOwner);
   const canReprocess = perms.includes("audio.reprocess") || perms.includes("audio.edit_any") || isOwner;
-
+  const canFeature = perms.includes("audio.edit_any");
+  const accent = (audio.works as { color?: string | null } | null)?.color || "hsl(var(--brand))";
+  const restricted = audio.access_level !== "public";
+  const keywords = (audio.keywords as string[] | null) ?? [];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-10">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-10">
       <Link to="/app/audios" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Voltar à biblioteca
       </Link>
 
       <div>
-        <p className="text-xs uppercase tracking-[0.22em] text-brand">{audio.message_source ?? "Mensagem"}</p>
-        <h1 className="mt-1 font-display text-3xl text-foreground">{audio.title}</h1>
+        <p className="text-xs uppercase tracking-[0.22em]" style={{ color: accent }}>
+          {audio.message_source ?? "Mensagem"}
+        </p>
+        <h1 className="mt-1 font-display text-2xl text-foreground md:text-3xl">{audio.title}</h1>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           {audio.works?.name && <span>{audio.works.name}</span>}
           {audio.recorded_at && (
-            <span>· Gravada em {format(new Date(audio.recorded_at), "d 'de' MMM 'de' yyyy", { locale: ptBR })}</span>
+            <span>· Gravada em {format(new Date(`${audio.recorded_at}T12:00:00`), "d 'de' MMM 'de' yyyy", { locale: ptBR })}</span>
           )}
+          {(audio.play_count ?? 0) > 0 && <span>· {audio.play_count} reproduções</span>}
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Badge variant="secondary">{ACCESS_LEVEL_LABELS[audio.access_level]}</Badge>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Badge variant={restricted ? "secondary" : "outline"} className="gap-1">
+            {restricted ? <Lock className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
+            {ACCESS_LEVEL_LABELS[audio.access_level]}
+          </Badge>
           <Badge variant="outline">{AUDIO_STATUS_LABELS[audio.status]}</Badge>
           {transcription && (
             <Badge
@@ -168,11 +223,70 @@ function AudioDetail() {
               Transcrição: {REVIEW_STATUS_LABELS[transcription.review_status as keyof typeof REVIEW_STATUS_LABELS]}
             </Badge>
           )}
+          {canFeature && (
+            <Button
+              size="sm"
+              variant={audio.is_featured ? "default" : "outline"}
+              className="h-7"
+              disabled={featuredMutation.isPending}
+              onClick={() => featuredMutation.mutate(!audio.is_featured)}
+            >
+              <Star className="mr-1 h-3 w-3" />
+              {audio.is_featured ? "Em destaque" : "Destacar"}
+            </Button>
+          )}
         </div>
+
         {audio.description && (
           <p className="mt-4 whitespace-pre-line text-muted-foreground">{audio.description}</p>
         )}
       </div>
+
+      {(audio.summary || keywords.length > 0 || canReprocess) && audio.status === "ready" && (
+        <Card className="space-y-3 p-5" style={{ borderLeft: `4px solid ${accent}` }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 font-display text-lg text-foreground">
+              <Sparkles className="h-4 w-4" style={{ color: accent }} /> Resumo
+            </h2>
+            {canReprocess && (
+              <Button
+                size="sm" variant="outline"
+                disabled={insightsMutation.isPending}
+                onClick={() => insightsMutation.mutate(true)}
+              >
+                {insightsMutation.isPending
+                  ? <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  : <RefreshCw className="mr-2 h-3 w-3" />}
+                {audio.summary ? "Gerar novamente" : "Gerar resumo"}
+              </Button>
+            )}
+          </div>
+
+          {audio.summary ? (
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{audio.summary}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {insightsMutation.isPending
+                ? "Gerando resumo descritivo com IA…"
+                : "Resumo ainda não gerado para este áudio."}
+            </p>
+          )}
+
+          {keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {keywords.map((k) => (
+                <Badge key={k} variant="outline" className="text-[11px]">{k}</Badge>
+              ))}
+            </div>
+          )}
+
+          <p className="pt-1 text-xs text-muted-foreground">
+            Síntese descritiva gerada por IA a partir da transcrição — sem interpretações
+            nem identificação de quem falou.
+          </p>
+        </Card>
+      )}
+
 
       {audio.status !== "ready" ? (
         audio.status === "error" ? (
@@ -255,6 +369,28 @@ function AudioDetail() {
             </div>
           )}
 
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-lg text-foreground">Transcrição</h2>
+            <div className="flex items-center gap-1 rounded-md border border-border p-1">
+              {([
+                ["closed", "Oculta"],
+                ["partial", "Parcial"],
+                ["full", "Completa"],
+              ] as const).map(([v, label]) => (
+                <Button
+                  key={v}
+                  size="sm"
+                  variant={transcriptView === v ? "default" : "ghost"}
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setTranscriptView(v)}
+                >
+                  {v === "closed" ? <ChevronDown className="mr-1 h-3 w-3" /> : v === "full" ? <ChevronUp className="mr-1 h-3 w-3" /> : null}
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <SyncedTranscript
             src={stream.url}
             segments={segments}
@@ -263,10 +399,15 @@ function AudioDetail() {
             onChangeSegments={onChangeSegments}
             fallbackText={transcription?.text ?? undefined}
             onDurationKnown={handleDurationKnown}
+            onFirstPlay={() => { playFn({ data: { id } }).catch(() => {}); }}
+            accentColor={accent}
+            hideTranscript={!editing && transcriptView === "closed"}
+            listMaxHeight={transcriptView === "full" ? "none" : "45vh"}
           />
 
         </>
       )}
     </div>
+
   );
 }
