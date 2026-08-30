@@ -4,7 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AlertTriangle, ArrowLeft, Clock, Loader2, RefreshCw, Save } from "lucide-react";
+import {
+  AlertTriangle, ArrowLeft, Clock, Loader2, RefreshCw, Save, Sparkles,
+  Star, ChevronDown, ChevronUp, Lock, Globe,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +15,16 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { SyncedTranscript, type Segment } from "@/components/app/SyncedTranscript";
 import { useMyAccess } from "@/components/app/AppShell";
-import { getAudioStreamUrl, failStaleTranscriptions, reprocessAudio } from "@/lib/audios.functions";
+import {
+  getAudioStreamUrl, failStaleTranscriptions, reprocessAudio,
+  registerAudioPlay, setAudioFeatured,
+} from "@/lib/audios.functions";
+import { generateAudioInsights } from "@/lib/audio-insights.functions";
 import { saveTranscription } from "@/lib/transcriptions.functions";
 import { segmentsFromText } from "@/lib/transcript-segments";
 
 import { ACCESS_LEVEL_LABELS, AUDIO_STATUS_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
+
 
 export const Route = createFileRoute("/_authenticated/app/audios/$id")({
   component: AudioDetail,
