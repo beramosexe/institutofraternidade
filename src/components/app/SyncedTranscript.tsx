@@ -102,7 +102,10 @@ function TimeField({
   );
 }
 
-export function SyncedTranscript({ src, segments, editable, editableTimestamps, onChangeSegments, fallbackText, onDurationKnown }: Props) {
+export function SyncedTranscript({
+  src, segments, editable, editableTimestamps, onChangeSegments, fallbackText,
+  onDurationKnown, onFirstPlay, accentColor, hideTranscript, listMaxHeight,
+}: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [time, setTime] = useState(0);
@@ -114,6 +117,11 @@ export function SyncedTranscript({ src, segments, editable, editableTimestamps, 
   const timeRef = useRef(0);
   const onDurationKnownRef = useRef(onDurationKnown);
   useEffect(() => { onDurationKnownRef.current = onDurationKnown; }, [onDurationKnown]);
+  const firstPlayRef = useRef(false);
+  const onFirstPlayRef = useRef(onFirstPlay);
+  useEffect(() => { onFirstPlayRef.current = onFirstPlay; }, [onFirstPlay]);
+  const accent = accentColor || "hsl(var(--brand))";
+
 
 
   const timeEditing = !!(editable && editableTimestamps);
