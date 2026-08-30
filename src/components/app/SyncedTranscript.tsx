@@ -45,7 +45,16 @@ interface Props {
   fallbackText?: string;
   /** Fires once the real audio duration is known. */
   onDurationKnown?: (duration: number) => void;
+  /** Fires na primeira reprodução (para contabilizar audiência). */
+  onFirstPlay?: () => void;
+  /** Cor do trabalho, usada nos destaques do player. */
+  accentColor?: string;
+  /** Oculta a lista de transcrição (quando o pai controla a exibição). */
+  hideTranscript?: boolean;
+  /** Altura máxima da lista de transcrição. */
+  listMaxHeight?: string;
 }
+
 
 
 function TimeField({
