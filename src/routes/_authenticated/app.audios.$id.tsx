@@ -369,6 +369,28 @@ function AudioDetail() {
             </div>
           )}
 
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-lg text-foreground">Transcrição</h2>
+            <div className="flex items-center gap-1 rounded-md border border-border p-1">
+              {([
+                ["closed", "Oculta"],
+                ["partial", "Parcial"],
+                ["full", "Completa"],
+              ] as const).map(([v, label]) => (
+                <Button
+                  key={v}
+                  size="sm"
+                  variant={transcriptView === v ? "default" : "ghost"}
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setTranscriptView(v)}
+                >
+                  {v === "closed" ? <ChevronDown className="mr-1 h-3 w-3" /> : v === "full" ? <ChevronUp className="mr-1 h-3 w-3" /> : null}
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <SyncedTranscript
             src={stream.url}
             segments={segments}
@@ -377,10 +399,15 @@ function AudioDetail() {
             onChangeSegments={onChangeSegments}
             fallbackText={transcription?.text ?? undefined}
             onDurationKnown={handleDurationKnown}
+            onFirstPlay={() => { playFn({ data: { id } }).catch(() => {}); }}
+            accentColor={accent}
+            hideTranscript={!editing && transcriptView === "closed"}
+            listMaxHeight={transcriptView === "full" ? "none" : "45vh"}
           />
 
         </>
       )}
     </div>
+
   );
 }
