@@ -139,8 +139,15 @@ export function SyncedTranscript({
       if (d && isFinite(d)) onDurationKnownRef.current?.(d);
     };
 
-    const onPlay = () => setPlaying(true);
+    const onPlay = () => {
+      setPlaying(true);
+      if (!firstPlayRef.current) {
+        firstPlayRef.current = true;
+        onFirstPlayRef.current?.();
+      }
+    };
     const onPause = () => setPlaying(false);
+
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("durationchange", onDur);
     a.addEventListener("play", onPlay);
