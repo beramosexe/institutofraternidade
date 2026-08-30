@@ -37,7 +37,11 @@ function AudioDetail() {
   const saveFn = useServerFn(saveTranscription);
   const failStaleFn = useServerFn(failStaleTranscriptions);
   const reprocessFn = useServerFn(reprocessAudio);
+  const insightsFn = useServerFn(generateAudioInsights);
+  const playFn = useServerFn(registerAudioPlay);
+  const featuredFn = useServerFn(setAudioFeatured);
   const { data: access } = useMyAccess();
+  const [transcriptView, setTranscriptView] = useState<"closed" | "partial" | "full">("partial");
 
   const { data: audio, isLoading } = useQuery({
     queryKey: ["audio", id],
@@ -45,9 +49,10 @@ function AudioDetail() {
       const { data, error } = await supabase
         .from("audios")
         .select(`
-          *, works(name),
+          *, works(name, color),
           audio_transcriptions(id, text, segments, review_status, reviewed_at)
         `)
+
         .eq("id", id)
         .maybeSingle();
       if (error) throw new Error(error.message);
