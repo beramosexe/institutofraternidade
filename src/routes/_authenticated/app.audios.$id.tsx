@@ -82,6 +82,39 @@ function AudioDetail() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao reprocessar"),
   });
 
+  const insightsMutation = useMutation({
+    mutationFn: (force: boolean) => insightsFn({ data: { audio_id: id, force } }),
+    onSuccess: (r) => {
+      if (!r.skipped) toast.success("Resumo e palavras-chave gerados pela IA.");
+      qc.invalidateQueries({ queryKey: ["audio", id] });
+      qc.invalidateQueries({ queryKey: ["library-audios"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao gerar resumo"),
+  });
+
+  const featuredMutation = useMutation({
+    mutationFn: (featured: boolean) => featuredFn({ data: { id, featured } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["audio", id] });
+      qc.invalidateQueries({ queryKey: ["library-audios"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao destacar"),
+  });
+
+  // Gera o resumo automaticamente na primeira vez que a transcrição fica pronta.
+  const insightsTriedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!audio || audio.status !== "ready" || audio.summary) return;
+    const t = Array.isArray(audio.audio_transcriptions) ? audio.audio_transcriptions[0] : audio.audio_transcriptions;
+    const text = (t as { text?: string } | null)?.text;
+    if (!text || text.trim().length < 40) return;
+    if (insightsTriedRef.current === id) return;
+    insightsTriedRef.current = id;
+    insightsMutation.mutate(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audio?.status, audio?.summary, id]);
+
+
   const { data: stream } = useQuery({
     queryKey: ["audio-stream", id],
     queryFn: () => streamFn({ data: { audio_id: id } }),
