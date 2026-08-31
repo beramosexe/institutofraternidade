@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Upload as UploadIcon } from "lucide-react";
+import { Loader2, Upload as UploadIcon, Wand2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,8 @@ import { registerAudio } from "@/lib/audios.functions";
 import { listEntitiesForWork } from "@/lib/entities.functions";
 import { useMyAccess } from "@/components/app/AppShell";
 import { useAuth } from "@/lib/auth-context";
+import { suggestAudioTitle } from "@/lib/audio-title";
+import { UploadTokens } from "@/components/app/UploadTokens";
 
 const OTHER_VALUE = "__other__";
 const NONE_VALUE = "__none__";
@@ -251,6 +253,8 @@ function UploadPage() {
           </Button>
         </Card>
       </form>
+
+      <UploadTokens />
     </div>
   );
 }
