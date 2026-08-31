@@ -167,3 +167,30 @@
   }
   .text-balance { text-wrap: balance; }
 }
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* iOS zooms into inputs whose font-size is below 16px */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea,
+    button {
+      font-size: 16px;
+    }
+  }
+}
+
+@layer utilities {
+  .safe-top { padding-top: env(safe-area-inset-top, 0px); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-x {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .scroll-momentum { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+}
