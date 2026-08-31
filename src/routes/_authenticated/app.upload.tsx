@@ -153,9 +153,25 @@ function UploadPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label htmlFor="title">Título *</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="title">Título *</Label>
+                <Button
+                  type="button" size="sm" variant="ghost" className="h-6 px-2 text-xs"
+                  onClick={() => setTitle(suggestAudioTitle({
+                    audioType,
+                    entityName: entityChoice === OTHER_VALUE
+                      ? messageSourceOther
+                      : entities.find((e) => e.id === entityChoice)?.name ?? null,
+                    workName: works?.find((w) => w.id === workId)?.name ?? null,
+                    recordedAt: recordedAt || null,
+                  }))}
+                >
+                  <Wand2 className="mr-1 h-3 w-3" /> Sugerir
+                </Button>
+              </div>
               <Input id="title" required value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
             </div>
+
             <div>
               <Label htmlFor="source">Mensagem de quem (canalização)</Label>
               <Select value={entityChoice} onValueChange={setEntityChoice}>
