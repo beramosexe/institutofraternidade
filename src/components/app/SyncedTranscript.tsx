@@ -236,7 +236,7 @@ export function SyncedTranscript({
       <audio ref={audioRef} src={src} preload="metadata" />
 
       <div
-        className="sticky top-2 z-10 rounded-xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur"
+        className="sticky top-16 z-10 rounded-xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur md:top-2"
         style={{ borderTop: `3px solid ${accent}` }}
       >
         <Slider
