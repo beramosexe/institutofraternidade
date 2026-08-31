@@ -264,26 +264,63 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile top bar */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:hidden">
+        <header className="safe-top sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:hidden">
           <Link to="/app"><Logo /></Link>
           <button
-            className="rounded-md p-2"
+            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Menu"
+            aria-expanded={mobileOpen}
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </header>
-        {mobileOpen && (
-          <div className="border-b border-border bg-sidebar px-3 py-3 md:hidden">
+
+        {/* Mobile drawer */}
+        <div
+          className={[
+            "fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm transition-opacity md:hidden",
+            mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
+          ].join(" ")}
+          onClick={() => setMobileOpen(false)}
+          aria-hidden
+        />
+        <aside
+          className={[
+            "fixed inset-y-0 right-0 z-50 flex w-[86%] max-w-xs flex-col border-l border-sidebar-border bg-sidebar shadow-2xl transition-transform duration-200 md:hidden",
+            mobileOpen ? "translate-x-0" : "translate-x-full",
+          ].join(" ")}
+        >
+          <div className="safe-top flex items-center justify-between border-b border-sidebar-border px-4 py-3">
+            <span className="text-sm font-medium text-sidebar-foreground truncate">
+              {access?.profile?.full_name ?? "Menu"}
+            </span>
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-md"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Fechar menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="scroll-momentum flex-1 overflow-y-auto px-3 py-4">
             <NavLinks onClick={() => setMobileOpen(false)} />
-            <Button variant="ghost" size="sm" onClick={signOut} className="mt-3 w-full justify-start gap-2">
+          </div>
+          <div className="safe-bottom border-t border-sidebar-border p-3">
+            {access?.membershipStatus === "inactive" && (
+              <div className="mb-2 px-1">
+                <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
+                  Associado inativo
+                </Badge>
+              </div>
+            )}
+            <Button variant="ghost" onClick={signOut} className="h-11 w-full justify-start gap-2">
               <LogOut className="h-4 w-4" /> Sair
             </Button>
           </div>
-        )}
+        </aside>
 
-        <main className="min-w-0 flex-1">
+        <main className="safe-bottom safe-x min-w-0 flex-1">
           {isLoading ? <div className="p-8 text-muted-foreground">Carregando…</div> : children}
         </main>
       </div>
