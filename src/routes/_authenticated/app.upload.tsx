@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Upload as UploadIcon } from "lucide-react";
+import { Loader2, Upload as UploadIcon, Wand2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,8 @@ import { registerAudio } from "@/lib/audios.functions";
 import { listEntitiesForWork } from "@/lib/entities.functions";
 import { useMyAccess } from "@/components/app/AppShell";
 import { useAuth } from "@/lib/auth-context";
+import { suggestAudioTitle } from "@/lib/audio-title";
+import { UploadTokens } from "@/components/app/UploadTokens";
 
 const OTHER_VALUE = "__other__";
 const NONE_VALUE = "__none__";
@@ -153,9 +155,25 @@ function UploadPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label htmlFor="title">Título *</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="title">Título *</Label>
+                <Button
+                  type="button" size="sm" variant="ghost" className="h-6 px-2 text-xs"
+                  onClick={() => setTitle(suggestAudioTitle({
+                    audioType,
+                    entityName: entityChoice === OTHER_VALUE
+                      ? messageSourceOther
+                      : entities.find((e) => e.id === entityChoice)?.name ?? null,
+                    workName: works?.find((w) => w.id === workId)?.name ?? null,
+                    recordedAt: recordedAt || null,
+                  }))}
+                >
+                  <Wand2 className="mr-1 h-3 w-3" /> Sugerir
+                </Button>
+              </div>
               <Input id="title" required value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
             </div>
+
             <div>
               <Label htmlFor="source">Mensagem de quem (canalização)</Label>
               <Select value={entityChoice} onValueChange={setEntityChoice}>
@@ -235,6 +253,8 @@ function UploadPage() {
           </Button>
         </Card>
       </form>
+
+      <UploadTokens />
     </div>
   );
 }
