@@ -64,6 +64,9 @@ function PurchasesPage() {
   const updateRequestFn = useServerFn(updatePurchaseRequest);
   const createPurchaseFn = useServerFn(createPurchase);
   const stockFn = useServerFn(listStockItems);
+  const parseInvoiceFn = useServerFn(parseInvoice);
+  const addDocFn = useServerFn(addPurchaseDocument);
+  const createStockItemFn = useServerFn(createStockItem);
 
   const { data: requests } = useQuery({ queryKey: ["purchase-requests"], queryFn: () => requestsFn({ data: {} }), retry: false });
   const { data: purchases } = useQuery({ queryKey: ["purchases"], queryFn: () => purchasesFn(), retry: false });
@@ -84,6 +87,7 @@ function PurchasesPage() {
 
   /* ---- nova compra ---- */
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"nota" | "conferencia" | "manual">("nota");
   const [purchasedOn, setPurchasedOn] = useState(() => new Date().toISOString().slice(0, 10));
   const [supplier, setSupplier] = useState("");
   const [notes, setNotes] = useState("");
@@ -91,35 +95,141 @@ function PurchasesPage() {
   const [requestId, setRequestId] = useState<string>("");
   const [lines, setLines] = useState<Line[]>([emptyLine()]);
 
+  /* ---- nota fiscal ---- */
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const [docPath, setDocPath] = useState<string | null>(null);
+  const [docMime, setDocMime] = useState<string | null>(null);
+  const [docPreview, setDocPreview] = useState<string | null>(null);
+  const [aiRaw, setAiRaw] = useState<unknown>(null);
+  const [invoiceTotal, setInvoiceTotal] = useState<number | null>(null);
+  const [readStep, setReadStep] = useState<"idle" | "uploading" | "reading">("idle");
+
   const total = lines.reduce((s, l) => s + (Number(l.unit_price) || 0) * (Number(l.quantity) || 0), 0);
+  const totalMismatch = invoiceTotal != null && Math.abs(invoiceTotal - total) > 0.05;
+
+  const resetForm = () => {
+    setTab("nota");
+    setSupplier(""); setNotes(""); setRequestId(""); setLines([emptyLine()]);
+    setPurchasedOn(new Date().toISOString().slice(0, 10));
+    setDocPath(null); setDocMime(null); setDocPreview(null); setAiRaw(null);
+    setInvoiceTotal(null); setReadStep("idle");
+  };
+
+  const readInvoice = async (file: File) => {
+    try {
+      setReadStep("uploading");
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) throw new Error("Sessão expirada. Entre novamente.");
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().slice(0, 5);
+      const path = `notas/${uid}/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("documentos").upload(path, file, {
+        contentType: file.type || undefined,
+        upsert: false,
+      });
+      if (upErr) throw new Error(upErr.message);
+
+      setDocPath(path);
+      setDocMime(file.type || null);
+      setDocPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+
+      setReadStep("reading");
+      const result = await parseInvoiceFn({ data: { storage_path: path, mime_type: file.type || undefined } });
+
+      if (result.supplier) setSupplier(result.supplier);
+      if (result.purchased_on) setPurchasedOn(result.purchased_on);
+      setInvoiceTotal(result.total ?? null);
+      setAiRaw(result.raw ?? null);
+      setLines(
+        result.items.length
+          ? result.items.map((i) => ({
+              item_id: i.item_id,
+              name: i.name,
+              unit: i.unit,
+              quantity: String(i.quantity ?? 1),
+              unit_price: String(i.unit_price ?? 0),
+              category: i.category ?? "",
+              from_ai: true,
+            }))
+          : [emptyLine()],
+      );
+      setTab("conferencia");
+      toast.success(
+        result.items.length ? "Nota lida. Confira os dados antes de salvar." : "Nota lida, mas nenhum item foi identificado.",
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao ler a nota.");
+    } finally {
+      setReadStep("idle");
+      if (fileRef.current) fileRef.current.value = "";
+      if (cameraRef.current) cameraRef.current.value = "";
+    }
+  };
 
   const create = useMutation({
-    mutationFn: () => createPurchaseFn({
-      data: {
-        purchased_on: purchasedOn,
-        supplier: supplier || undefined,
-        notes: notes || undefined,
-        request_id: requestId || null,
-        apply_to_stock: applyStock,
-        items: lines.filter((l) => l.name.trim()).map((l) => ({
-          item_id: l.item_id,
-          name: l.name,
-          unit: l.unit,
-          quantity: Number(l.quantity) || 0,
-          unit_price: Number(l.unit_price) || 0,
-        })),
-      },
-    }),
+    mutationFn: async () => {
+      const usable = lines.filter((l) => l.name.trim());
+
+      // cria no estoque os itens marcados com categoria e ainda não vinculados
+      const resolved = [] as Array<Line & { item_id: string | null }>;
+      for (const l of usable) {
+        if (!l.item_id && l.category.trim()) {
+          try {
+            const created = await createStockItemFn({
+              data: { name: l.name.trim(), category: l.category.trim(), unit: l.unit },
+            });
+            resolved.push({ ...l, item_id: (created as { id?: string } | null)?.id ?? null });
+            continue;
+          } catch {
+            /* segue sem vincular */
+          }
+        }
+        resolved.push(l);
+      }
+
+      const purchase = await createPurchaseFn({
+        data: {
+          purchased_on: purchasedOn,
+          supplier: supplier || undefined,
+          notes: notes || undefined,
+          request_id: requestId || null,
+          apply_to_stock: applyStock,
+          items: resolved.map((l) => ({
+            item_id: l.item_id,
+            name: l.name,
+            unit: l.unit,
+            quantity: Number(l.quantity) || 0,
+            unit_price: Number(l.unit_price) || 0,
+          })),
+        },
+      });
+
+      if (docPath && purchase?.id) {
+        await addDocFn({
+          data: {
+            purchase_id: purchase.id,
+            storage_path: docPath,
+            kind: "nota",
+            mime_type: docMime ?? undefined,
+            ai_suggestion: aiRaw ?? undefined,
+          },
+        });
+      }
+      return purchase;
+    },
     onSuccess: () => {
       toast.success("Compra registrada.");
-      setOpen(false); setSupplier(""); setNotes(""); setRequestId(""); setLines([emptyLine()]);
+      setOpen(false);
+      resetForm();
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const updateLine = (idx: number, patch: Partial<Line>) =>
-    setLines((ls) => ls.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+    setLines((ls) => ls.map((l, i) => (i === idx ? { ...l, ...patch, from_ai: false } : l)));
+
 
   const pendingRequests = (requests ?? []).filter((r) => !["purchased", "cancelled", "rejected"].includes(r.status));
 
