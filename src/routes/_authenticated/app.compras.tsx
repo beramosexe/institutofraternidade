@@ -44,9 +44,18 @@ export const Route = createFileRoute("/_authenticated/app/compras")({
 const money = (n: number) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const d = (s: string) => new Date(`${s}T12:00:00`).toLocaleDateString("pt-BR");
 
-type Line = { item_id: string | null; name: string; unit: string; quantity: string; unit_price: string };
+type Line = {
+  item_id: string | null;
+  name: string;
+  unit: string;
+  quantity: string;
+  unit_price: string;
+  category: string;
+  from_ai?: boolean;
+};
 
-const emptyLine = (): Line => ({ item_id: null, name: "", unit: "unidade", quantity: "1", unit_price: "0" });
+const emptyLine = (): Line => ({ item_id: null, name: "", unit: "unidade", quantity: "1", unit_price: "0", category: "" });
+
 
 function PurchasesPage() {
   const qc = useQueryClient();
