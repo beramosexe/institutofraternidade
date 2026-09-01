@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { Camera, Loader2, Plus, ShoppingCart, Sparkles, Trash2, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,9 +14,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createPurchase, listPurchaseRequests, listPurchases, updatePurchaseRequest } from "@/lib/purchases.functions";
-import { listStockItems } from "@/lib/stock.functions";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  addPurchaseDocument,
+  createPurchase,
+  listPurchaseRequests,
+  listPurchases,
+  parseInvoice,
+  updatePurchaseRequest,
+} from "@/lib/purchases.functions";
+import { createStockItem, listStockItems } from "@/lib/stock.functions";
 import { PRIORITY_LABELS, PURCHASE_REQUEST_STATUS_LABELS } from "@/lib/permissions";
+
 
 export const Route = createFileRoute("/_authenticated/app/compras")({
   head: () => ({
