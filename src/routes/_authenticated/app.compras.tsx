@@ -334,81 +334,177 @@ function PurchasesPage() {
       </Tabs>
 
       {/* Dialog nova compra */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-3xl">
+      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+        <DialogContent className="max-h-[92vh] max-w-3xl overflow-y-auto">
           <DialogHeader><DialogTitle>Registrar compra</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <Label htmlFor="p-date">Data *</Label>
-                <Input id="p-date" type="date" value={purchasedOn} onChange={(e) => setPurchasedOn(e.target.value)} />
-              </div>
-              <div>
-                <Label htmlFor="p-sup">Fornecedor</Label>
-                <Input id="p-sup" value={supplier} onChange={(e) => setSupplier(e.target.value)} />
-              </div>
-              <div>
-                <Label>Pedido relacionado</Label>
-                <Select value={requestId} onValueChange={setRequestId}>
-                  <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
-                  <SelectContent>
-                    {pendingRequests.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Itens</Label>
-              {lines.map((l, idx) => (
-                <div key={idx} className="grid gap-2 sm:grid-cols-[1fr_90px_90px_110px_40px]">
-                  <Input
-                    placeholder="Nome do item"
-                    value={l.name}
-                    onChange={(e) => {
-                      const name = e.target.value;
-                      const match = (stockItems ?? []).find((s) => s.name.toLowerCase() === name.toLowerCase());
-                      updateLine(idx, { name, item_id: match?.id ?? null, unit: match?.unit ?? l.unit });
-                    }}
-                    list="stock-item-names"
-                  />
-                  <Input placeholder="Un." value={l.unit} onChange={(e) => updateLine(idx, { unit: e.target.value })} />
-                  <Input type="number" min={0} step="any" placeholder="Qtd" value={l.quantity}
-                    onChange={(e) => updateLine(idx, { quantity: e.target.value })} />
-                  <Input type="number" min={0} step="0.01" placeholder="Valor un." value={l.unit_price}
-                    onChange={(e) => updateLine(idx, { unit_price: e.target.value })} />
-                  <Button variant="ghost" size="sm" onClick={() => setLines((ls) => ls.filter((_, i) => i !== idx))}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
+          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+            <TabsList className="w-full">
+              <TabsTrigger value="nota" className="flex-1">Nota fiscal (IA)</TabsTrigger>
+              <TabsTrigger value="conferencia" className="flex-1" disabled={!docPath}>Conferência</TabsTrigger>
+              <TabsTrigger value="manual" className="flex-1">Manual</TabsTrigger>
+            </TabsList>
+
+            {/* ---- Captura da nota ---- */}
+            <TabsContent value="nota" className="mt-4 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Fotografe a nota fiscal ou envie um arquivo. A IA lê os dados, categoriza os itens e
+                abre a aba de conferência para você corrigir antes de salvar.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button className="gap-2" disabled={readStep !== "idle"} onClick={() => cameraRef.current?.click()}>
+                  {readStep === "idle" ? <Camera className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
+                  Tirar foto da nota
+                </Button>
+                <Button variant="outline" className="gap-2" disabled={readStep !== "idle"} onClick={() => fileRef.current?.click()}>
+                  <Upload className="h-4 w-4" /> Enviar arquivo (foto ou PDF)
+                </Button>
+                <Button variant="ghost" onClick={() => setTab("manual")}>Preencher manualmente</Button>
+              </div>
+              <input
+                ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void readInvoice(f); }}
+              />
+              <input
+                ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void readInvoice(f); }}
+              />
+              {readStep !== "idle" && (
+                <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-3 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {readStep === "uploading" ? "Enviando a nota..." : "Lendo a nota com a IA..."}
+                </div>
+              )}
+              {docPreview && (
+                <img src={docPreview} alt="Nota fiscal enviada" className="max-h-64 rounded-md border object-contain" />
+              )}
+            </TabsContent>
+
+            {/* ---- Conferência (IA) e Manual compartilham o formulário ---- */}
+            {(["conferencia", "manual"] as const).map((value) => (
+              <TabsContent key={value} value={value} className="mt-4 space-y-4">
+                {value === "conferencia" && (
+                  <div className="flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+                    <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
+                    <div>
+                      Dados preenchidos pela leitura da nota. Confira e corrija o que for necessário.
+                      {invoiceTotal != null && <> Total lido na nota: <strong>{money(invoiceTotal)}</strong>.</>}
+                    </div>
+                  </div>
+                )}
+                {value === "conferencia" && totalMismatch && (
+                  <p className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+                    A soma dos itens ({money(total)}) não fecha com o total lido na nota ({money(invoiceTotal ?? 0)}).
+                  </p>
+                )}
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <Label htmlFor={`p-date-${value}`}>Data *</Label>
+                    <Input id={`p-date-${value}`} type="date" value={purchasedOn} onChange={(e) => setPurchasedOn(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor={`p-sup-${value}`}>Fornecedor</Label>
+                    <Input id={`p-sup-${value}`} value={supplier} onChange={(e) => setSupplier(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Pedido relacionado</Label>
+                    <Select value={requestId} onValueChange={setRequestId}>
+                      <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                      <SelectContent>
+                        {pendingRequests.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Itens</Label>
+                    {value === "conferencia" && docPreview && (
+                      <a href={docPreview} target="_blank" rel="noreferrer" className="text-xs underline">
+                        Ver a nota
+                      </a>
+                    )}
+                  </div>
+                  {lines.map((l, idx) => (
+                    <div key={idx} className="grid gap-2 sm:grid-cols-[1fr_120px_80px_80px_100px_40px]">
+                      <Input
+                        placeholder="Nome do item"
+                        className={l.from_ai ? "border-primary/50 bg-primary/5" : undefined}
+                        value={l.name}
+                        onChange={(e) => {
+                          const name = e.target.value;
+                          const match = (stockItems ?? []).find((s) => s.name.toLowerCase() === name.toLowerCase());
+                          updateLine(idx, {
+                            name,
+                            item_id: match?.id ?? null,
+                            unit: match?.unit ?? l.unit,
+                            category: match?.category ?? l.category,
+                          });
+                        }}
+                        list="stock-item-names"
+                      />
+                      <Input
+                        placeholder="Categoria"
+                        value={l.category}
+                        onChange={(e) => updateLine(idx, { category: e.target.value })}
+                        list="stock-categories"
+                      />
+                      <Input placeholder="Un." value={l.unit} onChange={(e) => updateLine(idx, { unit: e.target.value })} />
+                      <Input type="number" min={0} step="any" placeholder="Qtd" value={l.quantity}
+                        onChange={(e) => updateLine(idx, { quantity: e.target.value })} />
+                      <Input type="number" min={0} step="0.01" placeholder="Valor un." value={l.unit_price}
+                        onChange={(e) => updateLine(idx, { unit_price: e.target.value })} />
+                      <Button variant="ghost" size="sm" onClick={() => setLines((ls) => ls.filter((_, i) => i !== idx))}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                      {!l.item_id && l.name.trim() && (
+                        <p className="col-span-full -mt-1 text-xs text-muted-foreground">
+                          Sem produto no estoque{l.category.trim() ? " — será criado com a categoria informada." : " — informe a categoria para criar o produto."}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                  <datalist id="stock-item-names">
+                    {(stockItems ?? []).map((s) => <option key={s.id} value={s.name} />)}
+                  </datalist>
+                  <datalist id="stock-categories">
+                    {[...new Set((stockItems ?? []).map((s) => s.category).filter(Boolean))].map((c) => (
+                      <option key={c as string} value={c as string} />
+                    ))}
+                  </datalist>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => setLines((ls) => [...ls, emptyLine()])}>
+                    <Plus className="h-4 w-4" /> Adicionar item
                   </Button>
                 </div>
-              ))}
-              <datalist id="stock-item-names">
-                {(stockItems ?? []).map((s) => <option key={s.id} value={s.name} />)}
-              </datalist>
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => setLines((ls) => [...ls, emptyLine()])}>
-                <Plus className="h-4 w-4" /> Adicionar item
-              </Button>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <Checkbox id="p-stock" checked={applyStock} onCheckedChange={(v) => setApplyStock(!!v)} />
-              <Label htmlFor="p-stock" className="font-normal">
-                Lançar entrada no estoque para itens vinculados
-              </Label>
-            </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id={`p-stock-${value}`} checked={applyStock} onCheckedChange={(v) => setApplyStock(!!v)} />
+                  <Label htmlFor={`p-stock-${value}`} className="font-normal">
+                    Lançar entrada no estoque para itens vinculados
+                  </Label>
+                </div>
 
-            <div>
-              <Label htmlFor="p-notes">Observações</Label>
-              <Textarea id="p-notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-            </div>
+                <div>
+                  <Label htmlFor={`p-notes-${value}`}>Observações</Label>
+                  <Textarea id={`p-notes-${value}`} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                </div>
 
-            <p className="text-right text-sm font-medium">Total: {money(total)}</p>
-          </div>
+                <p className="text-right text-sm font-medium">Total: {money(total)}</p>
+              </TabsContent>
+            ))}
+          </Tabs>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => create.mutate()} disabled={create.isPending || !lines.some((l) => l.name.trim())}>
+            <Button
+              onClick={() => create.mutate()}
+              disabled={create.isPending || tab === "nota" || !lines.some((l) => l.name.trim())}
+            >
+              {create.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Registrar compra
             </Button>
           </DialogFooter>
@@ -417,3 +513,4 @@ function PurchasesPage() {
     </div>
   );
 }
+
