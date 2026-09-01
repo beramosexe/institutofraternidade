@@ -244,3 +244,162 @@ export const getPurchaseDocumentUrl = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { url: signed.signedUrl };
   });
+
+/* ---------------- Leitura da nota fiscal por IA ---------------- */
+
+const INVOICE_PROMPT = [
+  "Você lê notas fiscais e cupons fiscais brasileiros a partir de uma imagem ou PDF.",
+  "Extraia apenas o que está legível no documento. Nunca invente valores, nomes ou datas.",
+  "Se um dado não estiver legível, use null.",
+  "Responda SOMENTE com um JSON no formato:",
+  '{"supplier":"nome do estabelecimento ou null","purchased_on":"YYYY-MM-DD ou null","total":0,',
+  '"items":[{"name":"descrição do item","unit":"un/kg/l/cx","quantity":1,"unit_price":0,"category":"categoria"}]}',
+  "A quantidade e o valor unitário devem ser números (use ponto como separador decimal).",
+  "A categoria deve ser escolhida entre as categorias existentes informadas pelo usuário quando fizer sentido;",
+  "caso nenhuma sirva, sugira uma categoria curta em português.",
+].join("\n");
+
+const invoiceSchema = z.object({
+  supplier: z.string().nullish(),
+  purchased_on: z.string().nullish(),
+  total: z.coerce.number().nullish(),
+  items: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        unit: z.string().nullish(),
+        quantity: z.coerce.number().nullish(),
+        unit_price: z.coerce.number().nullish(),
+        category: z.string().nullish(),
+      }),
+    )
+    .default([]),
+});
+
+const normalize = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+
+function matchStockItem(
+  name: string,
+  items: Array<{ id: string; name: string; unit: string; category: string | null }>,
+) {
+  const target = normalize(name);
+  if (!target) return null;
+  const targetWords = new Set(target.split(" ").filter((w) => w.length > 2));
+  let best: { id: string; name: string; unit: string; category: string | null; score: number } | null = null;
+  for (const it of items) {
+    const cand = normalize(it.name);
+    let score = 0;
+    if (cand === target) score = 1;
+    else if (cand.includes(target) || target.includes(cand)) score = 0.8;
+    else {
+      const candWords = cand.split(" ").filter((w) => w.length > 2);
+      if (candWords.length && targetWords.size) {
+        const hits = candWords.filter((w) => targetWords.has(w)).length;
+        score = (hits / Math.max(candWords.length, targetWords.size)) * 0.7;
+      }
+    }
+    if (score > (best?.score ?? 0)) best = { ...it, score };
+  }
+  return best && best.score >= 0.45 ? best : null;
+}
+
+/** Lê uma nota fiscal (imagem ou PDF) já enviada ao bucket privado e sugere os dados da compra. */
+export const parseInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { storage_path: string; mime_type?: string }) =>
+    z.object({ storage_path: z.string().min(3).max(400), mime_type: z.string().max(120).optional() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new Error("A IA não está configurada neste projeto.");
+
+    const { data: file, error: dlError } = await context.supabase.storage
+      .from("documentos")
+      .download(data.storage_path);
+    if (dlError || !file) throw new Error("Não foi possível ler o arquivo enviado.");
+
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!bytes.length) throw new Error("O arquivo enviado está vazio.");
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    }
+    const base64 = btoa(binary);
+    const mime = data.mime_type || file.type || "image/jpeg";
+    const isPdf = mime.includes("pdf");
+
+    const { data: stock } = await context.supabase
+      .from("stock_items")
+      .select("id, name, unit, category")
+      .eq("is_active", true)
+      .limit(500);
+    const stockItems = (stock ?? []) as Array<{ id: string; name: string; unit: string; category: string | null }>;
+    const categories = [...new Set(stockItems.map((s) => s.category).filter(Boolean))] as string[];
+
+    const userContent: unknown[] = [
+      {
+        type: "text",
+        text: categories.length
+          ? `Categorias existentes: ${categories.join(", ")}. Extraia os dados desta nota fiscal.`
+          : "Extraia os dados desta nota fiscal.",
+      },
+      isPdf
+        ? { type: "file", file: { filename: "nota.pdf", file_data: `data:${mime};base64,${base64}` } }
+        : { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
+    ];
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "google/gemini-3.7-flash",
+        messages: [
+          { role: "system", content: INVOICE_PROMPT },
+          { role: "user", content: userContent },
+        ],
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      if (resp.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos para ler a nota.");
+      if (resp.status === 403) throw new Error("O uso de IA está bloqueado nas configurações do espaço de trabalho.");
+      if (resp.status === 429) throw new Error("Muitas solicitações de IA agora. Tente novamente em alguns instantes.");
+      throw new Error(`Falha ao ler a nota (${resp.status}). ${body.slice(0, 200)}`);
+    }
+
+    const json = (await resp.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const content = json.choices?.[0]?.message?.content ?? "";
+    let parsed: z.infer<typeof invoiceSchema>;
+    try {
+      parsed = invoiceSchema.parse(JSON.parse(content.replace(/^```json\s*|\s*```$/g, "")));
+    } catch {
+      throw new Error("Não foi possível interpretar a nota. Tente outra foto ou preencha manualmente.");
+    }
+
+    const items = parsed.items.map((i) => {
+      const match = matchStockItem(i.name, stockItems);
+      return {
+        name: i.name.trim().slice(0, 140),
+        unit: (i.unit ?? match?.unit ?? "unidade").slice(0, 30),
+        quantity: i.quantity ?? 1,
+        unit_price: i.unit_price ?? 0,
+        category: (i.category ?? match?.category ?? null)?.slice(0, 60) ?? null,
+        item_id: match?.id ?? null,
+        match_confidence: match ? Number(match.score.toFixed(2)) : 0,
+      };
+    });
+
+    const date = parsed.purchased_on && /^\d{4}-\d{2}-\d{2}$/.test(parsed.purchased_on) ? parsed.purchased_on : null;
+
+    return {
+      supplier: parsed.supplier?.trim().slice(0, 140) ?? null,
+      purchased_on: date,
+      total: parsed.total ?? null,
+      items,
+      raw: parsed as unknown,
+    };
+  });
+
