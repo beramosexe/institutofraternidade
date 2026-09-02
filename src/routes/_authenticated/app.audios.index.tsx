@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Headphones, Filter, Star, Clock, X } from "lucide-react";
+import { Search, Headphones, SlidersHorizontal, Star, Clock, X, LayoutGrid, Rows3 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { AudioCard, type AudioCardData } from "@/components/app/AudioCard";
 
@@ -39,6 +40,7 @@ function AudiosLibrary() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [accessFilter, setAccessFilter] = useState("all");
   const [keyword, setKeyword] = useState<string | null>(null);
+  const [view, setView] = useState<"grid" | "row">("grid");
 
   const { data: works } = useQuery({
     queryKey: ["works-options"],
@@ -86,15 +88,17 @@ function AudiosLibrary() {
     });
   }, [prepared, q, workFilter, typeFilter, accessFilter, keyword]);
 
-  const hasFilters = q.trim() !== "" || workFilter !== "all" || typeFilter !== "all" || accessFilter !== "all" || !!keyword;
+  const activeFilterCount =
+    (workFilter !== "all" ? 1 : 0) + (typeFilter !== "all" ? 1 : 0) + (accessFilter !== "all" ? 1 : 0) + (keyword ? 1 : 0);
+  const hasFilters = q.trim() !== "" || activeFilterCount > 0;
 
-  const recent = filtered.slice(0, 6);
+  const recent = filtered.slice(0, 8);
   const featured = useMemo(
     () =>
       filtered
         .filter((a) => a.is_featured || (a.play_count ?? 0) > 0)
         .sort((a, b) => Number(b.is_featured) - Number(a.is_featured) || (b.play_count ?? 0) - (a.play_count ?? 0))
-        .slice(0, 6),
+        .slice(0, 8),
     [filtered],
   );
 
@@ -108,77 +112,124 @@ function AudiosLibrary() {
     setQ(""); setWorkFilter("all"); setTypeFilter("all"); setAccessFilter("all"); setKeyword(null);
   }
 
+  const filterFields = (
+    <div className="grid gap-2 sm:grid-cols-3">
+      <Select value={workFilter} onValueChange={setWorkFilter}>
+        <SelectTrigger><SelectValue placeholder="Trabalho" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos os trabalhos</SelectItem>
+          {works?.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Select value={typeFilter} onValueChange={setTypeFilter}>
+        <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos os tipos</SelectItem>
+          <SelectItem value="canalizacao">Canalização</SelectItem>
+          <SelectItem value="outro">Outro</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={accessFilter} onValueChange={setAccessFilter}>
+        <SelectTrigger><SelectValue placeholder="Acesso" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos os acessos</SelectItem>
+          <SelectItem value="public">Público</SelectItem>
+          <SelectItem value="associates">Associados</SelectItem>
+          <SelectItem value="work_participants">Participantes do trabalho</SelectItem>
+          <SelectItem value="attendees_only">Somente presentes</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const keywordChips = topKeywords.length > 0 && (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {topKeywords.map((k) => (
+        <Badge
+          key={k}
+          variant={keyword === k ? "default" : "outline"}
+          className="cursor-pointer text-[11px]"
+          onClick={() => setKeyword(keyword === k ? null : k)}
+        >
+          {k}
+        </Badge>
+      ))}
+    </div>
+  );
+
   return (
-    <div className="mx-auto max-w-6xl space-y-8 p-4 md:p-10">
-      <div>
-        <p className="text-xs uppercase tracking-[0.22em] text-brand">Biblioteca</p>
-        <h1 className="mt-1 font-display text-3xl text-foreground">Áudios</h1>
-        <p className="mt-1 text-muted-foreground">
-          Mensagens recebidas em nossos trabalhos. Busque por título, resumo, palavras-chave ou
-          qualquer trecho da transcrição.
-        </p>
+    <div className="mx-auto max-w-6xl space-y-5 px-4 py-5 md:px-8 md:py-8">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-brand">Biblioteca</p>
+          <h1 className="font-display text-2xl text-foreground md:text-3xl">Áudios</h1>
+        </div>
+        <div className="hidden shrink-0 items-center gap-1 rounded-md border border-border p-0.5 md:flex">
+          <Button
+            variant={view === "grid" ? "secondary" : "ghost"}
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => setView("grid")}
+            aria-label="Visualizar em grade"
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={view === "row" ? "secondary" : "ghost"}
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => setView("row")}
+            aria-label="Visualizar em lista"
+          >
+            <Rows3 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      <Card className="p-4">
-        <div className="grid gap-3 md:grid-cols-[1fr_180px_150px_170px]">
-          <div className="relative">
+      {/* Barra de busca + filtros */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Buscar…"
+              placeholder="Buscar título, resumo ou transcrição…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              className="pl-9"
+              className="h-10 pl-9"
             />
           </div>
-          <Select value={workFilter} onValueChange={setWorkFilter}>
-            <SelectTrigger><Filter className="mr-2 h-4 w-4" /><SelectValue placeholder="Trabalho" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os trabalhos</SelectItem>
-              {works?.map((w) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="canalizacao">Canalização</SelectItem>
-              <SelectItem value="outro">Outro</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={accessFilter} onValueChange={setAccessFilter}>
-            <SelectTrigger><SelectValue placeholder="Acesso" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os acessos</SelectItem>
-              <SelectItem value="public">Público</SelectItem>
-              <SelectItem value="associates">Associados</SelectItem>
-              <SelectItem value="work_participants">Participantes do trabalho</SelectItem>
-              <SelectItem value="attendees_only">Somente presentes</SelectItem>
-            </SelectContent>
-          </Select>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="h-10 shrink-0 gap-2 md:hidden">
+                <SlidersHorizontal className="h-4 w-4" />
+                {activeFilterCount > 0 && <Badge className="h-5 min-w-5 px-1">{activeFilterCount}</Badge>}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filtros</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-4 pb-6">
+                {filterFields}
+                {keywordChips}
+                {hasFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    <X className="mr-1 h-3 w-3" /> Limpar filtros
+                  </Button>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
 
-        {topKeywords.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">Palavras-chave:</span>
-            {topKeywords.map((k) => (
-              <Badge
-                key={k}
-                variant={keyword === k ? "default" : "outline"}
-                className="cursor-pointer text-[11px]"
-                onClick={() => setKeyword(keyword === k ? null : k)}
-              >
-                {k}
-              </Badge>
-            ))}
-          </div>
-        )}
-
+        <div className="hidden md:block">{filterFields}</div>
+        <div className="hidden md:block">{keywordChips}</div>
         {hasFilters && (
-          <Button variant="ghost" size="sm" className="mt-3" onClick={clearFilters}>
+          <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={clearFilters}>
             <X className="mr-1 h-3 w-3" /> Limpar filtros
           </Button>
         )}
-      </Card>
+      </div>
 
       {isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
@@ -188,34 +239,59 @@ function AudiosLibrary() {
           Nenhum áudio encontrado.
         </Card>
       ) : (
-        <div className="space-y-8">
-          <Section title="Recentes" icon={<Clock className="h-4 w-4" />}>
-            {recent.map((a) => <AudioCard key={a.id} audio={a} onKeyword={setKeyword} />)}
-          </Section>
+        <div className="space-y-7">
+          {!hasFilters && (
+            <>
+              <Rail title="Recentes" icon={<Clock className="h-4 w-4" />}>
+                {recent.map((a) => <AudioCard key={a.id} audio={a} variant="compact" />)}
+              </Rail>
 
-          {featured.length > 0 && (
-            <Section title="Mais ouvidos e destaques" icon={<Star className="h-4 w-4" />}>
-              {featured.map((a) => <AudioCard key={a.id} audio={a} onKeyword={setKeyword} />)}
-            </Section>
+              {featured.length > 0 && (
+                <Rail title="Mais ouvidos e destaques" icon={<Star className="h-4 w-4" />}>
+                  {featured.map((a) => <AudioCard key={a.id} audio={a} variant="compact" />)}
+                </Rail>
+              )}
+            </>
           )}
 
-          <Section title={`Todos os áudios (${filtered.length})`} icon={<Headphones className="h-4 w-4" />}>
-            {filtered.map((a) => <AudioCard key={a.id} audio={a} onKeyword={setKeyword} />)}
-          </Section>
+          <section className="space-y-3">
+            <SectionTitle icon={<Headphones className="h-4 w-4" />}>
+              {hasFilters ? `Resultados (${filtered.length})` : `Todos os áudios (${filtered.length})`}
+            </SectionTitle>
+            <div
+              className={
+                view === "grid"
+                  ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+                  : "grid gap-2"
+              }
+            >
+              {filtered.map((a) => (
+                <AudioCard key={a.id} audio={a} onKeyword={setKeyword} variant={view} />
+              ))}
+            </div>
+          </section>
         </div>
       )}
     </div>
   );
 }
 
-function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function SectionTitle({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="space-y-3">
-      <h2 className="flex items-center gap-2 font-display text-lg text-foreground">
-        <span className="text-brand">{icon}</span>
-        {title}
-      </h2>
-      <div className="grid gap-3">{children}</div>
+    <h2 className="flex items-center gap-2 font-display text-base text-foreground md:text-lg">
+      <span className="text-brand">{icon}</span>
+      {children}
+    </h2>
+  );
+}
+
+function Rail({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="space-y-2">
+      <SectionTitle icon={icon}>{title}</SectionTitle>
+      <div className="scroll-momentum -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+        {children}
+      </div>
     </section>
   );
 }
