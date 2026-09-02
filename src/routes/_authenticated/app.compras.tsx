@@ -101,7 +101,7 @@ function PurchasesPage() {
   const [docPath, setDocPath] = useState<string | null>(null);
   const [docMime, setDocMime] = useState<string | null>(null);
   const [docPreview, setDocPreview] = useState<string | null>(null);
-  const [aiRaw, setAiRaw] = useState<unknown>(null);
+  const [aiRaw, setAiRaw] = useState<string | null>(null);
   const [invoiceTotal, setInvoiceTotal] = useState<number | null>(null);
   const [readStep, setReadStep] = useState<"idle" | "uploading" | "reading">("idle");
 
@@ -212,7 +212,7 @@ function PurchasesPage() {
             storage_path: docPath,
             kind: "nota",
             mime_type: docMime ?? undefined,
-            ai_suggestion: aiRaw ?? undefined,
+            ai_suggestion: aiRaw ? (JSON.parse(aiRaw) as unknown) : undefined,
           },
         });
       }
