@@ -399,7 +399,7 @@ export const parseInvoice = createServerFn({ method: "POST" })
       purchased_on: date,
       total: parsed.total ?? null,
       items,
-      raw: parsed as unknown,
+      raw: JSON.stringify(parsed),
     };
   });
 
