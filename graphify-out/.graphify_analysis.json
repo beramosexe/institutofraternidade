@@ -1,176 +1,6 @@
 {
   "communities": {
     "0": [
-      "src_components_app_appshell",
-      "src_components_app_appshell_appshell",
-      "src_components_app_appshell_appshell_signout",
-      "src_components_app_appshell_navitem",
-      "src_components_app_appshell_navsection",
-      "src_components_app_appshell_sections",
-      "src_components_app_appshell_usemyaccess",
-      "src_components_app_signuppincard",
-      "src_components_brand_logo",
-      "src_components_brand_logo_logo",
-      "src_components_site_sitelayout",
-      "src_components_site_sitelayout_links",
-      "src_components_site_sitelayout_sitefooter",
-      "src_components_site_sitelayout_siteheader",
-      "src_components_ui_button",
-      "src_components_ui_button_button",
-      "src_components_ui_card",
-      "src_components_ui_card_card",
-      "src_components_ui_input",
-      "src_components_ui_input_input",
-      "src_integrations_lovable_index",
-      "src_integrations_lovable_index_lovable",
-      "src_integrations_lovable_index_lovableauth",
-      "src_integrations_lovable_index_signinoptions",
-      "src_integrations_supabase_client",
-      "src_integrations_supabase_client_createsupabaseclient",
-      "src_integrations_supabase_client_supabase",
-      "src_integrations_supabase_previewauthstorage",
-      "src_integrations_supabase_previewauthstorage_brokeredpreviewstorage",
-      "src_lib_audio_title",
-      "src_lib_audio_title_suggestaudiotitle",
-      "src_lib_auth_context",
-      "src_lib_auth_context_authcontext",
-      "src_lib_auth_context_authcontextvalue",
-      "src_lib_auth_context_useauth",
-      "src_lib_me_functions_getmymembership",
-      "src_lib_members_functions_countpendingmembers",
-      "src_lib_permissions_class_member_status_labels",
-      "src_lib_permissions_membership_status_labels",
-      "src_lib_signup_functions",
-      "src_lib_signup_functions_checksignuppin",
-      "src_lib_signup_functions_getsignuppinstatus",
-      "src_lib_signup_functions_setsignuppin",
-      "src_lib_signup_functions_signupassociate",
-      "src_lib_signup_server",
-      "src_lib_signup_server_encodepin",
-      "src_lib_signup_server_hashpin",
-      "src_lib_signup_server_newsalt",
-      "src_lib_signup_server_signup_pin_key",
-      "src_lib_signup_server_verifypin",
-      "src_routes_agenda",
-      "src_routes_agenda_agendapage",
-      "src_routes_associados_cadastro",
-      "src_routes_associados_cadastro_signuppage",
-      "src_routes_auth",
-      "src_routes_auth_authpage",
-      "src_routes_auth_googlebutton",
-      "src_routes_auth_googlebutton_onclick",
-      "src_routes_auth_googleicon",
-      "src_routes_auth_passwordinput",
-      "src_routes_auth_searchschema",
-      "src_routes_auth_signinform",
-      "src_routes_auth_signinform_onsubmit",
-      "src_routes_auth_signupform",
-      "src_routes_auth_signupform_onsubmit",
-      "src_routes_authenticated_app_acolhimento",
-      "src_routes_authenticated_app_acolhimento_acolhimentopage",
-      "src_routes_authenticated_app_acolhimento_route",
-      "src_routes_authenticated_app_acolhimento_weekdays",
-      "src_routes_authenticated_app_associados_index_memberspage",
-      "src_routes_authenticated_app_conta",
-      "src_routes_authenticated_app_conta_fmtdate",
-      "src_routes_authenticated_app_conta_myaccountpage",
-      "src_routes_authenticated_app_conta_route",
-      "src_routes_authenticated_app_index",
-      "src_routes_authenticated_app_index_dashboard",
-      "src_routes_authenticated_app_index_quickaction",
-      "src_routes_authenticated_app_index_route",
-      "src_routes_authenticated_app_meus_uploads",
-      "src_routes_authenticated_app_meus_uploads_myuploads",
-      "src_routes_authenticated_app_pendente",
-      "src_routes_authenticated_app_pendente_pendingpage",
-      "src_routes_authenticated_app_perfil",
-      "src_routes_authenticated_app_perfil_profilepage",
-      "src_routes_authenticated_app_revisao",
-      "src_routes_authenticated_app_revisao_reviewqueue",
-      "src_routes_authenticated_app_upload",
-      "src_routes_authenticated_app_upload_uploadpage",
-      "src_routes_authenticated_app_upload_uploadpage_onsubmit",
-      "src_routes_authenticated_route",
-      "src_routes_canalizacoes",
-      "src_routes_canalizacoes_publiccanalizacoes",
-      "src_routes_contato",
-      "src_routes_contato_contatopage",
-      "src_routes_index",
-      "src_routes_index_homepage",
-      "src_routes_quem_somos",
-      "src_routes_quem_somos_quemsomospage"
-    ],
-    "1": [
-      "src_components_app_audiocard",
-      "src_components_app_audiocard_accesschip",
-      "src_components_app_audiocard_audiocard",
-      "src_components_app_audiocard_audiocarddata",
-      "src_components_app_audiocard_formatduration",
-      "src_components_app_audiocard_shortdate",
-      "src_components_app_audiocard_tint",
-      "src_components_app_audiocard_variant",
-      "src_components_ui_select",
-      "src_components_ui_select_selectcontent",
-      "src_components_ui_select_selectitem",
-      "src_components_ui_select_selectlabel",
-      "src_components_ui_select_selectscrolldownbutton",
-      "src_components_ui_select_selectscrollupbutton",
-      "src_components_ui_select_selectseparator",
-      "src_components_ui_select_selecttrigger",
-      "src_lib_classes_functions",
-      "src_lib_classes_functions_addclassmember",
-      "src_lib_classes_functions_assertcanmanageclasses",
-      "src_lib_classes_functions_class_status",
-      "src_lib_classes_functions_createclass",
-      "src_lib_classes_functions_createformationlevel",
-      "src_lib_classes_functions_endclassmembership",
-      "src_lib_classes_functions_getclassdetail",
-      "src_lib_classes_functions_listclasses",
-      "src_lib_classes_functions_listformationlevels",
-      "src_lib_classes_functions_logmemberevent",
-      "src_lib_classes_functions_updateclass",
-      "src_lib_members_functions",
-      "src_lib_members_functions_assertcanmanagemembers",
-      "src_lib_members_functions_getmember",
-      "src_lib_members_functions_isadmin",
-      "src_lib_members_functions_listcriticalpermissions",
-      "src_lib_members_functions_listmembers",
-      "src_lib_members_functions_logevent",
-      "src_lib_members_functions_setmemberroles",
-      "src_lib_members_functions_setmemberrolesinternal",
-      "src_lib_members_functions_setmemberstatus",
-      "src_lib_members_functions_setpermissioncritical",
-      "src_lib_members_functions_updatememberprofile",
-      "src_lib_members_functions_validatemember",
-      "src_lib_options_functions",
-      "src_lib_options_functions_deleteoption",
-      "src_lib_options_functions_listoptions",
-      "src_lib_options_functions_upsertoption",
-      "src_lib_permissions_class_status_labels",
-      "src_lib_permissions_critical_permissions",
-      "src_lib_permissions_review_status_labels",
-      "src_routes_authenticated_app_admin_listas",
-      "src_routes_authenticated_app_admin_listas_lists",
-      "src_routes_authenticated_app_admin_listas_optionsadmin",
-      "src_routes_authenticated_app_admin_listas_route",
-      "src_routes_authenticated_app_associados_id",
-      "src_routes_authenticated_app_associados_id_fmtdate",
-      "src_routes_authenticated_app_associados_id_memberdetailpage",
-      "src_routes_authenticated_app_associados_turmas",
-      "src_routes_authenticated_app_associados_turmas_classespage",
-      "src_routes_authenticated_app_associados_turmas_route",
-      "src_routes_authenticated_app_associados_turmas_statuses",
-      "src_routes_authenticated_app_audios_index",
-      "src_routes_authenticated_app_audios_index_audioslibrary",
-      "src_routes_authenticated_app_audios_index_audioslibrary_clearfilters",
-      "src_routes_authenticated_app_audios_index_rail",
-      "src_routes_authenticated_app_audios_index_reviewstatus",
-      "src_routes_authenticated_app_audios_index_route",
-      "src_routes_authenticated_app_audios_index_row",
-      "src_routes_authenticated_app_audios_index_sectiontitle",
-      "src_routes_authenticated_app_audios_index_transcripttext"
-    ],
-    "2": [
       "src_components_app_entitymultiselect",
       "src_components_app_entitymultiselect_entitymultiselect",
       "src_components_app_entitymultiselect_entitymultiselect_toggle",
@@ -182,10 +12,6 @@
       "src_components_ui_avatar_avatar",
       "src_components_ui_avatar_avatarfallback",
       "src_components_ui_avatar_avatarimage",
-      "src_components_ui_badge",
-      "src_components_ui_badge_badge",
-      "src_components_ui_badge_badgeprops",
-      "src_components_ui_badge_badgevariants",
       "src_components_ui_command",
       "src_components_ui_command_command",
       "src_components_ui_command_commanddialog",
@@ -240,7 +66,67 @@
       "src_routes_authenticated_app_trabalhos_index_worksagenda",
       "supabase_js"
     ],
-    "3": [
+    "1": [
+      "src_components_app_appshell",
+      "src_components_app_appshell_appshell",
+      "src_components_app_appshell_appshell_signout",
+      "src_components_app_appshell_navitem",
+      "src_components_app_appshell_navsection",
+      "src_components_app_appshell_sections",
+      "src_components_brand_logo",
+      "src_components_brand_logo_logo",
+      "src_components_site_sitelayout",
+      "src_components_site_sitelayout_links",
+      "src_components_site_sitelayout_sitefooter",
+      "src_components_site_sitelayout_siteheader",
+      "src_components_ui_sonner",
+      "src_components_ui_sonner_toaster",
+      "src_components_ui_sonner_toasterprops",
+      "src_integrations_lovable_index",
+      "src_integrations_lovable_index_lovable",
+      "src_integrations_lovable_index_lovableauth",
+      "src_integrations_lovable_index_signinoptions",
+      "src_integrations_supabase_client",
+      "src_integrations_supabase_client_createsupabaseclient",
+      "src_integrations_supabase_client_supabase",
+      "src_integrations_supabase_previewauthstorage",
+      "src_integrations_supabase_previewauthstorage_brokeredpreviewstorage",
+      "src_lib_audio_title",
+      "src_lib_audio_title_suggestaudiotitle",
+      "src_lib_auth_context",
+      "src_lib_auth_context_authcontext",
+      "src_lib_auth_context_authcontextvalue",
+      "src_lib_auth_context_authprovider",
+      "src_lib_auth_context_useauth",
+      "src_lib_lovable_error_reporting",
+      "src_lib_lovable_error_reporting_lovableerroroptions",
+      "src_lib_lovable_error_reporting_lovableevents",
+      "src_lib_lovable_error_reporting_reportlovableerror",
+      "src_lib_lovable_error_reporting_window",
+      "src_lib_members_functions_countpendingmembers",
+      "src_lib_notifications_functions_countunreadnotifications",
+      "src_routes_agenda",
+      "src_routes_agenda_agendapage",
+      "src_routes_auth_authpage",
+      "src_routes_authenticated_app_meus_uploads_myuploads",
+      "src_routes_authenticated_app_upload_uploadpage",
+      "src_routes_authenticated_app_upload_uploadpage_onsubmit",
+      "src_routes_authenticated_route",
+      "src_routes_canalizacoes",
+      "src_routes_canalizacoes_publiccanalizacoes",
+      "src_routes_contato",
+      "src_routes_contato_contatopage",
+      "src_routes_index",
+      "src_routes_index_homepage",
+      "src_routes_quem_somos",
+      "src_routes_quem_somos_quemsomospage",
+      "src_routes_root",
+      "src_routes_root_errorcomponent",
+      "src_routes_root_notfoundcomponent",
+      "src_routes_root_rootcomponent",
+      "src_routes_root_rootshell"
+    ],
+    "2": [
       "src_routetree_gen",
       "src_routetree_gen_agendaroute",
       "src_routetree_gen_apipublicaudiouploadroute",
@@ -299,7 +185,7 @@
       "src_routetree_gen_tanstack_react_router",
       "src_routetree_gen_tanstack_react_start"
     ],
-    "4": [
+    "3": [
       "eslint",
       "eslint_config_prettier",
       "eslint_js",
@@ -348,51 +234,18 @@
       "vite",
       "vitejs_plugin_react"
     ],
-    "5": [
-      "src_components_ui_accordion",
-      "src_components_ui_accordion_accordioncontent",
-      "src_components_ui_accordion_accordionitem",
-      "src_components_ui_accordion_accordiontrigger",
-      "src_components_ui_breadcrumb",
-      "src_components_ui_breadcrumb_breadcrumb",
-      "src_components_ui_breadcrumb_breadcrumbellipsis",
-      "src_components_ui_breadcrumb_breadcrumbitem",
-      "src_components_ui_breadcrumb_breadcrumblink",
-      "src_components_ui_breadcrumb_breadcrumblist",
-      "src_components_ui_breadcrumb_breadcrumbpage",
-      "src_components_ui_breadcrumb_breadcrumbseparator",
-      "src_components_ui_card_cardcontent",
-      "src_components_ui_card_carddescription",
-      "src_components_ui_card_cardfooter",
-      "src_components_ui_card_cardheader",
-      "src_components_ui_card_cardtitle",
-      "src_components_ui_context_menu",
-      "src_components_ui_context_menu_contextmenucheckboxitem",
-      "src_components_ui_context_menu_contextmenucontent",
-      "src_components_ui_context_menu_contextmenuitem",
-      "src_components_ui_context_menu_contextmenulabel",
-      "src_components_ui_context_menu_contextmenuradioitem",
-      "src_components_ui_context_menu_contextmenuseparator",
-      "src_components_ui_context_menu_contextmenushortcut",
-      "src_components_ui_context_menu_contextmenusubcontent",
-      "src_components_ui_context_menu_contextmenusubtrigger",
-      "src_components_ui_scroll_area",
-      "src_components_ui_scroll_area_scrollarea",
-      "src_components_ui_scroll_area_scrollbar",
-      "src_components_ui_table",
-      "src_components_ui_table_table",
-      "src_components_ui_table_tablebody",
-      "src_components_ui_table_tablecaption",
-      "src_components_ui_table_tablecell",
-      "src_components_ui_table_tablefooter",
-      "src_components_ui_table_tablehead",
-      "src_components_ui_table_tableheader",
-      "src_components_ui_table_tablerow",
-      "src_lib_utils_cn"
-    ],
-    "6": [
+    "4": [
       "src_components_ui_separator",
       "src_components_ui_separator_separator",
+      "src_components_ui_sheet",
+      "src_components_ui_sheet_sheetcontent",
+      "src_components_ui_sheet_sheetcontentprops",
+      "src_components_ui_sheet_sheetdescription",
+      "src_components_ui_sheet_sheetfooter",
+      "src_components_ui_sheet_sheetheader",
+      "src_components_ui_sheet_sheetoverlay",
+      "src_components_ui_sheet_sheettitle",
+      "src_components_ui_sheet_sheetvariants",
       "src_components_ui_sidebar",
       "src_components_ui_sidebar_sidebar",
       "src_components_ui_sidebar_sidebarcontent",
@@ -428,13 +281,92 @@
       "src_hooks_use_mobile",
       "src_hooks_use_mobile_useismobile"
     ],
+    "5": [
+      "src_components_ui_accordion",
+      "src_components_ui_accordion_accordioncontent",
+      "src_components_ui_accordion_accordionitem",
+      "src_components_ui_accordion_accordiontrigger",
+      "src_components_ui_breadcrumb",
+      "src_components_ui_breadcrumb_breadcrumb",
+      "src_components_ui_breadcrumb_breadcrumbellipsis",
+      "src_components_ui_breadcrumb_breadcrumbitem",
+      "src_components_ui_breadcrumb_breadcrumblink",
+      "src_components_ui_breadcrumb_breadcrumblist",
+      "src_components_ui_breadcrumb_breadcrumbpage",
+      "src_components_ui_breadcrumb_breadcrumbseparator",
+      "src_components_ui_card_cardcontent",
+      "src_components_ui_card_carddescription",
+      "src_components_ui_card_cardfooter",
+      "src_components_ui_card_cardheader",
+      "src_components_ui_card_cardtitle",
+      "src_components_ui_drawer",
+      "src_components_ui_drawer_drawer",
+      "src_components_ui_drawer_drawercontent",
+      "src_components_ui_drawer_drawerdescription",
+      "src_components_ui_drawer_drawerfooter",
+      "src_components_ui_drawer_drawerheader",
+      "src_components_ui_drawer_draweroverlay",
+      "src_components_ui_drawer_drawertitle",
+      "src_components_ui_input_otp",
+      "src_components_ui_input_otp_inputotp",
+      "src_components_ui_input_otp_inputotpgroup",
+      "src_components_ui_input_otp_inputotpseparator",
+      "src_components_ui_input_otp_inputotpslot",
+      "src_components_ui_select_selectlabel",
+      "src_components_ui_select_selectscrolldownbutton",
+      "src_components_ui_select_selectscrollupbutton",
+      "src_components_ui_select_selectseparator",
+      "src_components_ui_table",
+      "src_components_ui_table_table",
+      "src_components_ui_table_tablebody",
+      "src_components_ui_table_tablecaption",
+      "src_components_ui_table_tablecell",
+      "src_components_ui_table_tablefooter",
+      "src_components_ui_table_tablehead",
+      "src_components_ui_table_tableheader",
+      "src_components_ui_table_tablerow",
+      "src_lib_utils_cn"
+    ],
+    "6": [
+      "src_components_ui_tabs",
+      "src_components_ui_tabs_tabscontent",
+      "src_components_ui_tabs_tabslist",
+      "src_components_ui_tabs_tabstrigger",
+      "src_lib_purchases_functions_updatepurchaserequest",
+      "src_lib_stock_functions",
+      "src_lib_stock_functions_createstockitem",
+      "src_lib_stock_functions_deletestockitem",
+      "src_lib_stock_functions_liststockitems",
+      "src_lib_stock_functions_liststockmovements",
+      "src_lib_stock_functions_registerstockmovement",
+      "src_lib_stock_functions_updatestockitem",
+      "src_routes_auth",
+      "src_routes_auth_googlebutton",
+      "src_routes_auth_googlebutton_onclick",
+      "src_routes_auth_googleicon",
+      "src_routes_auth_passwordinput",
+      "src_routes_auth_searchschema",
+      "src_routes_auth_signinform",
+      "src_routes_auth_signinform_onsubmit",
+      "src_routes_auth_signupform",
+      "src_routes_auth_signupform_onsubmit",
+      "src_routes_authenticated_app_compras",
+      "src_routes_authenticated_app_compras_d",
+      "src_routes_authenticated_app_compras_emptyline",
+      "src_routes_authenticated_app_compras_line",
+      "src_routes_authenticated_app_compras_money",
+      "src_routes_authenticated_app_compras_purchasespage",
+      "src_routes_authenticated_app_estoque",
+      "src_routes_authenticated_app_estoque_fmtqty",
+      "src_routes_authenticated_app_estoque_movement_labels",
+      "src_routes_authenticated_app_estoque_stockitem",
+      "src_routes_authenticated_app_estoque_stockpage"
+    ],
     "7": [
       "src_components_app_rolesmanager",
       "src_components_app_rolesmanager_roledialog",
       "src_components_app_rolesmanager_roledialog_submit",
       "src_components_app_rolesmanager_rolerow",
-      "src_components_app_rolesmanager_rolesmanager",
-      "src_components_app_signuppincard_signuppincard",
       "src_components_ui_checkbox",
       "src_components_ui_checkbox_checkbox",
       "src_components_ui_dialog",
@@ -445,8 +377,6 @@
       "src_components_ui_dialog_dialogoverlay",
       "src_components_ui_dialog_dialogtitle",
       "src_lib_permissions_all_permissions",
-      "src_lib_permissions_permission",
-      "src_lib_permissions_permission_labels",
       "src_lib_roles_functions",
       "src_lib_roles_functions_createrole",
       "src_lib_roles_functions_deleterole",
@@ -454,16 +384,16 @@
       "src_lib_roles_functions_listuserswithroles",
       "src_lib_roles_functions_setuserroles",
       "src_lib_roles_functions_updaterole",
-      "src_routes_authenticated_app_admin_index",
-      "src_routes_authenticated_app_admin_index_adminhome",
-      "src_routes_authenticated_app_admin_index_route",
-      "src_routes_authenticated_app_admin_index_shortcut",
       "src_routes_authenticated_app_admin_usuarios",
       "src_routes_authenticated_app_admin_usuarios_adminusers",
       "src_routes_authenticated_app_admin_usuarios_adminusers_startedit",
       "src_routes_authenticated_app_admin_usuarios_route",
       "src_routes_authenticated_app_admin_usuarios_userrow",
-      "src_routes_authenticated_app_associados_index"
+      "src_routes_authenticated_app_associados_index",
+      "src_routes_authenticated_app_index",
+      "src_routes_authenticated_app_index_all_shortcuts",
+      "src_routes_authenticated_app_index_quickaction",
+      "src_routes_authenticated_app_index_route"
     ],
     "8": [
       "ref_dom",
@@ -495,6 +425,72 @@
       "tsconfig_include"
     ],
     "9": [
+      "src_routes_agenda_route",
+      "src_routes_associados_cadastro_route",
+      "src_routes_auth_route",
+      "src_routes_authenticated_app_acolhimento_route",
+      "src_routes_authenticated_app_admin_audios_route",
+      "src_routes_authenticated_app_admin_entidades_route",
+      "src_routes_authenticated_app_admin_listas_route",
+      "src_routes_authenticated_app_associados_id_route",
+      "src_routes_authenticated_app_associados_index_route",
+      "src_routes_authenticated_app_associados_turmas_route",
+      "src_routes_authenticated_app_casa_route",
+      "src_routes_authenticated_app_compras_route",
+      "src_routes_authenticated_app_conta_route",
+      "src_routes_authenticated_app_estoque_route",
+      "src_routes_authenticated_app_financeiro_route",
+      "src_routes_authenticated_app_manutencao_id_route",
+      "src_routes_authenticated_app_manutencao_index_route",
+      "src_routes_authenticated_app_meus_uploads_route",
+      "src_routes_authenticated_app_perfil_route",
+      "src_routes_authenticated_app_revisao_route",
+      "src_routes_authenticated_app_upload_route",
+      "src_routes_authenticated_route_route",
+      "src_routes_canalizacoes_route",
+      "src_routes_contato_route",
+      "src_routes_index_route",
+      "src_routes_quem_somos_route",
+      "src_routetree_gen_fileroutesbypath"
+    ],
+    "10": [
+      "src_components_app_signuppincard",
+      "src_components_app_uploadtokens",
+      "src_components_app_uploadtokens_uploadtokens",
+      "src_components_ui_input",
+      "src_components_ui_input_input",
+      "src_components_ui_label",
+      "src_components_ui_label_label",
+      "src_components_ui_label_labelvariants",
+      "src_components_ui_select",
+      "src_components_ui_select_selectcontent",
+      "src_components_ui_select_selectitem",
+      "src_components_ui_select_selecttrigger",
+      "src_routes_associados_cadastro",
+      "src_routes_associados_cadastro_signuppage",
+      "src_routes_authenticated_app_admin_listas",
+      "src_routes_authenticated_app_admin_listas_lists",
+      "src_routes_authenticated_app_admin_listas_optionsadmin",
+      "src_routes_authenticated_app_associados_id",
+      "src_routes_authenticated_app_associados_id_fmtdate",
+      "src_routes_authenticated_app_associados_id_memberdetailpage",
+      "src_routes_authenticated_app_manutencao_id",
+      "src_routes_authenticated_app_manutencao_id_dt",
+      "src_routes_authenticated_app_manutencao_id_money",
+      "src_routes_authenticated_app_manutencao_id_next_statuses",
+      "src_routes_authenticated_app_manutencao_id_ticketdetail",
+      "src_routes_authenticated_app_upload"
+    ],
+    "11": [
+      "src_lib_maintenance_functions",
+      "src_lib_maintenance_functions_addmaintenancequote",
+      "src_lib_maintenance_functions_createmaintenanceticket",
+      "src_lib_maintenance_functions_deletemaintenancequote",
+      "src_lib_maintenance_functions_getmaintenanceticket",
+      "src_lib_maintenance_functions_priorities",
+      "src_lib_maintenance_functions_sendquotetofinance",
+      "src_lib_maintenance_functions_statuses",
+      "src_lib_maintenance_functions_updatemaintenanceticket",
       "src_lib_profile_names",
       "src_lib_profile_names_displayrpcclient",
       "src_lib_profile_names_resolvedisplaynames",
@@ -506,23 +502,64 @@
       "src_lib_purchases_functions_invoice_prompt",
       "src_lib_purchases_functions_invoiceschema",
       "src_lib_purchases_functions_itemschema",
-      "src_lib_purchases_functions_listpurchaserequests",
       "src_lib_purchases_functions_listpurchases",
       "src_lib_purchases_functions_matchstockitem",
       "src_lib_purchases_functions_normalize",
       "src_lib_purchases_functions_parseinvoice",
       "src_lib_purchases_functions_priorities",
-      "src_lib_purchases_functions_request_statuses",
-      "src_lib_purchases_functions_updatepurchaserequest",
-      "src_routes_authenticated_app_compras",
-      "src_routes_authenticated_app_compras_d",
-      "src_routes_authenticated_app_compras_emptyline",
-      "src_routes_authenticated_app_compras_line",
-      "src_routes_authenticated_app_compras_money",
-      "src_routes_authenticated_app_compras_purchasespage",
-      "src_routes_authenticated_app_compras_route"
+      "src_lib_purchases_functions_request_statuses"
     ],
-    "10": [
+    "12": [
+      "src_components_app_syncedtranscript",
+      "src_components_app_syncedtranscript_formatprecise",
+      "src_components_app_syncedtranscript_formattime",
+      "src_components_app_syncedtranscript_parseprecise",
+      "src_components_app_syncedtranscript_props",
+      "src_components_app_syncedtranscript_segment",
+      "src_components_app_syncedtranscript_syncedtranscript",
+      "src_components_app_syncedtranscript_syncedtranscript_onkey",
+      "src_components_app_syncedtranscript_syncedtranscript_seek",
+      "src_components_app_syncedtranscript_syncedtranscript_shiftall",
+      "src_components_app_syncedtranscript_syncedtranscript_toggle",
+      "src_components_app_syncedtranscript_syncedtranscript_updatesegmenttext",
+      "src_components_app_syncedtranscript_syncedtranscript_updatesegmenttime",
+      "src_components_app_syncedtranscript_timefield",
+      "src_lib_transcript_segments",
+      "src_lib_transcript_segments_round",
+      "src_lib_transcriptions_functions",
+      "src_lib_transcriptions_functions_marktranscriptionreviewed",
+      "src_lib_transcriptions_functions_saveschema",
+      "src_lib_transcriptions_functions_savetranscription",
+      "src_lib_transcriptions_functions_segmentschema",
+      "src_routes_authenticated_app_revisao_id",
+      "src_routes_authenticated_app_revisao_id_route"
+    ],
+    "13": [
+      "src_components_ui_alert",
+      "src_components_ui_alert_alert",
+      "src_components_ui_alert_alertdescription",
+      "src_components_ui_alert_alerttitle",
+      "src_components_ui_alert_alertvariants",
+      "src_components_ui_hover_card",
+      "src_components_ui_hover_card_hovercardcontent",
+      "src_components_ui_progress",
+      "src_components_ui_progress_progress",
+      "src_components_ui_radio_group",
+      "src_components_ui_radio_group_radiogroup",
+      "src_components_ui_radio_group_radiogroupitem",
+      "src_components_ui_resizable",
+      "src_components_ui_resizable_resizablehandle",
+      "src_components_ui_resizable_resizablepanelgroup",
+      "src_components_ui_scroll_area",
+      "src_components_ui_scroll_area_scrollarea",
+      "src_components_ui_scroll_area_scrollbar",
+      "src_components_ui_slider",
+      "src_components_ui_slider_slider",
+      "src_components_ui_switch",
+      "src_components_ui_switch_switch",
+      "src_lib_utils"
+    ],
+    "14": [
       "src_components_ui_alert_dialog",
       "src_components_ui_alert_dialog_alertdialogaction",
       "src_components_ui_alert_dialog_alertdialogcancel",
@@ -547,17 +584,40 @@
       "src_components_ui_pagination_paginationnext",
       "src_components_ui_pagination_paginationprevious"
     ],
-    "11": [
-      "src_components_ui_tabs",
-      "src_components_ui_tabs_tabscontent",
-      "src_components_ui_tabs_tabslist",
-      "src_components_ui_tabs_tabstrigger",
+    "15": [
+      "src_integrations_supabase_client_server",
+      "src_integrations_supabase_client_server_createsupabaseadminclient",
+      "src_integrations_supabase_client_server_supabaseadmin",
+      "src_lib_audio_insights_functions",
+      "src_lib_audio_insights_functions_askgateway",
+      "src_lib_audio_insights_functions_generateaudioinsights",
+      "src_lib_audio_insights_functions_insights",
+      "src_lib_audio_insights_functions_saveaudioinsights",
+      "src_lib_audio_insights_functions_system_prompt",
+      "src_lib_audios_functions",
+      "src_lib_audios_functions_deleteaudio",
+      "src_lib_audios_functions_failstaletranscriptions",
+      "src_lib_audios_functions_getaudiostreamurl",
+      "src_lib_audios_functions_getpublicaudiourl",
+      "src_lib_audios_functions_registeraudio",
+      "src_lib_audios_functions_registeraudioplay",
+      "src_lib_audios_functions_reprocessaudio",
+      "src_lib_audios_functions_setaudiofeatured",
+      "src_lib_audios_functions_updateaudio",
+      "src_routes_authenticated_app_audios_id",
+      "src_routes_authenticated_app_audios_id_route"
+    ],
+    "16": [
       "src_lib_maintenance_functions_listmaintenancetickets",
       "src_lib_permissions",
+      "src_lib_permissions_critical_permissions",
       "src_lib_permissions_maintenance_status_labels",
       "src_lib_permissions_maintenancestatus",
+      "src_lib_permissions_permission",
+      "src_lib_permissions_permission_labels",
       "src_lib_permissions_priority_labels",
       "src_lib_permissions_purchase_request_status_labels",
+      "src_lib_purchases_functions_listpurchaserequests",
       "src_routes_authenticated_app_casa",
       "src_routes_authenticated_app_casa_dt",
       "src_routes_authenticated_app_casa_housepanel",
@@ -565,35 +625,12 @@
       "src_routes_authenticated_app_financeiro_dt",
       "src_routes_authenticated_app_financeiro_finance_statuses",
       "src_routes_authenticated_app_financeiro_financepage",
-      "src_routes_authenticated_app_financeiro_route",
       "src_routes_authenticated_app_manutencao_index",
       "src_routes_authenticated_app_manutencao_index_dt",
       "src_routes_authenticated_app_manutencao_index_maintenancelist",
       "src_routes_authenticated_app_manutencao_index_open_statuses"
     ],
-    "12": [
-      "src_components_ui_hover_card",
-      "src_components_ui_hover_card_hovercardcontent",
-      "src_components_ui_input_otp",
-      "src_components_ui_input_otp_inputotp",
-      "src_components_ui_input_otp_inputotpgroup",
-      "src_components_ui_input_otp_inputotpseparator",
-      "src_components_ui_input_otp_inputotpslot",
-      "src_components_ui_progress",
-      "src_components_ui_progress_progress",
-      "src_components_ui_radio_group",
-      "src_components_ui_radio_group_radiogroup",
-      "src_components_ui_radio_group_radiogroupitem",
-      "src_components_ui_resizable",
-      "src_components_ui_resizable_resizablehandle",
-      "src_components_ui_resizable_resizablepanelgroup",
-      "src_components_ui_slider",
-      "src_components_ui_slider_slider",
-      "src_components_ui_switch",
-      "src_components_ui_switch_switch",
-      "src_lib_utils"
-    ],
-    "13": [
+    "17": [
       "components",
       "components_aliases",
       "components_aliases_components",
@@ -614,68 +651,48 @@
       "components_tailwind_prefix",
       "components_tsx"
     ],
-    "14": [
-      "src_integrations_supabase_client_server",
-      "src_integrations_supabase_client_server_createsupabaseadminclient",
-      "src_integrations_supabase_client_server_supabaseadmin",
-      "src_lib_audios_functions",
-      "src_lib_audios_functions_deleteaudio",
-      "src_lib_audios_functions_failstaletranscriptions",
-      "src_lib_audios_functions_getaudiostreamurl",
-      "src_lib_audios_functions_getpublicaudiourl",
-      "src_lib_audios_functions_registeraudio",
-      "src_lib_audios_functions_registeraudioplay",
-      "src_lib_audios_functions_reprocessaudio",
-      "src_lib_audios_functions_setaudiofeatured",
-      "src_lib_audios_functions_updateaudio",
-      "src_lib_permissions_access_level_labels",
-      "src_lib_permissions_audio_status_labels",
-      "src_routes_authenticated_app_admin_audios",
-      "src_routes_authenticated_app_admin_audios_adminaudios",
-      "src_routes_authenticated_app_admin_audios_route",
-      "src_routes_authenticated_app_audios_id"
-    ],
-    "15": [
-      "src_routes_agenda_route",
-      "src_routes_associados_cadastro_route",
-      "src_routes_auth_route",
-      "src_routes_authenticated_app_associados_id_route",
-      "src_routes_authenticated_app_associados_index_route",
-      "src_routes_authenticated_app_audios_id_route",
-      "src_routes_authenticated_app_casa_route",
-      "src_routes_authenticated_app_manutencao_index_route",
-      "src_routes_authenticated_app_meus_uploads_route",
+    "18": [
+      "src_components_app_appshell_usemyaccess",
+      "src_components_ui_button",
+      "src_components_ui_button_button",
+      "src_lib_me_functions",
+      "src_lib_me_functions_getmyaccess",
+      "src_lib_me_functions_getmymembership",
+      "src_lib_me_functions_updatemyprofile",
+      "src_lib_permissions_class_member_status_labels",
+      "src_lib_permissions_membership_status_labels",
+      "src_routes_authenticated_app_associados_index_memberspage",
+      "src_routes_authenticated_app_conta",
+      "src_routes_authenticated_app_conta_fmtdate",
+      "src_routes_authenticated_app_conta_myaccountpage",
+      "src_routes_authenticated_app_index_dashboard",
+      "src_routes_authenticated_app_pendente",
+      "src_routes_authenticated_app_pendente_pendingpage",
       "src_routes_authenticated_app_pendente_route",
-      "src_routes_authenticated_app_perfil_route",
-      "src_routes_authenticated_app_revisao_route",
-      "src_routes_authenticated_app_upload_route",
-      "src_routes_authenticated_route_route",
-      "src_routes_canalizacoes_route",
-      "src_routes_contato_route",
-      "src_routes_index_route",
-      "src_routes_quem_somos_route",
-      "src_routetree_gen_fileroutesbypath"
+      "src_routes_authenticated_app_perfil",
+      "src_routes_authenticated_app_perfil_profilepage"
     ],
-    "16": [
-      "src_components_app_syncedtranscript_segment",
-      "src_lib_transcript_segments",
-      "src_lib_transcript_segments_round",
-      "src_lib_transcript_segments_segmentsfromtext",
-      "src_lib_transcriptions_functions",
-      "src_lib_transcriptions_functions_marktranscriptionreviewed",
-      "src_lib_transcriptions_functions_saveschema",
-      "src_lib_transcriptions_functions_savetranscription",
-      "src_lib_transcriptions_functions_segmentschema",
-      "src_routes_authenticated_app_audios_id_audiodetail",
-      "src_routes_authenticated_app_audios_id_audiodetail_handledurationknown",
-      "src_routes_authenticated_app_audios_id_audiodetail_onchangesegments",
-      "src_routes_authenticated_app_revisao_id",
-      "src_routes_authenticated_app_revisao_id_revieweditor",
-      "src_routes_authenticated_app_revisao_id_revieweditor_handledurationknown",
-      "src_routes_authenticated_app_revisao_id_revieweditor_onchangesegments",
-      "src_routes_authenticated_app_revisao_id_route"
+    "19": [
+      "src_components_app_audiocard",
+      "src_components_app_audiocard_accesschip",
+      "src_components_app_audiocard_audiocard",
+      "src_components_app_audiocard_audiocarddata",
+      "src_components_app_audiocard_formatduration",
+      "src_components_app_audiocard_shortdate",
+      "src_components_app_audiocard_tint",
+      "src_components_app_audiocard_variant",
+      "src_lib_permissions_review_status_labels",
+      "src_routes_authenticated_app_audios_index",
+      "src_routes_authenticated_app_audios_index_audioslibrary",
+      "src_routes_authenticated_app_audios_index_audioslibrary_clearfilters",
+      "src_routes_authenticated_app_audios_index_rail",
+      "src_routes_authenticated_app_audios_index_reviewstatus",
+      "src_routes_authenticated_app_audios_index_route",
+      "src_routes_authenticated_app_audios_index_row",
+      "src_routes_authenticated_app_audios_index_sectiontitle",
+      "src_routes_authenticated_app_audios_index_transcripttext"
     ],
-    "17": [
+    "20": [
       "src_components_ui_menubar",
       "src_components_ui_menubar_menubar",
       "src_components_ui_menubar_menubarcheckboxitem",
@@ -694,7 +711,61 @@
       "src_components_ui_menubar_menubarsubtrigger",
       "src_components_ui_menubar_menubartrigger"
     ],
-    "18": [
+    "21": [
+      "src_components_ui_badge",
+      "src_components_ui_badge_badge",
+      "src_components_ui_badge_badgeprops",
+      "src_components_ui_badge_badgevariants",
+      "src_components_ui_card",
+      "src_components_ui_card_card",
+      "src_lib_permissions_access_level_labels",
+      "src_lib_permissions_audio_status_labels",
+      "src_routes_authenticated_app_acolhimento",
+      "src_routes_authenticated_app_acolhimento_acolhimentopage",
+      "src_routes_authenticated_app_acolhimento_weekdays",
+      "src_routes_authenticated_app_admin_audios",
+      "src_routes_authenticated_app_admin_audios_adminaudios",
+      "src_routes_authenticated_app_meus_uploads",
+      "src_routes_authenticated_app_revisao",
+      "src_routes_authenticated_app_revisao_reviewqueue"
+    ],
+    "22": [
+      "src_integrations_supabase_auth_middleware",
+      "src_integrations_supabase_auth_middleware_requiresupabaseauth",
+      "src_lib_logs_functions",
+      "src_lib_logs_functions_listauditlogs",
+      "src_lib_options_functions",
+      "src_lib_options_functions_deleteoption",
+      "src_lib_options_functions_listoptions",
+      "src_lib_options_functions_upsertoption",
+      "src_lib_upload_tokens_functions",
+      "src_lib_upload_tokens_functions_createuploadtoken",
+      "src_lib_upload_tokens_functions_listmyuploadtokens",
+      "src_lib_upload_tokens_functions_revokeuploadtoken",
+      "src_lib_upload_tokens_functions_sha256hex",
+      "src_routes_authenticated_app_admin_logs",
+      "src_routes_authenticated_app_admin_logs_adminlogs",
+      "src_routes_authenticated_app_admin_logs_route"
+    ],
+    "23": [
+      "src_lib_classes_functions",
+      "src_lib_classes_functions_addclassmember",
+      "src_lib_classes_functions_assertcanmanageclasses",
+      "src_lib_classes_functions_class_status",
+      "src_lib_classes_functions_createclass",
+      "src_lib_classes_functions_createformationlevel",
+      "src_lib_classes_functions_endclassmembership",
+      "src_lib_classes_functions_getclassdetail",
+      "src_lib_classes_functions_listclasses",
+      "src_lib_classes_functions_listformationlevels",
+      "src_lib_classes_functions_logmemberevent",
+      "src_lib_classes_functions_updateclass",
+      "src_lib_permissions_class_status_labels",
+      "src_routes_authenticated_app_associados_turmas",
+      "src_routes_authenticated_app_associados_turmas_classespage",
+      "src_routes_authenticated_app_associados_turmas_statuses"
+    ],
+    "24": [
       "server_entry",
       "src_integrations_supabase_auth_attacher",
       "src_integrations_supabase_auth_attacher_attachsupabaseauth",
@@ -711,58 +782,7 @@
       "src_start",
       "src_start_errormiddleware"
     ],
-    "19": [
-      "src_components_ui_label",
-      "src_components_ui_label_label",
-      "src_components_ui_label_labelvariants",
-      "src_lib_entities_functions",
-      "src_lib_entities_functions_createentity",
-      "src_lib_entities_functions_deleteentity",
-      "src_lib_entities_functions_entityinput",
-      "src_lib_entities_functions_listentities",
-      "src_lib_entities_functions_listentitiesforwork",
-      "src_lib_entities_functions_updateentity",
-      "src_routes_authenticated_app_admin_entidades",
-      "src_routes_authenticated_app_admin_entidades_adminentities",
-      "src_routes_authenticated_app_admin_entidades_entitydialog",
-      "src_routes_authenticated_app_admin_entidades_entityrow",
-      "src_routes_authenticated_app_admin_entidades_route"
-    ],
-    "20": [
-      "src_components_ui_textarea",
-      "src_components_ui_textarea_textarea",
-      "src_lib_stock_functions",
-      "src_lib_stock_functions_createstockitem",
-      "src_lib_stock_functions_deletestockitem",
-      "src_lib_stock_functions_liststockitems",
-      "src_lib_stock_functions_liststockmovements",
-      "src_lib_stock_functions_registerstockmovement",
-      "src_lib_stock_functions_updatestockitem",
-      "src_routes_authenticated_app_estoque",
-      "src_routes_authenticated_app_estoque_fmtqty",
-      "src_routes_authenticated_app_estoque_movement_labels",
-      "src_routes_authenticated_app_estoque_route",
-      "src_routes_authenticated_app_estoque_stockitem",
-      "src_routes_authenticated_app_estoque_stockpage"
-    ],
-    "21": [
-      "src_lib_maintenance_functions",
-      "src_lib_maintenance_functions_addmaintenancequote",
-      "src_lib_maintenance_functions_createmaintenanceticket",
-      "src_lib_maintenance_functions_deletemaintenancequote",
-      "src_lib_maintenance_functions_getmaintenanceticket",
-      "src_lib_maintenance_functions_priorities",
-      "src_lib_maintenance_functions_sendquotetofinance",
-      "src_lib_maintenance_functions_statuses",
-      "src_lib_maintenance_functions_updatemaintenanceticket",
-      "src_routes_authenticated_app_manutencao_id",
-      "src_routes_authenticated_app_manutencao_id_dt",
-      "src_routes_authenticated_app_manutencao_id_money",
-      "src_routes_authenticated_app_manutencao_id_next_statuses",
-      "src_routes_authenticated_app_manutencao_id_route",
-      "src_routes_authenticated_app_manutencao_id_ticketdetail"
-    ],
-    "22": [
+    "25": [
       "src_components_ui_carousel",
       "src_components_ui_carousel_carousel",
       "src_components_ui_carousel_carouselapi",
@@ -778,23 +798,7 @@
       "src_components_ui_carousel_usecarousel",
       "src_components_ui_carousel_usecarouselparameters"
     ],
-    "23": [
-      "src_components_ui_sonner",
-      "src_components_ui_sonner_toaster",
-      "src_components_ui_sonner_toasterprops",
-      "src_lib_auth_context_authprovider",
-      "src_lib_lovable_error_reporting",
-      "src_lib_lovable_error_reporting_lovableerroroptions",
-      "src_lib_lovable_error_reporting_lovableevents",
-      "src_lib_lovable_error_reporting_reportlovableerror",
-      "src_lib_lovable_error_reporting_window",
-      "src_routes_root",
-      "src_routes_root_errorcomponent",
-      "src_routes_root_notfoundcomponent",
-      "src_routes_root_rootcomponent",
-      "src_routes_root_rootshell"
-    ],
-    "24": [
+    "26": [
       "class_variance_authority",
       "input_otp",
       "lovable_dev_cloud_auth_js",
@@ -809,22 +813,22 @@
       "recharts",
       "tanstack_react_start"
     ],
-    "25": [
-      "src_components_app_syncedtranscript",
-      "src_components_app_syncedtranscript_formatprecise",
-      "src_components_app_syncedtranscript_formattime",
-      "src_components_app_syncedtranscript_parseprecise",
-      "src_components_app_syncedtranscript_props",
-      "src_components_app_syncedtranscript_syncedtranscript",
-      "src_components_app_syncedtranscript_syncedtranscript_onkey",
-      "src_components_app_syncedtranscript_syncedtranscript_seek",
-      "src_components_app_syncedtranscript_syncedtranscript_shiftall",
-      "src_components_app_syncedtranscript_syncedtranscript_toggle",
-      "src_components_app_syncedtranscript_syncedtranscript_updatesegmenttext",
-      "src_components_app_syncedtranscript_syncedtranscript_updatesegmenttime",
-      "src_components_app_syncedtranscript_timefield"
+    "27": [
+      "src_lib_members_functions",
+      "src_lib_members_functions_assertcanmanagemembers",
+      "src_lib_members_functions_getmember",
+      "src_lib_members_functions_isadmin",
+      "src_lib_members_functions_listcriticalpermissions",
+      "src_lib_members_functions_listmembers",
+      "src_lib_members_functions_logevent",
+      "src_lib_members_functions_setmemberroles",
+      "src_lib_members_functions_setmemberrolesinternal",
+      "src_lib_members_functions_setmemberstatus",
+      "src_lib_members_functions_setpermissioncritical",
+      "src_lib_members_functions_updatememberprofile",
+      "src_lib_members_functions_validatemember"
     ],
-    "26": [
+    "28": [
       "src_components_ui_form",
       "src_components_ui_form_formcontrol",
       "src_components_ui_form_formdescription",
@@ -838,21 +842,7 @@
       "src_components_ui_form_formmessage",
       "src_components_ui_form_useformfield"
     ],
-    "27": [
-      "src_integrations_supabase_auth_middleware",
-      "src_integrations_supabase_auth_middleware_requiresupabaseauth",
-      "src_integrations_supabase_types_database",
-      "src_lib_audio_insights_functions",
-      "src_lib_audio_insights_functions_askgateway",
-      "src_lib_audio_insights_functions_generateaudioinsights",
-      "src_lib_audio_insights_functions_insights",
-      "src_lib_audio_insights_functions_saveaudioinsights",
-      "src_lib_audio_insights_functions_system_prompt",
-      "src_lib_me_functions",
-      "src_lib_me_functions_getmyaccess",
-      "src_lib_me_functions_updatemyprofile"
-    ],
-    "28": [
+    "29": [
       "src_components_ui_chart",
       "src_components_ui_chart_chartconfig",
       "src_components_ui_chart_chartcontainer",
@@ -865,7 +855,45 @@
       "src_components_ui_chart_themes",
       "src_components_ui_chart_usechart"
     ],
-    "29": [
+    "30": [
+      "src_integrations_supabase_types",
+      "src_integrations_supabase_types_compositetypes",
+      "src_integrations_supabase_types_constants",
+      "src_integrations_supabase_types_database",
+      "src_integrations_supabase_types_databasewithoutinternals",
+      "src_integrations_supabase_types_defaultschema",
+      "src_integrations_supabase_types_enums",
+      "src_integrations_supabase_types_json",
+      "src_integrations_supabase_types_tables",
+      "src_integrations_supabase_types_tablesinsert",
+      "src_integrations_supabase_types_tablesupdate"
+    ],
+    "31": [
+      "src_lib_signup_functions",
+      "src_lib_signup_functions_checksignuppin",
+      "src_lib_signup_functions_getsignuppinstatus",
+      "src_lib_signup_functions_setsignuppin",
+      "src_lib_signup_functions_signupassociate",
+      "src_lib_signup_server",
+      "src_lib_signup_server_encodepin",
+      "src_lib_signup_server_hashpin",
+      "src_lib_signup_server_newsalt",
+      "src_lib_signup_server_signup_pin_key",
+      "src_lib_signup_server_verifypin"
+    ],
+    "32": [
+      "src_components_ui_context_menu",
+      "src_components_ui_context_menu_contextmenucheckboxitem",
+      "src_components_ui_context_menu_contextmenucontent",
+      "src_components_ui_context_menu_contextmenuitem",
+      "src_components_ui_context_menu_contextmenulabel",
+      "src_components_ui_context_menu_contextmenuradioitem",
+      "src_components_ui_context_menu_contextmenuseparator",
+      "src_components_ui_context_menu_contextmenushortcut",
+      "src_components_ui_context_menu_contextmenusubcontent",
+      "src_components_ui_context_menu_contextmenusubtrigger"
+    ],
+    "33": [
       "src_components_ui_dropdown_menu",
       "src_components_ui_dropdown_menu_dropdownmenucheckboxitem",
       "src_components_ui_dropdown_menu_dropdownmenucontent",
@@ -877,21 +905,8 @@
       "src_components_ui_dropdown_menu_dropdownmenusubcontent",
       "src_components_ui_dropdown_menu_dropdownmenusubtrigger"
     ],
-    "30": [
-      "src_integrations_supabase_types",
-      "src_integrations_supabase_types_compositetypes",
-      "src_integrations_supabase_types_constants",
-      "src_integrations_supabase_types_databasewithoutinternals",
-      "src_integrations_supabase_types_defaultschema",
-      "src_integrations_supabase_types_enums",
-      "src_integrations_supabase_types_json",
-      "src_integrations_supabase_types_tables",
-      "src_integrations_supabase_types_tablesinsert",
-      "src_integrations_supabase_types_tablesupdate"
-    ],
-    "31": [
+    "34": [
       "src_lib_notifications_functions",
-      "src_lib_notifications_functions_countunreadnotifications",
       "src_lib_notifications_functions_getmynotificationpreferences",
       "src_lib_notifications_functions_listmynotifications",
       "src_lib_notifications_functions_marknotificationread",
@@ -901,28 +916,7 @@
       "src_routes_authenticated_app_notificacoes_notificationspage",
       "src_routes_authenticated_app_notificacoes_route"
     ],
-    "32": [
-      "src_components_ui_sheet",
-      "src_components_ui_sheet_sheetcontent",
-      "src_components_ui_sheet_sheetcontentprops",
-      "src_components_ui_sheet_sheetdescription",
-      "src_components_ui_sheet_sheetfooter",
-      "src_components_ui_sheet_sheetheader",
-      "src_components_ui_sheet_sheetoverlay",
-      "src_components_ui_sheet_sheettitle",
-      "src_components_ui_sheet_sheetvariants"
-    ],
-    "33": [
-      "src_components_ui_drawer",
-      "src_components_ui_drawer_drawer",
-      "src_components_ui_drawer_drawercontent",
-      "src_components_ui_drawer_drawerdescription",
-      "src_components_ui_drawer_drawerfooter",
-      "src_components_ui_drawer_drawerheader",
-      "src_components_ui_drawer_draweroverlay",
-      "src_components_ui_drawer_drawertitle"
-    ],
-    "34": [
+    "35": [
       "src_components_ui_navigation_menu",
       "src_components_ui_navigation_menu_navigationmenu",
       "src_components_ui_navigation_menu_navigationmenucontent",
@@ -931,15 +925,6 @@
       "src_components_ui_navigation_menu_navigationmenutrigger",
       "src_components_ui_navigation_menu_navigationmenutriggerstyle",
       "src_components_ui_navigation_menu_navigationmenuviewport"
-    ],
-    "35": [
-      "src_components_app_uploadtokens",
-      "src_components_app_uploadtokens_uploadtokens",
-      "src_lib_upload_tokens_functions",
-      "src_lib_upload_tokens_functions_createuploadtoken",
-      "src_lib_upload_tokens_functions_listmyuploadtokens",
-      "src_lib_upload_tokens_functions_revokeuploadtoken",
-      "src_lib_upload_tokens_functions_sha256hex"
     ],
     "36": [
       "src_components_ui_toggle",
@@ -951,6 +936,40 @@
       "src_components_ui_toggle_togglevariants"
     ],
     "37": [
+      "src_lib_entities_functions",
+      "src_lib_entities_functions_createentity",
+      "src_lib_entities_functions_deleteentity",
+      "src_lib_entities_functions_entityinput",
+      "src_lib_entities_functions_listentities",
+      "src_lib_entities_functions_listentitiesforwork",
+      "src_lib_entities_functions_updateentity"
+    ],
+    "38": [
+      "src_lib_transcript_segments_segmentsfromtext",
+      "src_routes_authenticated_app_audios_id_audiodetail",
+      "src_routes_authenticated_app_audios_id_audiodetail_handledurationknown",
+      "src_routes_authenticated_app_audios_id_audiodetail_onchangesegments",
+      "src_routes_authenticated_app_revisao_id_revieweditor",
+      "src_routes_authenticated_app_revisao_id_revieweditor_handledurationknown",
+      "src_routes_authenticated_app_revisao_id_revieweditor_onchangesegments"
+    ],
+    "39": [
+      "src_components_app_rolesmanager_rolesmanager",
+      "src_components_app_signuppincard_signuppincard",
+      "src_routes_authenticated_app_admin_index",
+      "src_routes_authenticated_app_admin_index_adminhome",
+      "src_routes_authenticated_app_admin_index_route",
+      "src_routes_authenticated_app_admin_index_shortcut"
+    ],
+    "40": [
+      "src_components_ui_textarea",
+      "src_components_ui_textarea_textarea",
+      "src_routes_authenticated_app_admin_entidades",
+      "src_routes_authenticated_app_admin_entidades_adminentities",
+      "src_routes_authenticated_app_admin_entidades_entitydialog",
+      "src_routes_authenticated_app_admin_entidades_entityrow"
+    ],
+    "41": [
       "src_routes_api_public_audio_upload",
       "src_routes_api_public_audio_upload_cors",
       "src_routes_api_public_audio_upload_extfromname",
@@ -958,7 +977,7 @@
       "src_routes_api_public_audio_upload_route",
       "src_routes_api_public_audio_upload_sha256hex"
     ],
-    "38": [
+    "42": [
       "supabase_functions_transcribe_audio_index",
       "supabase_functions_transcribe_audio_index_body",
       "supabase_functions_transcribe_audio_index_corsheaders",
@@ -966,300 +985,286 @@
       "supabase_functions_transcribe_audio_index_mimetoextension",
       "supabase_functions_transcribe_audio_index_segment"
     ],
-    "39": [
-      "src_components_ui_alert",
-      "src_components_ui_alert_alert",
-      "src_components_ui_alert_alertdescription",
-      "src_components_ui_alert_alerttitle",
-      "src_components_ui_alert_alertvariants"
-    ],
-    "40": [
-      "src_lib_logs_functions",
-      "src_lib_logs_functions_listauditlogs",
-      "src_routes_authenticated_app_admin_logs",
-      "src_routes_authenticated_app_admin_logs_adminlogs",
-      "src_routes_authenticated_app_admin_logs_route"
-    ],
-    "41": [
+    "43": [
       "src_router",
       "src_router_getrouter",
       "src_routetree_gen_register",
       "src_routetree_gen_routetree",
       "src_start_startinstance"
     ],
-    "42": [
+    "44": [
       "src_lib_api_example_functions",
       "src_lib_api_example_functions_getgreeting",
       "src_lib_config_server",
       "src_lib_config_server_getserverconfig"
     ],
-    "43": [
+    "45": [
       "clsx",
       "package_dependencies_clsx"
     ],
-    "44": [
+    "46": [
       "cmdk",
       "package_dependencies_cmdk"
     ],
-    "45": [
+    "47": [
       "date_fns",
       "package_dependencies_date_fns"
     ],
-    "46": [
+    "48": [
       "embla_carousel_react",
       "package_dependencies_embla_carousel_react"
     ],
-    "47": [
+    "49": [
       "hookform_resolvers",
       "package_dependencies_hookform_resolvers"
     ],
-    "48": [
+    "50": [
       "lucide_react",
       "package_dependencies_lucide_react"
     ],
-    "49": [
+    "51": [
       "package_dependencies_radix_ui_react_accordion",
       "radix_ui_react_accordion"
     ],
-    "50": [
+    "52": [
       "package_dependencies_radix_ui_react_alert_dialog",
       "radix_ui_react_alert_dialog"
     ],
-    "51": [
+    "53": [
       "package_dependencies_radix_ui_react_aspect_ratio",
       "radix_ui_react_aspect_ratio"
     ],
-    "52": [
+    "54": [
       "package_dependencies_radix_ui_react_avatar",
       "radix_ui_react_avatar"
     ],
-    "53": [
+    "55": [
       "package_dependencies_radix_ui_react_checkbox",
       "radix_ui_react_checkbox"
     ],
-    "54": [
+    "56": [
       "package_dependencies_radix_ui_react_collapsible",
       "radix_ui_react_collapsible"
     ],
-    "55": [
+    "57": [
       "package_dependencies_radix_ui_react_dialog",
       "radix_ui_react_dialog"
     ],
-    "56": [
+    "58": [
       "package_dependencies_radix_ui_react_dropdown_menu",
       "radix_ui_react_dropdown_menu"
     ],
-    "57": [
+    "59": [
       "package_dependencies_radix_ui_react_hover_card",
       "radix_ui_react_hover_card"
     ],
-    "58": [
+    "60": [
       "package_dependencies_radix_ui_react_label",
       "radix_ui_react_label"
     ],
-    "59": [
+    "61": [
       "package_dependencies_radix_ui_react_menubar",
       "radix_ui_react_menubar"
     ],
-    "60": [
+    "62": [
       "package_dependencies_radix_ui_react_navigation_menu",
       "radix_ui_react_navigation_menu"
     ],
-    "61": [
+    "63": [
       "package_dependencies_radix_ui_react_popover",
       "radix_ui_react_popover"
     ],
-    "62": [
+    "64": [
       "package_dependencies_radix_ui_react_progress",
       "radix_ui_react_progress"
     ],
-    "63": [
+    "65": [
       "package_dependencies_radix_ui_react_radio_group",
       "radix_ui_react_radio_group"
     ],
-    "64": [
+    "66": [
       "package_dependencies_radix_ui_react_scroll_area",
       "radix_ui_react_scroll_area"
     ],
-    "65": [
+    "67": [
       "package_dependencies_radix_ui_react_select",
       "radix_ui_react_select"
     ],
-    "66": [
+    "68": [
       "package_dependencies_radix_ui_react_separator",
       "radix_ui_react_separator"
     ],
-    "67": [
+    "69": [
       "package_dependencies_radix_ui_react_slider",
       "radix_ui_react_slider"
     ],
-    "68": [
+    "70": [
       "package_dependencies_radix_ui_react_slot",
       "radix_ui_react_slot"
     ],
-    "69": [
+    "71": [
       "package_dependencies_radix_ui_react_switch",
       "radix_ui_react_switch"
     ],
-    "70": [
+    "72": [
       "package_dependencies_radix_ui_react_tabs",
       "radix_ui_react_tabs"
     ],
-    "71": [
+    "73": [
       "package_dependencies_radix_ui_react_toggle",
       "radix_ui_react_toggle"
     ],
-    "72": [
+    "74": [
       "package_dependencies_radix_ui_react_toggle_group",
       "radix_ui_react_toggle_group"
     ],
-    "73": [
+    "75": [
       "package_dependencies_radix_ui_react_tooltip",
       "radix_ui_react_tooltip"
     ],
-    "74": [
+    "76": [
       "package_dependencies_react",
       "react"
     ],
-    "75": [
+    "77": [
       "package_dependencies_react_day_picker",
       "react_day_picker"
     ],
-    "76": [
+    "78": [
       "package_dependencies_react_dom",
       "react_dom"
     ],
-    "77": [
+    "79": [
       "package_dependencies_react_hook_form",
       "react_hook_form"
     ],
-    "78": [
+    "80": [
       "package_dependencies_react_resizable_panels",
       "react_resizable_panels"
     ],
-    "79": [
+    "81": [
       "package_dependencies_sonner",
       "sonner"
     ],
-    "80": [
+    "82": [
       "package_dependencies_supabase_supabase_js",
       "supabase_supabase_js"
     ],
-    "81": [
+    "83": [
       "package_dependencies_tailwind_merge",
       "tailwind_merge"
     ],
-    "82": [
+    "84": [
       "package_dependencies_tailwindcss",
       "tailwindcss"
     ],
-    "83": [
+    "85": [
       "package_dependencies_tailwindcss_vite",
       "tailwindcss_vite"
     ],
-    "84": [
+    "86": [
       "package_dependencies_tanstack_react_query",
       "tanstack_react_query"
     ],
-    "85": [
+    "87": [
       "package_dependencies_tanstack_react_router",
       "tanstack_react_router"
     ],
-    "86": [
+    "88": [
       "package_dependencies_tanstack_router_plugin",
       "tanstack_router_plugin"
     ],
-    "87": [
+    "89": [
       "package_dependencies_tw_animate_css",
       "tw_animate_css"
     ],
-    "88": [
+    "90": [
       "package_dependencies_vaul",
       "vaul"
     ],
-    "89": [
+    "91": [
       "package_dependencies_vite_tsconfig_paths",
       "vite_tsconfig_paths"
     ],
-    "90": [
+    "92": [
       "package_dependencies_zod",
       "zod"
     ],
-    "91": [
+    "93": [
       "src_routes_authenticated_app",
       "src_routes_authenticated_app_route"
     ],
-    "92": [
+    "94": [
       "src_routes_authenticated_app_admin_cargos",
       "src_routes_authenticated_app_admin_cargos_route"
     ],
-    "93": [
+    "95": [
       "src_routes_authenticated_app_audios",
       "src_routes_authenticated_app_audios_route"
     ],
-    "94": [
+    "96": [
       "src_routes_root_route",
       "src_routetree_gen_fileroutesbyid"
     ],
-    "95": [
+    "97": [
       "eslint_config"
     ],
-    "96": [
+    "98": [
       "src_components_ui_aspect_ratio"
     ],
-    "97": [
+    "99": [
       "src_components_ui_collapsible"
     ],
-    "98": [
+    "100": [
       "vite_config"
     ]
   },
   "cohesion": {
-    "0": 0.05112560488112771,
-    "1": 0.05487269534679543,
-    "2": 0.05311676909569798,
-    "3": 0.03508771929824561,
-    "4": 0.0425531914893617,
-    "5": 0.0858974358974359,
-    "6": 0.07142857142857142,
-    "7": 0.10756302521008404,
+    "0": 0.053075396825396824,
+    "1": 0.05565638233514821,
+    "2": 0.03508771929824561,
+    "3": 0.0425531914893617,
+    "4": 0.0595959595959596,
+    "5": 0.07293868921775898,
+    "6": 0.10227272727272728,
+    "7": 0.13548387096774195,
     "8": 0.07407407407407407,
-    "9": 0.12,
-    "10": 0.1067193675889328,
-    "11": 0.17316017316017315,
-    "12": 0.1,
-    "13": 0.10526315789473684,
-    "14": 0.21052631578947367,
-    "15": 0.10526315789473684,
-    "16": 0.16911764705882354,
-    "17": 0.11764705882352941,
-    "18": 0.22857142857142856,
-    "19": 0.19047619047619047,
-    "20": 0.20952380952380953,
-    "21": 0.2,
-    "22": 0.18681318681318682,
-    "23": 0.17582417582417584,
-    "24": 0.15384615384615385,
-    "25": 0.20512820512820512,
-    "26": 0.22727272727272727,
-    "27": 0.21212121212121213,
-    "28": 0.2545454545454545,
-    "29": 0.2,
-    "30": 0.2,
-    "31": 0.3111111111111111,
-    "32": 0.25,
-    "33": 0.25,
-    "34": 0.2857142857142857,
-    "35": 0.47619047619047616,
+    "9": 0.07407407407407407,
+    "10": 0.2153846153846154,
+    "11": 0.09538461538461539,
+    "12": 0.12648221343873517,
+    "13": 0.09090909090909091,
+    "14": 0.1067193675889328,
+    "15": 0.1761904761904762,
+    "16": 0.1761904761904762,
+    "17": 0.10526315789473684,
+    "18": 0.17543859649122806,
+    "19": 0.1568627450980392,
+    "20": 0.11764705882352941,
+    "21": 0.23333333333333334,
+    "22": 0.16666666666666666,
+    "23": 0.225,
+    "24": 0.22857142857142856,
+    "25": 0.18681318681318682,
+    "26": 0.15384615384615385,
+    "27": 0.3333333333333333,
+    "28": 0.22727272727272727,
+    "29": 0.2545454545454545,
+    "30": 0.18181818181818182,
+    "31": 0.3090909090909091,
+    "32": 0.2,
+    "33": 0.2,
+    "34": 0.3611111111111111,
+    "35": 0.2857142857142857,
     "36": 0.42857142857142855,
-    "37": 0.5333333333333333,
-    "38": 0.3333333333333333,
-    "39": 0.5,
-    "40": 0.5,
-    "41": 0.4,
-    "42": 0.8333333333333334,
-    "43": 1.0,
-    "44": 1.0,
+    "37": 0.2857142857142857,
+    "38": 0.38095238095238093,
+    "39": 0.3333333333333333,
+    "40": 0.4,
+    "41": 0.5333333333333333,
+    "42": 0.3333333333333333,
+    "43": 0.4,
+    "44": 0.8333333333333334,
     "45": 1.0,
     "46": 1.0,
     "47": 1.0,
@@ -1313,7 +1318,9 @@
     "95": 1.0,
     "96": 1.0,
     "97": 1.0,
-    "98": 1.0
+    "98": 1.0,
+    "99": 1.0,
+    "100": 1.0
   },
   "gods": [
     {
@@ -1322,14 +1329,14 @@
       "degree": 220
     },
     {
-      "id": "src_routetree_gen_fileroutesbypath",
-      "label": "FileRoutesByPath",
+      "id": "src_components_ui_button_button",
+      "label": "Button",
       "degree": 44
     },
     {
-      "id": "src_components_ui_button_button",
-      "label": "Button",
-      "degree": 43
+      "id": "src_routetree_gen_fileroutesbypath",
+      "label": "FileRoutesByPath",
+      "degree": 44
     },
     {
       "id": "src_components_ui_card_card",
