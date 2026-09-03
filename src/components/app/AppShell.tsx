@@ -304,7 +304,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         </div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-none">
           <NavLinks collapsed={!isDesktopExpanded} />
         </div>
 
@@ -396,7 +396,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <X className="h-6 w-6" />
             </button>
           </div>
-          <div className="scroll-momentum flex-1 overflow-y-auto px-3 py-4">
+          <div className="scroll-momentum flex-1 overflow-y-auto px-3 py-4 scrollbar-none">
             <NavLinks onClick={() => setMobileOpen(false)} />
           </div>
           <div className="safe-bottom border-t border-sidebar-border p-3">

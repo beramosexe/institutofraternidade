@@ -193,6 +193,13 @@
     padding-right: env(safe-area-inset-right, 0px);
   }
   .scroll-momentum { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Cores por área do menu de ferramentas */
