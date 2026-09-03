@@ -287,7 +287,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="safe-top sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/90 px-3 backdrop-blur md:hidden">
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-md text-blue-600 dark:text-blue-400"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-[#72b1dd]"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Menu"
             aria-expanded={mobileOpen}
