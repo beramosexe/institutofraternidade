@@ -249,7 +249,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
         <div className="border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
           <Link to="/app" className="flex items-center gap-2.5">
-            <Logo variant="mark" className="h-8 w-8 ring-1 ring-sidebar-border" />
+            <Logo variant="mark" className="h-12 w-12 shrink-0 ring-1 ring-sidebar-border" />
             <div className="min-w-0 leading-tight">
               <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/60">
                 Ferramentas
@@ -288,7 +288,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="safe-top sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/90 px-3 backdrop-blur md:hidden">
           <div className="w-11" aria-hidden />
           <Link to="/app" className="flex items-center">
-            <Logo variant="mark" className="h-8 w-8 ring-1 ring-border" />
+            <Logo variant="mark" className="h-10 w-10 shrink-0 ring-1 ring-border" />
           </Link>
           <button
             className="flex h-11 w-11 items-center justify-center rounded-md"
@@ -317,7 +317,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ].join(" ")}
         >
           <div className="safe-top flex items-center gap-2.5 border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
-            <Logo variant="mark" className="h-8 w-8 shrink-0 ring-1 ring-sidebar-border" />
+            <Logo variant="mark" className="h-12 w-12 shrink-0 ring-1 ring-sidebar-border" />
             <div className="min-w-0 flex-1 leading-tight">
               <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/60">
                 Ferramentas
