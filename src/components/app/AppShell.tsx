@@ -31,11 +31,12 @@ export function useMyAccess() {
 }
 
 type NavItem = { to: string; label: string; icon: typeof Home; need?: string; adminOnly?: boolean };
-type NavSection = { label: string; items: NavItem[]; comingSoon?: boolean; labelColor?: string };
+type NavSection = { label: string; items: NavItem[]; comingSoon?: boolean; accent?: string };
 
 const SECTIONS: NavSection[] = [
   {
     label: "Área do Associado",
+    accent: "var(--area-associado)",
     items: [
       { to: "/app", label: "Painel", icon: Home },
       { to: "/app/audios", label: "Áudios", icon: Headphones },
@@ -45,14 +46,14 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Painel da Casa",
-    labelColor: "text-teal-600",
+    accent: "var(--area-casa)",
     items: [
       { to: "/app/casa", label: "Cuidar da casa", icon: HeartHandshake },
     ],
   },
   {
     label: "Minha Conta",
-    labelColor: "text-indigo-600",
+    accent: "var(--area-conta)",
     items: [
       { to: "/app/conta", label: "Minha conta e formação", icon: UserCircle },
       { to: "/app/perfil", label: "Meus dados", icon: Settings },
@@ -60,7 +61,7 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Associados",
-    labelColor: "text-rose-600",
+    accent: "var(--area-associados)",
     items: [
       { to: "/app/associados", label: "Gestão de associados", icon: UsersIcon, need: "member.manage" },
       { to: "/app/associados/turmas", label: "Turmas e níveis", icon: GraduationCap, need: "class.manage" },
@@ -68,7 +69,7 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Gestão Áudios e Revisão",
-    labelColor: "text-blue-600",
+    accent: "var(--area-audios)",
     items: [
       { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
       { to: "/app/revisao", label: "Revisão de transcrições", icon: ListChecks, need: "transcription.review" },
@@ -76,14 +77,14 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Acolhimento",
-    labelColor: "text-emerald-600",
+    accent: "var(--area-acolhimento)",
     items: [
       { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
     ],
   },
   {
     label: "Estoque e Compras",
-    labelColor: "text-amber-600",
+    accent: "var(--area-estoque)",
     items: [
       { to: "/app/estoque", label: "Gestão de estoque", icon: Package, need: "stock.manage" },
       { to: "/app/compras", label: "Compras e pedidos", icon: ShoppingCart, need: "purchase.manage" },
@@ -91,21 +92,22 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Manutenção",
-    labelColor: "text-slate-500",
+    accent: "var(--area-manutencao)",
     items: [
       { to: "/app/manutencao", label: "Chamados da casa", icon: Wrench, need: "maintenance.manage" },
     ],
   },
   {
     label: "Financeiro",
-    labelColor: "text-green-700",
+    accent: "var(--area-financeiro)",
     items: [
       { to: "/app/financeiro", label: "Aprovações financeiras", icon: Banknote, need: "finance.view" },
     ],
   },
-  { label: "Mídias", labelColor: "text-violet-600", items: [], comingSoon: true },
+  { label: "Mídias", accent: "var(--area-midias)", items: [], comingSoon: true },
   {
     label: "Administração",
+    accent: "var(--area-admin)",
     items: [
       { to: "/app/admin", label: "Admin", icon: ShieldCheck, adminOnly: true },
       { to: "/app/admin/trabalhos", label: "Gestão dos trabalhos e eventos", icon: Calendar, need: "work.manage" },
@@ -115,6 +117,7 @@ const SECTIONS: NavSection[] = [
     ],
   },
 ];
+
 
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -179,22 +182,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="space-y-5">
+    <nav className="space-y-4">
       {(isPending ? PENDING_SECTIONS : SECTIONS).map((section) => {
         const items = section.items.filter(can);
         if (items.length === 0 && !section.comingSoon) return null;
+        const accent = section.accent ?? "var(--area-associado)";
         return (
-          <div key={section.label}>
-            <div className={[
-              "px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider",
-              section.labelColor || "text-sidebar-foreground/80",
-            ].join(" ")}>
+          <div key={section.label} className="pl-2.5" style={{ borderLeft: `2px solid ${accent}` }}>
+            <div
+              className="px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+              style={{ color: accent }}
+            >
               {section.label}
             </div>
             {items.length === 0 ? (
-              <div className="px-3 py-1.5 text-xs italic text-sidebar-foreground/40">Em breve</div>
+              <div className="px-2.5 pb-1 text-xs italic text-sidebar-foreground/45">Em breve</div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {items.map((i) => {
                   const Icon = i.icon;
                   const active = isActive(i.to);
@@ -204,13 +208,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                       to={i.to}
                       onClick={onClick}
                       className={[
-                        "flex items-center gap-3 rounded-md px-3 py-3 text-sm transition-colors md:py-2",
+                        "relative flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors md:min-h-9",
                         active
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                       ].join(" ")}
                     >
-                      <Icon className="h-4 w-4 shrink-0" />
+                      {active && (
+                        <span
+                          className="absolute inset-y-1 -left-[12px] w-[3px] rounded-full"
+                          style={{ background: accent }}
+                          aria-hidden
+                        />
+                      )}
+                      <Icon className="h-4 w-4 shrink-0" style={active ? { color: accent } : undefined} />
                       <span className="min-w-0 flex-1 truncate">{i.label}</span>
                       {i.to === "/app/associados" && (pendingMembers?.count ?? 0) > 0 && (
                         <Badge className="shrink-0">{pendingMembers?.count}</Badge>
@@ -218,7 +229,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {i.to === "/app/notificacoes" && (unread?.count ?? 0) > 0 && (
                         <Badge className="shrink-0">{unread?.count}</Badge>
                       )}
-
                     </Link>
                   );
                 })}
@@ -231,18 +241,29 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
 
+
+
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar desktop */}
+      {/* Sidebar desktop — menu de ferramentas */}
       <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
-        <div className="p-5"><Link to="/"><Logo /></Link></div>
-        <div className="flex-1 overflow-y-auto px-3 py-2"><NavLinks /></div>
-        <div className="border-t border-sidebar-border p-3">
-          <div className="mb-2 px-3 text-xs text-sidebar-foreground/70 truncate">
-            {access?.profile?.full_name ?? "Carregando…"}
-          </div>
+        <div className="border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
+          <Link to="/app" className="flex items-center gap-2.5">
+            <Logo variant="mark" className="h-8 w-8 ring-1 ring-sidebar-border" />
+            <div className="min-w-0 leading-tight">
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                Ferramentas
+              </div>
+              <div className="truncate text-sm font-medium text-sidebar-foreground">
+                {access?.profile?.full_name ?? "Carregando…"}
+              </div>
+            </div>
+          </Link>
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 py-3"><NavLinks /></div>
+        <div className="border-t border-sidebar-border p-2.5">
           {access?.membershipStatus === "inactive" && (
-            <div className="mb-2 px-3">
+            <div className="mb-2 px-1">
               <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
                 Associado inativo
               </Badge>
@@ -255,7 +276,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Settings className="h-4 w-4" /> Perfil
               </Button>
             </Link>
-            <Button variant="ghost" size="sm" onClick={signOut} title="Sair">
+            <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sair" title="Sair">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -264,10 +285,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile top bar */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="safe-top sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:hidden">
-          <Link to="/app"><Logo /></Link>
+        <header className="safe-top sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/90 px-3 backdrop-blur md:hidden">
+          <Link to="/app" className="flex items-center">
+            <Logo variant="mark" className="h-8 w-8 ring-1 ring-border" />
+          </Link>
+          <span className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            Ferramentas
+          </span>
           <button
-            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md"
+            className="flex h-11 w-11 items-center justify-center rounded-md"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Menu"
             aria-expanded={mobileOpen}
@@ -275,6 +301,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </header>
+
 
         {/* Mobile drawer */}
         <div
@@ -287,14 +314,21 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
         <aside
           className={[
-            "fixed inset-y-0 right-0 z-50 flex w-[86%] max-w-xs flex-col border-l border-sidebar-border bg-sidebar shadow-2xl transition-transform duration-200 md:hidden",
-            mobileOpen ? "translate-x-0" : "translate-x-full",
+            "fixed inset-y-0 left-0 z-50 flex w-[86%] max-w-xs flex-col border-r border-sidebar-border bg-sidebar shadow-2xl transition-transform duration-200 md:hidden",
+            mobileOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
-          <div className="safe-top flex items-center justify-between border-b border-sidebar-border px-4 py-3">
-            <span className="text-sm font-medium text-sidebar-foreground truncate">
-              {access?.profile?.full_name ?? "Menu"}
-            </span>
+          <div className="safe-top flex items-center gap-2.5 border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
+            <Logo variant="mark" className="h-8 w-8 shrink-0 ring-1 ring-sidebar-border" />
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                Ferramentas
+              </div>
+              <div className="truncate text-sm font-medium text-sidebar-foreground">
+                {access?.profile?.full_name ?? "Menu"}
+              </div>
+            </div>
+
             <button
               className="flex h-10 w-10 items-center justify-center rounded-md"
               onClick={() => setMobileOpen(false)}
