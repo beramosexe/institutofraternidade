@@ -31,6 +31,20 @@ type Status = "draft" | "published" | "completed" | "archived";
 type Visibility = "public" | "internal";
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+/** Paleta pronta para identificar os trabalhos por cor nos áudios e na agenda. */
+const COLOR_PALETTE = [
+  "#7BA7D9", // azul sereno (padrão)
+  "#5B8DEF", // azul vivo
+  "#7C6FD0", // violeta
+  "#B084CC", // lilás
+  "#4FAE9B", // verde-água
+  "#5FA55A", // verde
+  "#D9A441", // dourado
+  "#D97B54", // terracota
+  "#C4566B", // rosé
+  "#8A8F98", // cinza
+];
 const MODALITY_LABELS: Record<Modality, string> = {
   presencial: "Presencial",
   online: "Online",
@@ -42,6 +56,7 @@ type FormPayload = {
   id?: string;
   name: string;
   description?: string | null;
+  color?: string | null;
   starts_at: string;
   ends_at?: string | null;
   location?: string | null;
@@ -112,10 +127,17 @@ function AdminWorks() {
         {(works ?? []).length === 0 ? (
           <Card className="p-10 text-center text-muted-foreground">Nenhum trabalho cadastrado.</Card>
         ) : works?.map((w) => (
-          <Card key={w.id} className="p-5">
+          <Card
+            key={w.id}
+            className="p-5"
+            style={w.color ? { borderLeft: `5px solid ${w.color}`, background: `color-mix(in oklab, ${w.color} 5%, transparent)` } : undefined}
+          >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="font-display text-xl text-foreground">{w.name}</h2>
+                <h2 className="flex items-center gap-2 font-display text-xl text-foreground">
+                  {w.color && <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: w.color }} />}
+                  {w.name}
+                </h2>
                 <p className="text-sm text-brand">
                   {w.recurrence === "weekly" && w.recurrence_weekday != null && w.recurrence_time
                     ? `Semanal · ${WEEKDAYS[w.recurrence_weekday]} às ${w.recurrence_time.slice(0, 5)}`

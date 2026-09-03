@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Lock, Star, Headphones, PlayCircle } from "lucide-react";
+import { Lock, Star, Headphones, PlayCircle, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ACCESS_LEVEL_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
@@ -24,7 +24,12 @@ export type AudioCardData = {
   review_status?: "unreviewed" | "in_review" | "reviewed" | null;
 };
 
-const DEFAULT_COLOR = "hsl(var(--brand))";
+const DEFAULT_COLOR = "var(--brand)";
+
+/** Tinta suave derivada da cor do trabalho (fundo do cartão). */
+function tint(color: string, pct: number) {
+  return `color-mix(in oklab, ${color} ${pct}%, transparent)`;
+}
 
 export function formatDuration(sec?: number | null) {
   if (!sec || sec <= 0) return null;
@@ -41,6 +46,19 @@ function shortDate(recordedAt: string | null) {
 
 type Variant = "grid" | "row" | "compact";
 
+function AccessChip({ level }: { level: AudioCardData["access_level"] }) {
+  const restricted = level !== "public";
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-background/70 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+      title={`Disponibilidade: ${ACCESS_LEVEL_LABELS[level]}`}
+    >
+      {restricted ? <Lock className="h-2.5 w-2.5" /> : <Globe className="h-2.5 w-2.5" />}
+      {ACCESS_LEVEL_LABELS[level]}
+    </span>
+  );
+}
+
 export function AudioCard({
   audio,
   onKeyword,
@@ -51,7 +69,6 @@ export function AudioCard({
   variant?: Variant;
 }) {
   const color = audio.works?.color || DEFAULT_COLOR;
-  const restricted = audio.access_level !== "public";
   const duration = formatDuration(audio.duration_seconds);
   const date = shortDate(audio.recorded_at);
   const label = audio.works?.name ?? (audio.audio_type === "canalizacao" ? "Canalização" : "Áudio");
@@ -60,20 +77,23 @@ export function AudioCard({
     return (
       <Card
         className="w-[240px] shrink-0 overflow-hidden transition-colors hover:bg-accent/30 sm:w-[260px]"
-        style={{ borderTop: `3px solid ${color}` }}
+        style={{ borderTop: `4px solid ${color}`, background: tint(color, 7) }}
       >
         <Link to="/app/audios/$id" params={{ id: audio.id }} className="block p-3.5">
           <div className="flex items-center gap-1.5">
-            <span className="truncate text-[11px] font-medium uppercase tracking-wide" style={{ color }}>
-              {label}
+            <span
+              className="inline-flex max-w-full items-center gap-1.5 truncate rounded-full px-2 py-0.5 text-[11px] font-semibold"
+              style={{ color, background: tint(color, 14) }}
+            >
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
+              <span className="truncate">{label}</span>
             </span>
             {audio.is_featured && <Star className="h-3 w-3 shrink-0 text-gold" />}
-            {restricted && <Lock className="ml-auto h-3 w-3 shrink-0 text-muted-foreground" />}
           </div>
           <h3 className="mt-1.5 line-clamp-2 font-display text-base leading-snug text-foreground">
             {audio.title}
           </h3>
-          <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
             {date && <span>{date}</span>}
             {duration && (
               <span className="flex items-center gap-1">
@@ -81,6 +101,9 @@ export function AudioCard({
                 {duration}
               </span>
             )}
+          </div>
+          <div className="mt-2">
+            <AccessChip level={audio.access_level} />
           </div>
         </Link>
       </Card>
@@ -92,7 +115,7 @@ export function AudioCard({
   return (
     <Card
       className="group relative overflow-hidden transition-colors hover:bg-accent/30"
-      style={{ borderLeft: `3px solid ${color}` }}
+      style={{ borderLeft: `5px solid ${color}`, background: tint(color, 6) }}
     >
       <Link
         to="/app/audios/$id"
@@ -101,16 +124,21 @@ export function AudioCard({
       >
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-[11px] font-medium uppercase tracking-wide" style={{ color }}>
-                {label}
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className="inline-flex max-w-full items-center gap-1.5 truncate rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                style={{ color, background: tint(color, 14) }}
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} />
+                <span className="truncate">{label}</span>
               </span>
               {audio.is_featured && <Star className="h-3 w-3 shrink-0 text-gold" />}
+              <AccessChip level={audio.access_level} />
             </div>
 
             <h3
               className={[
-                "mt-1 font-display leading-snug text-foreground",
+                "mt-1.5 font-display leading-snug text-foreground",
                 isRow ? "truncate text-lg" : "line-clamp-2 text-lg",
               ].join(" ")}
             >
@@ -155,15 +183,6 @@ export function AudioCard({
               </p>
             )}
           </div>
-
-          {restricted && (
-            <span
-              className="shrink-0 rounded-full bg-muted p-1.5 text-muted-foreground"
-              title={ACCESS_LEVEL_LABELS[audio.access_level]}
-            >
-              <Lock className="h-3 w-3" />
-            </span>
-          )}
         </div>
       </Link>
 
@@ -174,7 +193,7 @@ export function AudioCard({
               key={k}
               type="button"
               onClick={() => onKeyword?.(k)}
-              className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-brand/50 hover:text-brand"
+              className="rounded-full border border-border bg-background/70 px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-brand/50 hover:text-brand"
             >
               {k}
             </button>

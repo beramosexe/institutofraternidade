@@ -8,6 +8,7 @@ const workInput = z.object({
   starts_at: z.string(),
   ends_at: z.string().optional().nullable(),
   location: z.string().max(200).optional().nullable(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
   status: z.enum(["draft", "published", "completed", "archived"]),
   visibility: z.enum(["public", "internal"]),
   modality: z.enum(["presencial", "online", "hibrido", "externo"]).nullable().optional(),
