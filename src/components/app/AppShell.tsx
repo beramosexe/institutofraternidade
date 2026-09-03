@@ -316,7 +316,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
-          <div className="safe-top flex items-center gap-3 border-b border-sidebar-border bg-sidebar-accent/40 px-4 pt-8 pb-4">
+          <div className="safe-top flex items-center gap-3 border-b border-sidebar-border bg-sidebar-accent/40 px-4 pt-12 pb-4">
             <Logo variant="mark" className="h-12 w-12 shrink-0 ring-1 ring-sidebar-border" />
             <div className="min-w-0 flex-1 flex flex-col justify-center gap-0.5 rounded-md border border-sidebar-border/50 bg-background/50 p-2 shadow-sm">
               <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/60">
