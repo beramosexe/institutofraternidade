@@ -314,14 +314,21 @@ export function AppShell({ children }: { children: ReactNode }) {
         />
         <aside
           className={[
-            "fixed inset-y-0 right-0 z-50 flex w-[86%] max-w-xs flex-col border-l border-sidebar-border bg-sidebar shadow-2xl transition-transform duration-200 md:hidden",
-            mobileOpen ? "translate-x-0" : "translate-x-full",
+            "fixed inset-y-0 left-0 z-50 flex w-[86%] max-w-xs flex-col border-r border-sidebar-border bg-sidebar shadow-2xl transition-transform duration-200 md:hidden",
+            mobileOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
-          <div className="safe-top flex items-center justify-between border-b border-sidebar-border px-4 py-3">
-            <span className="text-sm font-medium text-sidebar-foreground truncate">
-              {access?.profile?.full_name ?? "Menu"}
-            </span>
+          <div className="safe-top flex items-center gap-2.5 border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
+            <Logo variant="mark" className="h-8 w-8 shrink-0 ring-1 ring-sidebar-border" />
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                Ferramentas
+              </div>
+              <div className="truncate text-sm font-medium text-sidebar-foreground">
+                {access?.profile?.full_name ?? "Menu"}
+              </div>
+            </div>
+
             <button
               className="flex h-10 w-10 items-center justify-center rounded-md"
               onClick={() => setMobileOpen(false)}
