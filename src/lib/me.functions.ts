@@ -83,16 +83,19 @@ export const getMyMembership = createServerFn({ method: "GET" })
 /** Update own profile */
 export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { full_name?: string; phone?: string; bio?: string }) =>
+  .inputValidator((data: { full_name?: string; phone?: string; bio?: string; shortcuts?: string[] }) =>
     z.object({
       full_name: z.string().max(120).optional(),
       phone: z.string().max(40).optional(),
       bio: z.string().max(500).optional(),
+      shortcuts: z.array(z.string()).max(6).optional(),
     }).parse(data),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase.from("profiles").update(data).eq("id", userId);
+    // Bypass estrito de typagem para suportar nova coluna imediatamente no client
+    const updatePayload: any = { ...data }; 
+    const { error } = await supabase.from("profiles").update(updatePayload).eq("id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

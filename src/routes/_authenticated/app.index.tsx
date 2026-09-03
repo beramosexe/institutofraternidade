@@ -1,7 +1,11 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Calendar, Headphones, Upload, ListChecks, UserCheck, ArrowRight } from "lucide-react";
+import {
+  Calendar, Headphones, Upload, ListChecks, UserCheck, ArrowRight,
+  Settings, HeartHandshake, UserCircle, Users, GraduationCap, CalendarCheck,
+  Package, ShoppingCart, Wrench, Banknote, ShieldCheck, History
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { countPendingMembers } from "@/lib/members.functions";
 import { Card } from "@/components/ui/card";
@@ -9,14 +13,52 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMyAccess } from "@/components/app/AppShell";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { updateMyProfile } from "@/lib/me.functions";
+import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: Dashboard,
 });
 
+const ALL_SHORTCUTS = [
+  { to: "/app/audios", label: "Biblioteca de áudios", icon: Headphones },
+  { to: "/app/upload", label: "Enviar áudio", icon: Upload, need: "audio.upload" },
+  { to: "/app/trabalhos", label: "Agenda dos trabalhos", icon: Calendar },
+  { to: "/app/notificacoes", label: "Notificações", icon: Calendar }, // Default icon replacement gracefully handles 
+  { to: "/app/casa", label: "Cuidar da casa", icon: HeartHandshake },
+  { to: "/app/conta", label: "Minha conta e formação", icon: UserCircle },
+  { to: "/app/perfil", label: "Meus dados", icon: Settings },
+  { to: "/app/associados", label: "Gestão de associados", icon: Users, need: "member.manage" },
+  { to: "/app/associados/turmas", label: "Turmas e níveis", icon: GraduationCap, need: "class.manage" },
+  { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
+  { to: "/app/revisao", label: "Revisão de transcrições", icon: ListChecks, need: "transcription.review" },
+  { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
+  { to: "/app/estoque", label: "Gestão de estoque", icon: Package, need: "stock.manage" },
+  { to: "/app/compras", label: "Compras e pedidos", icon: ShoppingCart, need: "purchase.manage" },
+  { to: "/app/manutencao", label: "Chamados da casa", icon: Wrench, need: "maintenance.manage" },
+  { to: "/app/financeiro", label: "Aprovações financeiras", icon: Banknote, need: "finance.view" },
+  { to: "/app/admin", label: "Admin Geral", icon: ShieldCheck, adminOnly: true },
+  { to: "/app/admin/trabalhos", label: "Gerenciar trabalhos", icon: Calendar, need: "work.manage" },
+  { to: "/app/admin/listas", label: "Listas configuráveis", icon: ListChecks, need: "options.manage" },
+  { to: "/app/admin/logs", label: "Logs do sistema", icon: History, need: "logs.view" },
+  { to: "/app/admin/usuarios", label: "Acessos de usuários", icon: Users, need: "user.manage" },
+];
+
 function Dashboard() {
   const { data: access } = useMyAccess();
-  const can = (p: string) => access?.isAdmin || access?.permissions.includes(p);
+  const queryClient = useQueryClient();
+  const updateProfileFn = useServerFn(updateMyProfile);
+
+  const can = (p?: string, adminOnly?: boolean) => {
+    if (adminOnly) return !!access?.isAdmin;
+    if (!p) return true;
+    return !!access?.isAdmin || !!access?.permissions?.includes(p);
+  };
+
   const canManageMembers = !!can("member.manage") || !!can("member.validate");
 
   const pendingFn = useServerFn(countPendingMembers);
@@ -50,6 +92,48 @@ function Dashboard() {
         .limit(3);
       return data ?? [];
     },
+  });
+
+  const rawShortcuts = (access?.profile as any)?.shortcuts as string[] | undefined;
+  
+  // Se não existir dados gravados OU array vazio por default da tabela, popula os 4 essenciais
+  const defaultShortcuts = ["/app/audios", "/app/upload", "/app/revisao", "/app/admin/trabalhos"];
+  const hasConfig = Array.isArray(rawShortcuts) && rawShortcuts.length > 0;
+  const userShortcutsPaths = hasConfig ? rawShortcuts : defaultShortcuts;
+
+  const availableOptions = ALL_SHORTCUTS.filter(s => can(s.need, s.adminOnly));
+  const activeShortcuts = availableOptions.filter(s => userShortcutsPaths.includes(s.to)).slice(0, 6);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [tempSelected, setTempSelected] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (dialogOpen) {
+      setTempSelected(activeShortcuts.map(s => s.to));
+    }
+  }, [dialogOpen, activeShortcuts]);
+
+  const toggleShortcut = (path: string) => {
+    setTempSelected(prev => {
+      if (prev.includes(path)) return prev.filter(p => p !== path);
+      if (prev.length >= 6) {
+        toast.error("Você pode escolher no máximo 6 atalhos.");
+        return prev;
+      }
+      return [...prev, path];
+    });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      await updateProfileFn({ shortcuts: tempSelected });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-access"] });
+      toast.success("Acesso rápido salvo com sucesso.");
+      setDialogOpen(false);
+    },
+    onError: () => toast.error("Erro de conexão ao salvar atalhos.")
   });
 
   if (access?.isPending) return <Navigate to="/app/pendente" replace />;
@@ -86,12 +170,86 @@ function Dashboard() {
       )}
 
       <div>
-        <h2 className="mb-4 font-display text-xl text-foreground">Acesso Rápido</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <QuickAction to="/app/audios" icon={Headphones} title="Biblioteca de áudios" />
-          {can("audio.upload") && <QuickAction to="/app/upload" icon={Upload} title="Enviar áudio" />}
-          {can("transcription.review") && <QuickAction to="/app/revisao" icon={ListChecks} title="Revisar transcrições" />}
-          {can("work.manage") && <QuickAction to="/app/admin/trabalhos" icon={Calendar} title="Gerenciar trabalhos" />}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-xl text-foreground">Acesso Rápido</h2>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 gap-2 text-muted-foreground hover:bg-accent/40 hover:text-foreground">
+                <Settings className="h-4 w-4" /> Editar atalhos
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Personalizar Acesso Rápido</DialogTitle>
+                <DialogDescription>
+                  Escolha até 6 atalhos do menu lateral para aparecerem no topo do seu painel.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-2 p-1 max-h-[60vh] overflow-y-auto overflow-x-hidden scrollbar-none">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {availableOptions.map(opt => {
+                    const isSelected = tempSelected.includes(opt.to);
+                    return (
+                      <div
+                        key={opt.to}
+                        onClick={() => toggleShortcut(opt.to)}
+                        className={`group flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-all ${
+                          isSelected 
+                            ? "border-brand bg-brand-soft/20 ring-1 ring-brand/50" 
+                            : "border-border hover:border-foreground/30 hover:bg-accent/40"
+                        }`}
+                      >
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+                          isSelected ? "bg-brand text-brand-foreground" : "bg-accent text-muted-foreground group-hover:text-foreground"
+                        }`}>
+                          <opt.icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+                            {opt.label}
+                          </p>
+                        </div>
+                        <div className="shrink-0 px-1">
+                          <Checkbox 
+                            checked={isSelected} 
+                            onCheckedChange={() => toggleShortcut(opt.to)} 
+                            className="pointer-events-none" 
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  {tempSelected.length} de 6 atalhos selecionados.
+                </p>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+                    {saveMutation.isPending ? "Salvando..." : "Salvar atalhos"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {activeShortcuts.length === 0 ? (
+            <div className="col-span-full rounded-lg border border-dashed border-border py-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                Nenhum atalho configurado.
+              </p>
+            </div>
+          ) : (
+            activeShortcuts.map((s) => (
+              <QuickAction key={s.to} to={s.to} icon={s.icon} title={s.label} />
+            ))
+          )}
         </div>
       </div>
 
@@ -138,14 +296,16 @@ function Dashboard() {
   );
 }
 
-function QuickAction({ to, icon: Icon, title }: { to: string; icon: typeof Calendar; title: string }) {
+function QuickAction({ to, icon: Icon, title }: { to: string; icon: any; title: string }) {
   return (
     <Link to={to}>
-      <Card className="flex h-full items-center gap-3 p-4 transition-colors hover:bg-accent/40">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-soft text-brand">
+      <Card className="group flex h-full items-center gap-3 p-4 transition-colors hover:border-brand/40 hover:bg-brand-soft/20">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand transition-transform group-hover:scale-110">
           <Icon className="h-5 w-5" />
         </div>
-        <span className="text-sm font-medium text-foreground">{title}</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+          {title}
+        </span>
       </Card>
     </Link>
   );
