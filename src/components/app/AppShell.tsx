@@ -377,39 +377,50 @@ export function AppShell({ children }: { children: ReactNode }) {
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
-          <div className="safe-top flex items-center justify-between border-b border-sidebar-border bg-sidebar-accent/40 px-4 pt-20 pb-4">
-            <Logo variant="mark" className="h-12 w-12 shrink-0 ring-1 ring-sidebar-border" />
-            <div className="hidden md:flex min-w-0 flex-1 flex-col justify-center gap-0.5 rounded-md border border-sidebar-border/50 bg-background/50 p-2 shadow-sm">
-              <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/60">
-                Área do associado
+          <div className="safe-top flex items-center gap-3 border-b border-sidebar-border bg-sidebar-accent/40 px-4 pt-20 pb-4">
+            <Link to="/app" onClick={() => setMobileOpen(false)} className="flex min-w-0 flex-1 items-center gap-3">
+              <Logo variant="mark" className="h-12 w-12 shrink-0 ring-1 ring-sidebar-border" />
+              <div className="flex min-w-0 flex-col justify-center gap-0.5">
+                <div className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/60">
+                  Área do associado
+                </div>
+                <div className="truncate text-sm font-medium text-sidebar-foreground">
+                  {access?.profile?.full_name ?? "Carregando…"}
+                </div>
               </div>
-              <div className="truncate text-xs font-medium text-sidebar-foreground">
-                {access?.profile?.full_name ?? "Menu"}
-              </div>
-            </div>
+            </Link>
 
             <button
-              className="group flex h-10 w-10 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              className="group flex shrink-0 h-10 w-10 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               onClick={() => setMobileOpen(false)}
               aria-label="Fechar menu"
             >
               <X className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
             </button>
           </div>
-          <div className="scroll-momentum flex-1 overflow-y-auto px-3 py-4 scrollbar-none">
+          <div className="scroll-momentum flex-1 overflow-y-auto px-3 py-3 scrollbar-none">
             <NavLinks onClick={() => setMobileOpen(false)} />
           </div>
-          <div className="safe-bottom border-t border-sidebar-border p-3">
-            {access?.membershipStatus === "inactive" && (
-              <div className="mb-2 px-1">
-                <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
-                  Associado inativo
-                </Badge>
+          <div className="safe-bottom border-t border-sidebar-border p-2.5 overflow-hidden shrink-0">
+            <div className="w-full">
+              {access?.membershipStatus === "inactive" && (
+                <div className="mb-2 px-1">
+                  <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
+                    Associado inativo
+                  </Badge>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Link to="/app/perfil" className="flex-1" onClick={() => setMobileOpen(false)}>
+                  <Button variant="ghost" size="sm" className="group w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                    <Settings className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" /> Perfil
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sair" title="Sair" className="group text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                  <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                </Button>
               </div>
-            )}
-            <Button variant="ghost" onClick={signOut} className="group h-11 w-full justify-start gap-2">
-              <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" /> Sair
-            </Button>
+            </div>
           </div>
         </aside>
 
