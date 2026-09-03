@@ -330,9 +330,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               className="flex h-10 w-10 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               onClick={() => setMobileOpen(false)}
-              aria-label="Encolher menu"
+              aria-label="Fechar menu"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <X className="h-6 w-6" />
             </button>
           </div>
           <div className="scroll-momentum flex-1 overflow-y-auto px-3 py-4">
