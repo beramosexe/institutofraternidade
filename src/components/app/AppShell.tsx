@@ -285,13 +285,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile top bar */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="safe-top sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/90 px-3 backdrop-blur md:hidden">
+        <header className="safe-top sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/90 px-3 backdrop-blur md:hidden">
+          <div className="w-11" aria-hidden />
           <Link to="/app" className="flex items-center">
             <Logo variant="mark" className="h-8 w-8 ring-1 ring-border" />
           </Link>
-          <span className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-            Ferramentas
-          </span>
           <button
             className="flex h-11 w-11 items-center justify-center rounded-md"
             onClick={() => setMobileOpen((o) => !o)}
