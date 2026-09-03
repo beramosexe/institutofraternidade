@@ -31,11 +31,12 @@ export function useMyAccess() {
 }
 
 type NavItem = { to: string; label: string; icon: typeof Home; need?: string; adminOnly?: boolean };
-type NavSection = { label: string; items: NavItem[]; comingSoon?: boolean; labelColor?: string };
+type NavSection = { label: string; items: NavItem[]; comingSoon?: boolean; accent?: string };
 
 const SECTIONS: NavSection[] = [
   {
     label: "Área do Associado",
+    accent: "var(--area-associado)",
     items: [
       { to: "/app", label: "Painel", icon: Home },
       { to: "/app/audios", label: "Áudios", icon: Headphones },
@@ -45,14 +46,14 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Painel da Casa",
-    labelColor: "text-teal-600",
+    accent: "var(--area-casa)",
     items: [
       { to: "/app/casa", label: "Cuidar da casa", icon: HeartHandshake },
     ],
   },
   {
     label: "Minha Conta",
-    labelColor: "text-indigo-600",
+    accent: "var(--area-conta)",
     items: [
       { to: "/app/conta", label: "Minha conta e formação", icon: UserCircle },
       { to: "/app/perfil", label: "Meus dados", icon: Settings },
@@ -60,7 +61,7 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Associados",
-    labelColor: "text-rose-600",
+    accent: "var(--area-associados)",
     items: [
       { to: "/app/associados", label: "Gestão de associados", icon: UsersIcon, need: "member.manage" },
       { to: "/app/associados/turmas", label: "Turmas e níveis", icon: GraduationCap, need: "class.manage" },
@@ -68,7 +69,7 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Gestão Áudios e Revisão",
-    labelColor: "text-blue-600",
+    accent: "var(--area-audios)",
     items: [
       { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
       { to: "/app/revisao", label: "Revisão de transcrições", icon: ListChecks, need: "transcription.review" },
@@ -76,14 +77,14 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Acolhimento",
-    labelColor: "text-emerald-600",
+    accent: "var(--area-acolhimento)",
     items: [
       { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
     ],
   },
   {
     label: "Estoque e Compras",
-    labelColor: "text-amber-600",
+    accent: "var(--area-estoque)",
     items: [
       { to: "/app/estoque", label: "Gestão de estoque", icon: Package, need: "stock.manage" },
       { to: "/app/compras", label: "Compras e pedidos", icon: ShoppingCart, need: "purchase.manage" },
@@ -91,21 +92,22 @@ const SECTIONS: NavSection[] = [
   },
   {
     label: "Manutenção",
-    labelColor: "text-slate-500",
+    accent: "var(--area-manutencao)",
     items: [
       { to: "/app/manutencao", label: "Chamados da casa", icon: Wrench, need: "maintenance.manage" },
     ],
   },
   {
     label: "Financeiro",
-    labelColor: "text-green-700",
+    accent: "var(--area-financeiro)",
     items: [
       { to: "/app/financeiro", label: "Aprovações financeiras", icon: Banknote, need: "finance.view" },
     ],
   },
-  { label: "Mídias", labelColor: "text-violet-600", items: [], comingSoon: true },
+  { label: "Mídias", accent: "var(--area-midias)", items: [], comingSoon: true },
   {
     label: "Administração",
+    accent: "var(--area-admin)",
     items: [
       { to: "/app/admin", label: "Admin", icon: ShieldCheck, adminOnly: true },
       { to: "/app/admin/trabalhos", label: "Gestão dos trabalhos e eventos", icon: Calendar, need: "work.manage" },
@@ -115,6 +117,7 @@ const SECTIONS: NavSection[] = [
     ],
   },
 ];
+
 
 
 export function AppShell({ children }: { children: ReactNode }) {
