@@ -1675,7 +1675,7 @@
       "file_type": "code",
       "norm_label": "signout()",
       "source_file": "src/components/app/AppShell.tsx",
-      "source_location": "L152"
+      "source_location": "L153"
     },
     {
       "id": "src_components_app_appshell_usemyaccess",
@@ -30309,7 +30309,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/app/AppShell.tsx",
-      "source_location": "L152",
+      "source_location": "L153",
       "weight": 1.0
     },
     {
@@ -37857,5 +37857,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "d1aff4ea5c831803cacfb072639155ff42d8613f"
+  "built_at_commit": "be438071a35ed9ef671846312c7b3ce3c425e2b4"
 }
