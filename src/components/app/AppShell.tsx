@@ -123,6 +123,7 @@ const SECTIONS: NavSection[] = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: access, isLoading } = useMyAccess();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -181,22 +182,28 @@ export function AppShell({ children }: { children: ReactNode }) {
     return path === to || path.startsWith(`${to}/`);
   };
 
-  const NavLinks = ({ onClick }: { onClick?: () => void }) => (
+  const NavLinks = ({ onClick, collapsed = false }: { onClick?: () => void; collapsed?: boolean }) => (
     <nav className="space-y-4">
       {(isPending ? PENDING_SECTIONS : SECTIONS).map((section) => {
         const items = section.items.filter(can);
         if (items.length === 0 && !section.comingSoon) return null;
         const accent = section.accent ?? "var(--area-associado)";
         return (
-          <div key={section.label} className="pl-2.5" style={{ borderLeft: `2px solid ${accent}` }}>
-            <div
-              className="px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em]"
-              style={{ color: accent }}
-            >
-              {section.label}
-            </div>
+          <div
+            key={section.label}
+            className={collapsed ? "px-2" : "pl-2.5"}
+            style={!collapsed ? { borderLeft: `2px solid ${accent}` } : undefined}
+          >
+            {!collapsed && (
+              <div
+                className="px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+                style={{ color: accent }}
+              >
+                {section.label}
+              </div>
+            )}
             {items.length === 0 ? (
-              <div className="px-2.5 pb-1 text-xs italic text-sidebar-foreground/45">Em breve</div>
+              !collapsed && <div className="px-2.5 pb-1 text-xs italic text-sidebar-foreground/45">Em breve</div>
             ) : (
               <div className="space-y-0.5">
                 {items.map((i) => {
@@ -207,27 +214,42 @@ export function AppShell({ children }: { children: ReactNode }) {
                       key={i.to}
                       to={i.to}
                       onClick={onClick}
+                      title={collapsed ? i.label : undefined}
                       className={[
-                        "relative flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors md:min-h-9",
+                        "relative flex min-h-11 items-center rounded-md text-sm transition-colors md:min-h-9",
+                        collapsed ? "justify-center px-0 w-full" : "gap-2.5 px-2.5",
                         active
                           ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
                           : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                       ].join(" ")}
                     >
-                      {active && (
+                      {active && !collapsed && (
                         <span
                           className="absolute inset-y-1 -left-[12px] w-[3px] rounded-full"
                           style={{ background: accent }}
                           aria-hidden
                         />
                       )}
+                      {active && collapsed && (
+                        <span
+                          className="absolute inset-y-1 left-0 w-[2px] rounded-r-md"
+                          style={{ background: accent }}
+                          aria-hidden
+                        />
+                      )}
                       <Icon className="h-4 w-4 shrink-0" style={active ? { color: accent } : undefined} />
-                      <span className="min-w-0 flex-1 truncate">{i.label}</span>
-                      {i.to === "/app/associados" && (pendingMembers?.count ?? 0) > 0 && (
+                      {!collapsed && <span className="min-w-0 flex-1 truncate">{i.label}</span>}
+                      {!collapsed && i.to === "/app/associados" && (pendingMembers?.count ?? 0) > 0 && (
                         <Badge className="shrink-0">{pendingMembers?.count}</Badge>
                       )}
-                      {i.to === "/app/notificacoes" && (unread?.count ?? 0) > 0 && (
+                      {!collapsed && i.to === "/app/notificacoes" && (unread?.count ?? 0) > 0 && (
                         <Badge className="shrink-0">{unread?.count}</Badge>
+                      )}
+                      {collapsed && i.to === "/app/associados" && (pendingMembers?.count ?? 0) > 0 && (
+                        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-blue-500" />
+                      )}
+                      {collapsed && i.to === "/app/notificacoes" && (unread?.count ?? 0) > 0 && (
+                        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
                       )}
                     </Link>
                   );
@@ -246,12 +268,33 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar desktop — menu de ferramentas */}
-      <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
-        <div className="border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
-          <Link to="/app" className="flex items-center gap-3">
-            <Logo variant="mark" className="h-12 w-12 shrink-0 ring-1 ring-sidebar-border" />
-            <div className="min-w-0 flex flex-col justify-center gap-0.5">
-              <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/60">
+      <aside
+        className={[
+          "hidden shrink-0 border-r border-sidebar-border bg-sidebar transition-[width] duration-300 md:flex md:flex-col relative z-20",
+          isDesktopExpanded ? "w-64" : "w-16",
+        ].join(" ")}
+      >
+        {/* Toggle collapse button */}
+        <button
+          onClick={() => setIsDesktopExpanded(!isDesktopExpanded)}
+          className="absolute -right-3 top-6 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-background text-foreground shadow-sm hover:bg-sidebar-accent transition-colors focus:outline-none"
+          aria-label={isDesktopExpanded ? "Recolher menu" : "Expandir menu"}
+        >
+          <ChevronLeft className={`h-4 w-4 text-sidebar-foreground transition-transform duration-300 ${!isDesktopExpanded ? "rotate-180" : ""}`} />
+        </button>
+
+        <div
+          className={`flex h-[72px] shrink-0 items-center overflow-hidden border-b border-sidebar-border bg-sidebar-accent/40 transition-all duration-300 ${isDesktopExpanded ? "px-4" : "px-2 justify-center"}`}
+        >
+          <Link to="/app" className={`flex w-full items-center ${isDesktopExpanded ? "gap-3" : "justify-center"}`}>
+            <Logo
+              variant="mark"
+              className={`shrink-0 ring-1 ring-sidebar-border transition-all duration-300 ${isDesktopExpanded ? "h-12 w-12" : "h-9 w-9"}`}
+            />
+            <div
+              className={`flex min-w-0 flex-col justify-center gap-0.5 transition-all duration-300 ${isDesktopExpanded ? "opacity-100" : "w-0 opacity-0 hidden"}`}
+            >
+              <div className="whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/60">
                 Área do associado
               </div>
               <div className="truncate text-sm font-medium text-sidebar-foreground">
@@ -260,26 +303,44 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </Link>
         </div>
-        <div className="flex-1 overflow-y-auto px-3 py-3"><NavLinks /></div>
-        <div className="border-t border-sidebar-border p-2.5">
-          {access?.membershipStatus === "inactive" && (
-            <div className="mb-2 px-1">
-              <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
-                Associado inativo
-              </Badge>
+
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3">
+          <NavLinks collapsed={!isDesktopExpanded} />
+        </div>
+
+        <div className="border-t border-sidebar-border p-2.5 overflow-hidden shrink-0">
+          {!isDesktopExpanded ? (
+            <div className="flex flex-col items-center gap-2">
+              <Link to="/app/perfil" title="Perfil">
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair" title="Sair" className="h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="w-full">
+              {access?.membershipStatus === "inactive" && (
+                <div className="mb-2 px-1">
+                  <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
+                    Associado inativo
+                  </Badge>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Link to="/app/perfil" className="flex-1">
+                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                    <Settings className="h-4 w-4" /> Perfil
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sair" title="Sair" className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
-
-          <div className="flex gap-2">
-            <Link to="/app/perfil" className="flex-1">
-              <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                <Settings className="h-4 w-4" /> Perfil
-              </Button>
-            </Link>
-            <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sair" title="Sair">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </aside>
 
