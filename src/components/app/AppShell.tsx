@@ -237,7 +237,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           aria-hidden
                         />
                       )}
-                      <Icon className="h-4 w-4 shrink-0" style={active ? { color: accent } : undefined} />
+                      <Icon className="h-4 w-4 shrink-0" style={active || collapsed ? { color: accent } : undefined} />
                       {!collapsed && <span className="min-w-0 flex-1 truncate">{i.label}</span>}
                       {!collapsed && i.to === "/app/associados" && (pendingMembers?.count ?? 0) > 0 && (
                         <Badge className="shrink-0">{pendingMembers?.count}</Badge>
