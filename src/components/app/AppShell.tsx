@@ -2,7 +2,7 @@ import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-route
 import { useQuery } from "@tanstack/react-query";
 import {
   Bell, Calendar, CalendarCheck, Headphones, Home, LogOut, Settings, ShoppingCart,
-  Users as UsersIcon, History, ShieldCheck, Menu, X, UserCircle, GraduationCap, Clock,
+  Users as UsersIcon, History, ShieldCheck, PanelLeft, X, UserCircle, GraduationCap, Clock,
   Package, Wrench, Banknote, HeartHandshake, ListChecks,
 } from "lucide-react";
 
@@ -286,18 +286,18 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Mobile top bar */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="safe-top sticky top-0 z-30 flex h-20 items-center justify-between border-b border-border bg-background/90 px-3 backdrop-blur md:hidden">
-          <div className="w-12" aria-hidden />
-          <Link to="/app" className="flex items-center">
-            <Logo variant="mark" className="h-14 w-14 shrink-0 ring-1 ring-border" />
-          </Link>
           <button
             className="flex h-12 w-12 items-center justify-center rounded-md"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Menu"
             aria-expanded={mobileOpen}
           >
-            {mobileOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+            {mobileOpen ? <X className="h-7 w-7" /> : <PanelLeft className="h-7 w-7" />}
           </button>
+          <Link to="/app" className="flex items-center">
+            <Logo variant="mark" className="h-14 w-14 shrink-0 ring-1 ring-border" />
+          </Link>
+          <div className="w-12" aria-hidden />
         </header>
 
 
