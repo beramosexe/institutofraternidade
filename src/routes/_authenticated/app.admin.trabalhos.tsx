@@ -127,10 +127,17 @@ function AdminWorks() {
         {(works ?? []).length === 0 ? (
           <Card className="p-10 text-center text-muted-foreground">Nenhum trabalho cadastrado.</Card>
         ) : works?.map((w) => (
-          <Card key={w.id} className="p-5">
+          <Card
+            key={w.id}
+            className="p-5"
+            style={w.color ? { borderLeft: `5px solid ${w.color}`, background: `color-mix(in oklab, ${w.color} 5%, transparent)` } : undefined}
+          >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="font-display text-xl text-foreground">{w.name}</h2>
+                <h2 className="flex items-center gap-2 font-display text-xl text-foreground">
+                  {w.color && <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: w.color }} />}
+                  {w.name}
+                </h2>
                 <p className="text-sm text-brand">
                   {w.recurrence === "weekly" && w.recurrence_weekday != null && w.recurrence_time
                     ? `Semanal · ${WEEKDAYS[w.recurrence_weekday]} às ${w.recurrence_time.slice(0, 5)}`
