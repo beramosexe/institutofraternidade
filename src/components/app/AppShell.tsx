@@ -277,10 +277,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Toggle collapse button */}
         <button
           onClick={() => setIsDesktopExpanded(!isDesktopExpanded)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-foreground shadow-sm hover:bg-sidebar-accent transition-colors focus:outline-none"
+          className="absolute -right-3 bottom-16 z-50 flex h-14 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-foreground shadow-sm hover:bg-sidebar-accent transition-colors focus:outline-none"
           aria-label={isDesktopExpanded ? "Recolher menu" : "Expandir menu"}
         >
-          <ChevronLeft className={`h-4 w-4 text-sidebar-foreground transition-transform duration-300 ${!isDesktopExpanded ? "rotate-180" : ""}`} />
+          <ChevronLeft className={`h-5 w-5 text-sidebar-foreground transition-transform duration-300 ${!isDesktopExpanded ? "rotate-180" : ""}`} />
         </button>
 
         <div
