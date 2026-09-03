@@ -182,22 +182,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="space-y-5">
+    <nav className="space-y-4">
       {(isPending ? PENDING_SECTIONS : SECTIONS).map((section) => {
         const items = section.items.filter(can);
         if (items.length === 0 && !section.comingSoon) return null;
+        const accent = section.accent ?? "var(--area-associado)";
         return (
-          <div key={section.label}>
-            <div className={[
-              "px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider",
-              section.labelColor || "text-sidebar-foreground/80",
-            ].join(" ")}>
+          <div key={section.label} className="pl-2.5" style={{ borderLeft: `2px solid ${accent}` }}>
+            <div
+              className="px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+              style={{ color: accent }}
+            >
               {section.label}
             </div>
             {items.length === 0 ? (
-              <div className="px-3 py-1.5 text-xs italic text-sidebar-foreground/40">Em breve</div>
+              <div className="px-2.5 pb-1 text-xs italic text-sidebar-foreground/45">Em breve</div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {items.map((i) => {
                   const Icon = i.icon;
                   const active = isActive(i.to);
@@ -207,13 +208,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                       to={i.to}
                       onClick={onClick}
                       className={[
-                        "flex items-center gap-3 rounded-md px-3 py-3 text-sm transition-colors md:py-2",
+                        "relative flex min-h-11 items-center gap-2.5 rounded-md px-2.5 text-sm transition-colors md:min-h-9",
                         active
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                       ].join(" ")}
                     >
-                      <Icon className="h-4 w-4 shrink-0" />
+                      {active && (
+                        <span
+                          className="absolute inset-y-1 -left-[12px] w-[3px] rounded-full"
+                          style={{ background: accent }}
+                          aria-hidden
+                        />
+                      )}
+                      <Icon className="h-4 w-4 shrink-0" style={active ? { color: accent } : undefined} />
                       <span className="min-w-0 flex-1 truncate">{i.label}</span>
                       {i.to === "/app/associados" && (pendingMembers?.count ?? 0) > 0 && (
                         <Badge className="shrink-0">{pendingMembers?.count}</Badge>
@@ -221,7 +229,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                       {i.to === "/app/notificacoes" && (unread?.count ?? 0) > 0 && (
                         <Badge className="shrink-0">{unread?.count}</Badge>
                       )}
-
                     </Link>
                   );
                 })}
@@ -232,6 +239,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       })}
     </nav>
   );
+
+
 
 
   return (
