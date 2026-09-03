@@ -31,6 +31,20 @@ type Status = "draft" | "published" | "completed" | "archived";
 type Visibility = "public" | "internal";
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+/** Paleta pronta para identificar os trabalhos por cor nos áudios e na agenda. */
+const COLOR_PALETTE = [
+  "#7BA7D9", // azul sereno (padrão)
+  "#5B8DEF", // azul vivo
+  "#7C6FD0", // violeta
+  "#B084CC", // lilás
+  "#4FAE9B", // verde-água
+  "#5FA55A", // verde
+  "#D9A441", // dourado
+  "#D97B54", // terracota
+  "#C4566B", // rosé
+  "#8A8F98", // cinza
+];
 const MODALITY_LABELS: Record<Modality, string> = {
   presencial: "Presencial",
   online: "Online",
@@ -42,6 +56,7 @@ type FormPayload = {
   id?: string;
   name: string;
   description?: string | null;
+  color?: string | null;
   starts_at: string;
   ends_at?: string | null;
   location?: string | null;
