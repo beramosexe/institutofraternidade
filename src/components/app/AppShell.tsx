@@ -270,14 +270,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Sidebar desktop — menu de ferramentas */}
       <aside
         className={[
-          "hidden shrink-0 border-r border-sidebar-border bg-sidebar transition-[width] duration-300 md:flex md:flex-col relative z-20",
+          "sticky top-0 h-screen self-start hidden shrink-0 border-r border-sidebar-border bg-sidebar transition-[width] duration-300 md:flex md:flex-col relative z-20",
           isDesktopExpanded ? "w-64" : "w-16",
         ].join(" ")}
       >
         {/* Toggle collapse button */}
         <button
           onClick={() => setIsDesktopExpanded(!isDesktopExpanded)}
-          className="absolute -right-3 bottom-16 z-50 flex h-14 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-foreground shadow-sm hover:bg-sidebar-accent transition-colors focus:outline-none"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 z-50 flex h-14 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-foreground shadow-sm hover:bg-sidebar-accent transition-colors focus:outline-none"
           aria-label={isDesktopExpanded ? "Recolher menu" : "Expandir menu"}
         >
           <ChevronLeft className={`h-5 w-5 text-sidebar-foreground transition-transform duration-300 ${!isDesktopExpanded ? "rotate-180" : ""}`} />
