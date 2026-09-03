@@ -216,7 +216,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       onClick={onClick}
                       title={collapsed ? i.label : undefined}
                       className={[
-                        "relative flex min-h-11 items-center rounded-md text-sm transition-colors md:min-h-9",
+                        "group relative flex min-h-11 items-center rounded-md text-sm transition-colors md:min-h-9",
                         collapsed ? "justify-center px-0 w-full" : "gap-2.5 px-2.5",
                         active
                           ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
@@ -237,7 +237,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           aria-hidden
                         />
                       )}
-                      <Icon className="h-4 w-4 shrink-0" style={active || collapsed ? { color: accent } : undefined} />
+                      <Icon className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110" style={active || collapsed ? { color: accent } : undefined} />
                       {!collapsed && <span className="min-w-0 flex-1 truncate">{i.label}</span>}
                       {!collapsed && i.to === "/app/associados" && (pendingMembers?.count ?? 0) > 0 && (
                         <Badge className="shrink-0">{pendingMembers?.count}</Badge>
@@ -277,10 +277,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Toggle collapse button */}
         <button
           onClick={() => setIsDesktopExpanded(!isDesktopExpanded)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 z-50 flex h-14 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-foreground shadow-sm hover:bg-sidebar-accent transition-colors focus:outline-none"
+          className="group absolute -right-3 top-1/2 -translate-y-1/2 z-50 flex h-14 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-foreground shadow-sm hover:bg-sidebar-accent transition-colors focus:outline-none"
           aria-label={isDesktopExpanded ? "Recolher menu" : "Expandir menu"}
         >
-          <ChevronLeft className={`h-5 w-5 text-sidebar-foreground transition-transform duration-300 ${!isDesktopExpanded ? "rotate-180" : ""}`} />
+          <ChevronLeft className={`h-5 w-5 text-sidebar-foreground transition-transform duration-300 ${!isDesktopExpanded ? "rotate-180" : ""} group-hover:scale-110`} />
         </button>
 
         <div
@@ -312,12 +312,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           {!isDesktopExpanded ? (
             <div className="flex flex-col items-center gap-2">
               <Link to="/app/perfil" title="Perfil">
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
-                  <Settings className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="group h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                  <Settings className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair" title="Sair" className="h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
-                <LogOut className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sair" title="Sair" className="group h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
               </Button>
             </div>
           ) : (
@@ -331,12 +331,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               )}
               <div className="flex gap-2">
                 <Link to="/app/perfil" className="flex-1">
-                  <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
-                    <Settings className="h-4 w-4" /> Perfil
+                  <Button variant="ghost" size="sm" className="group w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                    <Settings className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" /> Perfil
                   </Button>
                 </Link>
-                <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sair" title="Sair" className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
-                  <LogOut className="h-4 w-4" />
+                <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sair" title="Sair" className="group text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                  <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                 </Button>
               </div>
             </div>
@@ -348,12 +348,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="safe-top sticky top-0 z-30 flex h-20 items-center justify-between border-b border-border bg-background/90 px-3 backdrop-blur md:hidden">
           <button
-            className="flex h-12 w-12 items-center justify-center rounded-md text-[#72b1dd]"
+            className="group flex h-12 w-12 items-center justify-center rounded-md text-[#72b1dd]"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Menu"
             aria-expanded={mobileOpen}
           >
-            {mobileOpen ? <X className="h-7 w-7" /> : <PanelLeft className="h-7 w-7" />}
+            {mobileOpen ? <X className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" /> : <PanelLeft className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" />}
           </button>
           <Link to="/app" className="flex items-center">
             <Logo variant="mark" className="h-14 w-14 shrink-0 ring-1 ring-border" />
@@ -389,11 +389,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
 
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              className="group flex h-10 w-10 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               onClick={() => setMobileOpen(false)}
               aria-label="Fechar menu"
             >
-              <X className="h-6 w-6" />
+              <X className="h-6 w-6 transition-transform duration-200 group-hover:scale-110" />
             </button>
           </div>
           <div className="scroll-momentum flex-1 overflow-y-auto px-3 py-4 scrollbar-none">
@@ -407,8 +407,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </Badge>
               </div>
             )}
-            <Button variant="ghost" onClick={signOut} className="h-11 w-full justify-start gap-2">
-              <LogOut className="h-4 w-4" /> Sair
+            <Button variant="ghost" onClick={signOut} className="group h-11 w-full justify-start gap-2">
+              <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" /> Sair
             </Button>
           </div>
         </aside>
