@@ -245,16 +245,25 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar desktop */}
+      {/* Sidebar desktop — menu de ferramentas */}
       <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
-        <div className="p-5"><Link to="/"><Logo /></Link></div>
-        <div className="flex-1 overflow-y-auto px-3 py-2"><NavLinks /></div>
-        <div className="border-t border-sidebar-border p-3">
-          <div className="mb-2 px-3 text-xs text-sidebar-foreground/70 truncate">
-            {access?.profile?.full_name ?? "Carregando…"}
-          </div>
+        <div className="border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
+          <Link to="/app" className="flex items-center gap-2.5">
+            <Logo variant="mark" className="h-8 w-8 ring-1 ring-sidebar-border" />
+            <div className="min-w-0 leading-tight">
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/60">
+                Ferramentas
+              </div>
+              <div className="truncate text-sm font-medium text-sidebar-foreground">
+                {access?.profile?.full_name ?? "Carregando…"}
+              </div>
+            </div>
+          </Link>
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 py-3"><NavLinks /></div>
+        <div className="border-t border-sidebar-border p-2.5">
           {access?.membershipStatus === "inactive" && (
-            <div className="mb-2 px-3">
+            <div className="mb-2 px-1">
               <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300">
                 Associado inativo
               </Badge>
@@ -267,7 +276,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Settings className="h-4 w-4" /> Perfil
               </Button>
             </Link>
-            <Button variant="ghost" size="sm" onClick={signOut} title="Sair">
+            <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sair" title="Sair">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -276,10 +285,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Mobile top bar */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="safe-top sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:hidden">
-          <Link to="/app"><Logo /></Link>
+        <header className="safe-top sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-background/90 px-3 backdrop-blur md:hidden">
+          <Link to="/app" className="flex items-center">
+            <Logo variant="mark" className="h-8 w-8 ring-1 ring-border" />
+          </Link>
+          <span className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            Ferramentas
+          </span>
           <button
-            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md"
+            className="flex h-11 w-11 items-center justify-center rounded-md"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Menu"
             aria-expanded={mobileOpen}
@@ -287,6 +301,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </header>
+
 
         {/* Mobile drawer */}
         <div
