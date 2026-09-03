@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Bell, Calendar, CalendarCheck, Headphones, Home, LogOut, Settings, ShoppingCart,
   Users as UsersIcon, History, ShieldCheck, PanelLeft, X, UserCircle, GraduationCap, Clock,
-  Package, Wrench, Banknote, HeartHandshake, ListChecks,
+  Package, Wrench, Banknote, HeartHandshake, ListChecks, ChevronLeft,
 } from "lucide-react";
 
 import { useState, type ReactNode } from "react";
@@ -248,11 +248,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Sidebar desktop — menu de ferramentas */}
       <aside className="hidden w-64 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
         <div className="border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
-          <Link to="/app" className="flex items-center gap-2.5">
+          <Link to="/app" className="flex items-center gap-3">
             <Logo variant="mark" className="h-12 w-12 shrink-0 ring-1 ring-sidebar-border" />
-            <div className="min-w-0 leading-tight">
-              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                Ferramentas
+            <div className="min-w-0 flex flex-col justify-center gap-0.5">
+              <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/60">
+                Área do associado
               </div>
               <div className="truncate text-sm font-medium text-sidebar-foreground">
                 {access?.profile?.full_name ?? "Carregando…"}
@@ -316,11 +316,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           ].join(" ")}
         >
-          <div className="safe-top flex items-center gap-2.5 border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
+          <div className="safe-top flex items-center gap-3 border-b border-sidebar-border bg-sidebar-accent/40 px-4 py-3">
             <Logo variant="mark" className="h-12 w-12 shrink-0 ring-1 ring-sidebar-border" />
-            <div className="min-w-0 flex-1 leading-tight">
-              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/60">
-                Ferramentas
+            <div className="min-w-0 flex-1 flex flex-col justify-center gap-0.5">
+              <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-sidebar-foreground/60">
+                Área do associado
               </div>
               <div className="truncate text-sm font-medium text-sidebar-foreground">
                 {access?.profile?.full_name ?? "Menu"}
@@ -328,11 +328,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
 
             <button
-              className="flex h-10 w-10 items-center justify-center rounded-md"
+              className="flex h-10 w-10 items-center justify-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               onClick={() => setMobileOpen(false)}
-              aria-label="Fechar menu"
+              aria-label="Encolher menu"
             >
-              <X className="h-5 w-5" />
+              <ChevronLeft className="h-6 w-6" />
             </button>
           </div>
           <div className="scroll-momentum flex-1 overflow-y-auto px-3 py-4">
