@@ -429,6 +429,39 @@ export type Database = {
           },
         ]
       }
+      communications: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string
+          platforms: string[]
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message: string
+          platforms?: string[]
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string
+          platforms?: string[]
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       critical_permissions: {
         Row: {
           created_at: string
@@ -881,6 +914,7 @@ export type Database = {
           id: string
           membership_status: Database["public"]["Enums"]["membership_status"]
           phone: string | null
+          shortcuts: string[]
           updated_at: string
           validated_at: string | null
           validated_by: string | null
@@ -893,6 +927,7 @@ export type Database = {
           id: string
           membership_status?: Database["public"]["Enums"]["membership_status"]
           phone?: string | null
+          shortcuts?: string[]
           updated_at?: string
           validated_at?: string | null
           validated_by?: string | null
@@ -905,6 +940,7 @@ export type Database = {
           id?: string
           membership_status?: Database["public"]["Enums"]["membership_status"]
           phone?: string | null
+          shortcuts?: string[]
           updated_at?: string
           validated_at?: string | null
           validated_by?: string | null
@@ -1195,6 +1231,72 @@ export type Database = {
           is_system?: boolean
           name?: string
           slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_posts: {
+        Row: {
+          author_id: string | null
+          content: string | null
+          created_at: string
+          id: string
+          published_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      social_media_posts: {
+        Row: {
+          channels: string[]
+          content_text: string
+          created_at: string
+          created_by: string | null
+          id: string
+          scheduled_for: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          channels?: string[]
+          content_text: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          scheduled_for?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          channels?: string[]
+          content_text?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          scheduled_for?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
