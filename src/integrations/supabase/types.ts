@@ -1239,30 +1239,36 @@ export type Database = {
         Row: {
           author_id: string | null
           content: string | null
+          cover_image_url: string | null
           created_at: string
           id: string
           published_at: string | null
           status: string
+          subtitle: string | null
           title: string
           updated_at: string
         }
         Insert: {
           author_id?: string | null
           content?: string | null
+          cover_image_url?: string | null
           created_at?: string
           id?: string
           published_at?: string | null
           status?: string
+          subtitle?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           author_id?: string | null
           content?: string | null
+          cover_image_url?: string | null
           created_at?: string
           id?: string
           published_at?: string | null
           status?: string
+          subtitle?: string | null
           title?: string
           updated_at?: string
         }
