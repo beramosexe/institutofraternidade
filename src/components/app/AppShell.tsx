@@ -104,7 +104,15 @@ const SECTIONS: NavSection[] = [
       { to: "/app/financeiro", label: "Aprovações financeiras", icon: Banknote, need: "finance.view" },
     ],
   },
-  { label: "Mídias", accent: "var(--area-midias)", items: [], comingSoon: true },
+  {
+    label: "Mídias",
+    accent: "var(--area-midias)",
+    items: [
+      { to: "/app/midias/site", label: "Postagens do site", icon: FileText, need: "media.manage" },
+      { to: "/app/midias/redes", label: "Redes sociais", icon: Share2, need: "media.manage" },
+      { to: "/app/midias/comunicados", label: "Comunicados", icon: MessageCircle, need: "media.manage" },
+    ],
+  },
   {
     label: "Administração",
     accent: "var(--area-admin)",
