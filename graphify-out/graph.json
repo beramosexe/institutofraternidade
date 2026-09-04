@@ -2907,7 +2907,7 @@
       "file_type": "code",
       "norm_label": "quickaction()",
       "source_file": "src/routes/_authenticated/app.index.tsx",
-      "source_location": "L299"
+      "source_location": "L305"
     },
     {
       "id": "supabase_js",
@@ -36048,7 +36048,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/routes/_authenticated/app.index.tsx",
-      "source_location": "L299",
+      "source_location": "L305",
       "weight": 1.0
     },
     {
@@ -37986,5 +37986,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "e441bd706dd9e9e7ba4c100286aea29b1723f0dc"
+  "built_at_commit": "5624c5a94fcf1b02c1f4b87650ff1fe944a90ab4"
 }
