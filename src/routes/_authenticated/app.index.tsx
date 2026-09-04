@@ -25,27 +25,27 @@ export const Route = createFileRoute("/_authenticated/app/")({
 });
 
 const ALL_SHORTCUTS = [
-  { to: "/app/audios", label: "Biblioteca de áudios", icon: Headphones },
-  { to: "/app/upload", label: "Enviar áudio", icon: Upload, need: "audio.upload" },
-  { to: "/app/trabalhos", label: "Agenda dos trabalhos", icon: Calendar },
-  { to: "/app/notificacoes", label: "Notificações", icon: Bell },
-  { to: "/app/casa", label: "Cuidar da casa", icon: HeartHandshake },
-  { to: "/app/conta", label: "Minha conta e formação", icon: UserCircle },
-  { to: "/app/perfil", label: "Meus dados", icon: Settings },
-  { to: "/app/associados", label: "Gestão de associados", icon: Users, need: "member.manage" },
-  { to: "/app/associados/turmas", label: "Turmas e níveis", icon: GraduationCap, need: "class.manage" },
-  { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
-  { to: "/app/revisao", label: "Revisão de transcrições", icon: ListChecks, need: "transcription.review" },
-  { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
-  { to: "/app/estoque", label: "Gestão de estoque", icon: Package, need: "stock.manage" },
-  { to: "/app/compras", label: "Compras e pedidos", icon: ShoppingCart, need: "purchase.manage" },
-  { to: "/app/manutencao", label: "Chamados da casa", icon: Wrench, need: "maintenance.manage" },
-  { to: "/app/financeiro", label: "Aprovações financeiras", icon: Banknote, need: "finance.view" },
-  { to: "/app/admin", label: "Admin Geral", icon: ShieldCheck, adminOnly: true },
-  { to: "/app/admin/trabalhos", label: "Gerenciar trabalhos", icon: Calendar, need: "work.manage" },
-  { to: "/app/admin/listas", label: "Listas configuráveis", icon: ListChecks, need: "options.manage" },
-  { to: "/app/admin/logs", label: "Logs do sistema", icon: History, need: "logs.view" },
-  { to: "/app/admin/usuarios", label: "Acessos de usuários", icon: Users, need: "user.manage" },
+  { to: "/app/audios", label: "Biblioteca de áudios", icon: Headphones, accent: "var(--area-associado)" },
+  { to: "/app/upload", label: "Enviar áudio", icon: Upload, need: "audio.upload", accent: "var(--area-associado)" },
+  { to: "/app/trabalhos", label: "Agenda dos trabalhos", icon: Calendar, accent: "var(--area-associado)" },
+  { to: "/app/notificacoes", label: "Notificações", icon: Bell, accent: "var(--area-associado)" },
+  { to: "/app/casa", label: "Cuidar da casa", icon: HeartHandshake, accent: "var(--area-casa)" },
+  { to: "/app/conta", label: "Minha conta e formação", icon: UserCircle, accent: "var(--area-conta)" },
+  { to: "/app/perfil", label: "Meus dados", icon: Settings, accent: "var(--area-conta)" },
+  { to: "/app/associados", label: "Gestão de associados", icon: Users, need: "member.manage", accent: "var(--area-associados)" },
+  { to: "/app/associados/turmas", label: "Turmas e níveis", icon: GraduationCap, need: "class.manage", accent: "var(--area-associados)" },
+  { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any", accent: "var(--area-audios)" },
+  { to: "/app/revisao", label: "Revisão de transcrições", icon: ListChecks, need: "transcription.review", accent: "var(--area-audios)" },
+  { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage", accent: "var(--area-acolhimento)" },
+  { to: "/app/estoque", label: "Gestão de estoque", icon: Package, need: "stock.manage", accent: "var(--area-estoque)" },
+  { to: "/app/compras", label: "Compras e pedidos", icon: ShoppingCart, need: "purchase.manage", accent: "var(--area-estoque)" },
+  { to: "/app/manutencao", label: "Chamados da casa", icon: Wrench, need: "maintenance.manage", accent: "var(--area-manutencao)" },
+  { to: "/app/financeiro", label: "Aprovações financeiras", icon: Banknote, need: "finance.view", accent: "var(--area-financeiro)" },
+  { to: "/app/admin", label: "Admin Geral", icon: ShieldCheck, adminOnly: true, accent: "var(--area-admin)" },
+  { to: "/app/admin/trabalhos", label: "Gerenciar trabalhos", icon: Calendar, need: "work.manage", accent: "var(--area-admin)" },
+  { to: "/app/admin/listas", label: "Listas configuráveis", icon: ListChecks, need: "options.manage", accent: "var(--area-admin)" },
+  { to: "/app/admin/logs", label: "Logs do sistema", icon: History, need: "logs.view", accent: "var(--area-admin)" },
+  { to: "/app/admin/usuarios", label: "Acessos de usuários", icon: Users, need: "user.manage", accent: "var(--area-admin)" },
 ];
 
 function Dashboard() {
@@ -195,13 +195,19 @@ function Dashboard() {
                         onClick={() => toggleShortcut(opt.to)}
                         className={`group flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-all ${
                           isSelected 
-                            ? "border-brand bg-brand-soft/20 ring-1 ring-brand/50" 
+                            ? "bg-accent/30" 
                             : "border-border hover:border-foreground/30 hover:bg-accent/40"
                         }`}
+                        style={isSelected ? { borderColor: opt.accent || 'var(--brand)', boxShadow: `0 0 0 1px ${opt.accent || 'var(--brand)'}` } : undefined}
                       >
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
-                          isSelected ? "bg-brand text-brand-foreground" : "bg-accent text-muted-foreground group-hover:text-foreground"
-                        }`}>
+                        <div 
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors"
+                          style={
+                            isSelected 
+                              ? { backgroundColor: opt.accent || 'hsl(var(--primary))', color: '#fff' } 
+                              : { backgroundColor: 'hsl(var(--accent))', color: opt.accent || 'hsl(var(--muted-foreground))' }
+                          }
+                        >
                           <opt.icon className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -248,6 +254,7 @@ function Dashboard() {
                   to={shortcut.to}
                   icon={shortcut.icon}
                   title={shortcut.label}
+                  accent={shortcut.accent}
                 />
               );
             }
@@ -313,10 +320,20 @@ function Dashboard() {
   );
 }
 
-function QuickAction({ to, icon: Icon, title }: { to: string; icon: any; title: string }) {
+function QuickAction({ to, icon: Icon, title, accent }: { to: string; icon: any; title: string; accent?: string }) {
   return (
-    <Link to={to as any} className="group flex h-[72px] items-center gap-3 rounded-md border border-border p-4 transition-colors hover:border-brand/40 hover:bg-brand-soft/20">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand transition-transform group-hover:scale-110">
+    <Link 
+      to={to as any} 
+      className="group flex h-[72px] items-center gap-3 rounded-md border border-border pr-4 py-4 transition-all hover:bg-accent/50"
+      style={{
+        borderLeft: accent ? `3px solid ${accent}` : '1px solid var(--border)',
+        paddingLeft: accent ? '13px' : '16px'
+      }}
+    >
+      <div 
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-muted-foreground transition-transform group-hover:scale-110"
+        style={accent ? { color: accent } : undefined}
+      >
         <Icon className="h-5 w-5" />
       </div>
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
