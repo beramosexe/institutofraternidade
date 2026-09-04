@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Calendar, Headphones, Upload, ListChecks, UserCheck, ArrowRight,
   Settings, HeartHandshake, UserCircle, Users, GraduationCap, CalendarCheck,
-  Package, ShoppingCart, Wrench, Banknote, ShieldCheck, History
+  Package, ShoppingCart, Wrench, Banknote, ShieldCheck, History, Plus, Bell
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { countPendingMembers } from "@/lib/members.functions";
@@ -28,7 +28,7 @@ const ALL_SHORTCUTS = [
   { to: "/app/audios", label: "Biblioteca de áudios", icon: Headphones },
   { to: "/app/upload", label: "Enviar áudio", icon: Upload, need: "audio.upload" },
   { to: "/app/trabalhos", label: "Agenda dos trabalhos", icon: Calendar },
-  { to: "/app/notificacoes", label: "Notificações", icon: Calendar }, // Default icon replacement gracefully handles 
+  { to: "/app/notificacoes", label: "Notificações", icon: Bell },
   { to: "/app/casa", label: "Cuidar da casa", icon: HeartHandshake },
   { to: "/app/conta", label: "Minha conta e formação", icon: UserCircle },
   { to: "/app/perfil", label: "Meus dados", icon: Settings },
@@ -96,10 +96,10 @@ function Dashboard() {
 
   const rawShortcuts = (access?.profile as any)?.shortcuts as string[] | undefined;
   
-  // Se não existir dados gravados OU array vazio por default da tabela, popula os 4 essenciais
-  const defaultShortcuts = ["/app/audios", "/app/upload", "/app/revisao", "/app/admin/trabalhos"];
-  const hasConfig = Array.isArray(rawShortcuts) && rawShortcuts.length > 0;
-  const userShortcutsPaths = hasConfig ? rawShortcuts : defaultShortcuts;
+  const defaultShortcuts = ["/app/audios", "/app/trabalhos", "/app/casa", "/app/conta"];
+  const userShortcutsPaths = (Array.isArray(rawShortcuts) && rawShortcuts.length > 0)
+    ? rawShortcuts
+    : defaultShortcuts;
 
   const availableOptions = ALL_SHORTCUTS.filter(s => can(s.need, s.adminOnly));
   const activeShortcuts = availableOptions.filter(s => userShortcutsPaths.includes(s.to)).slice(0, 6);
@@ -111,7 +111,7 @@ function Dashboard() {
     if (dialogOpen) {
       setTempSelected(activeShortcuts.map(s => s.to));
     }
-  }, [dialogOpen, activeShortcuts]);
+  }, [dialogOpen]);
 
   const toggleShortcut = (path: string) => {
     setTempSelected(prev => {
@@ -133,7 +133,7 @@ function Dashboard() {
       toast.success("Acesso rápido salvo com sucesso.");
       setDialogOpen(false);
     },
-    onError: () => toast.error("Erro de conexão ao salvar atalhos.")
+    onError: (err: any) => toast.error(err?.message || "Erro de conexão ao salvar atalhos.")
   });
 
   if (access?.isPending) return <Navigate to="/app/pendente" replace />;
@@ -185,7 +185,7 @@ function Dashboard() {
                   Escolha até 6 atalhos do menu lateral para aparecerem no topo do seu painel.
                 </DialogDescription>
               </DialogHeader>
-              <div className="mt-2 p-1 max-h-[60vh] overflow-y-auto overflow-x-hidden scrollbar-none">
+              <div className="mt-2 max-h-[60vh] overflow-y-auto overflow-x-hidden p-1 scrollbar-none">
                 <div className="grid gap-3 sm:grid-cols-2">
                   {availableOptions.map(opt => {
                     const isSelected = tempSelected.includes(opt.to);
@@ -204,7 +204,7 @@ function Dashboard() {
                         }`}>
                           <opt.icon className="h-5 w-5" />
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className={`text-sm font-medium transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
                             {opt.label}
                           </p>
@@ -217,7 +217,7 @@ function Dashboard() {
                           />
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -239,17 +239,34 @@ function Dashboard() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {activeShortcuts.length === 0 ? (
-            <div className="col-span-full rounded-lg border border-dashed border-border py-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                Nenhum atalho configurado.
-              </p>
-            </div>
-          ) : (
-            activeShortcuts.map((s) => (
-              <QuickAction key={s.to} to={s.to} icon={s.icon} title={s.label} />
-            ))
-          )}
+          {Array.from({ length: 6 }).map((_, idx) => {
+            const shortcut = activeShortcuts[idx];
+            if (shortcut) {
+              return (
+                <QuickAction
+                  key={shortcut.to}
+                  to={shortcut.to}
+                  icon={shortcut.icon}
+                  title={shortcut.label}
+                />
+              );
+            }
+            return (
+              <button
+                key={`empty-slot-${idx}`}
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="group flex h-[72px] items-center justify-center gap-2 rounded-md border border-dashed border-border p-4 transition-colors hover:border-brand/50 hover:bg-accent/40"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-muted-foreground transition-colors group-hover:bg-brand-soft group-hover:text-brand">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">
+                  Adicionar atalho
+                </span>
+              </button>
+            );
+          })}
         </div>
       </Card>
 
@@ -298,7 +315,7 @@ function Dashboard() {
 
 function QuickAction({ to, icon: Icon, title }: { to: string; icon: any; title: string }) {
   return (
-    <Link to={to} className="group flex h-full items-center gap-3 rounded-md border border-border p-4 transition-colors hover:border-brand/40 hover:bg-brand-soft/20">
+    <Link to={to as any} className="group flex h-[72px] items-center gap-3 rounded-md border border-border p-4 transition-colors hover:border-brand/40 hover:bg-brand-soft/20">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand transition-transform group-hover:scale-110">
         <Icon className="h-5 w-5" />
       </div>
