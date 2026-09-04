@@ -185,47 +185,58 @@ function Dashboard() {
                   Escolha até 6 atalhos do menu lateral para aparecerem no topo do seu painel.
                 </DialogDescription>
               </DialogHeader>
-              <div className="mt-2 max-h-[60vh] overflow-y-auto overflow-x-hidden p-1 scrollbar-none">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {availableOptions.map(opt => {
-                    const isSelected = tempSelected.includes(opt.to);
-                    return (
-                      <div
-                        key={opt.to}
-                        onClick={() => toggleShortcut(opt.to)}
-                        className={`group flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-all ${
-                          isSelected 
-                            ? "bg-accent/30" 
-                            : "border-border hover:border-foreground/30 hover:bg-accent/40"
-                        }`}
-                        style={isSelected ? { borderColor: opt.accent || 'var(--brand)', boxShadow: `0 0 0 1px ${opt.accent || 'var(--brand)'}` } : undefined}
-                      >
-                        <div 
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors"
-                          style={
-                            isSelected 
-                              ? { backgroundColor: opt.accent || 'hsl(var(--primary))', color: '#fff' } 
-                              : { backgroundColor: 'hsl(var(--accent))', color: opt.accent || 'hsl(var(--muted-foreground))' }
-                          }
-                        >
-                          <opt.icon className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className={`text-sm font-medium transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
-                            {opt.label}
-                          </p>
-                        </div>
-                        <div className="shrink-0 px-1">
-                          <Checkbox 
-                            checked={isSelected} 
-                            onCheckedChange={() => toggleShortcut(opt.to)} 
-                            className="pointer-events-none" 
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="mt-2 max-h-[60vh] space-y-6 overflow-y-auto overflow-x-hidden p-1 pb-4 scrollbar-none">
+                {Object.entries(
+                  availableOptions.reduce((acc, opt) => {
+                    if (!acc[opt.section]) acc[opt.section] = [];
+                    acc[opt.section].push(opt);
+                    return acc;
+                  }, {} as Record<string, typeof availableOptions>)
+                ).map(([section, opts], idx) => (
+                  <div key={section} className={idx > 0 ? "border-t border-border pt-4" : ""}>
+                    <h4 className="mb-3 text-sm font-semibold tracking-tight text-muted-foreground">{section}</h4>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {opts.map(opt => {
+                        const isSelected = tempSelected.includes(opt.to);
+                        return (
+                          <div
+                            key={opt.to}
+                            onClick={() => toggleShortcut(opt.to)}
+                            className={`group flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-all ${
+                              isSelected 
+                                ? "bg-accent/30" 
+                                : "border-border hover:border-foreground/30 hover:bg-accent/40"
+                            }`}
+                            style={isSelected ? { borderColor: opt.accent || 'var(--brand)', boxShadow: `0 0 0 1px ${opt.accent || 'var(--brand)'}` } : undefined}
+                          >
+                            <div 
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors"
+                              style={
+                                isSelected 
+                                  ? { backgroundColor: opt.accent || 'hsl(var(--primary))', color: '#fff' } 
+                                  : { backgroundColor: 'hsl(var(--accent))', color: opt.accent || 'hsl(var(--muted-foreground))' }
+                              }
+                            >
+                              <opt.icon className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className={`text-sm font-medium transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+                                {opt.label}
+                              </p>
+                            </div>
+                            <div className="shrink-0 px-1">
+                              <Checkbox 
+                                checked={isSelected} 
+                                onCheckedChange={() => toggleShortcut(opt.to)} 
+                                className="pointer-events-none" 
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
