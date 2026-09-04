@@ -10,6 +10,7 @@ const links = [
   { to: "/quem-somos", label: "Quem somos" },
   { to: "/agenda", label: "Agenda" },
   { to: "/canalizacoes", label: "Canalizações" },
+  { to: "/postagens", label: "Postagens" },
   { to: "/contato", label: "Contato" },
 ] as const;
 
