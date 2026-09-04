@@ -97,7 +97,7 @@ function Dashboard() {
   const rawShortcuts = (access?.profile as any)?.shortcuts as string[] | undefined;
   
   const defaultShortcuts = ["/app/audios", "/app/trabalhos", "/app/casa", "/app/conta"];
-  const userShortcutsPaths = (Array.isArray(rawShortcuts) && rawShortcuts.length > 0)
+  const userShortcutsPaths = Array.isArray(rawShortcuts)
     ? rawShortcuts
     : defaultShortcuts;
 
