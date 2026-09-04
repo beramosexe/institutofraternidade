@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Bell, Calendar, CalendarCheck, Headphones, Home, LogOut, Settings, ShoppingCart,
   Users as UsersIcon, History, ShieldCheck, PanelLeft, X, UserCircle, GraduationCap, Clock,
-  Package, Wrench, Banknote, HeartHandshake, ListChecks, ChevronLeft,
+  Package, Wrench, Banknote, HeartHandshake, ListChecks, ChevronLeft, FileText, Share2, MessageCircle,
 } from "lucide-react";
 
 import { useState, type ReactNode } from "react";
