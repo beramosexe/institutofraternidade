@@ -124,14 +124,41 @@ function renderRichLines(content: string): ReactNode[] {
 
     if (line.startsWith(">")) {
       blocks.push(
-        <blockquote key={`quote-${index}`} className="stack-quote">
+        <blockquote key={`quote-${index}`} className="stack-quote border-l-4 border-brand/40 pl-5 py-2 my-8 italic text-muted-foreground/90 text-xl">
           {renderInline(line.replace(/^>\s?/, ""))}
         </blockquote>
       );
       return;
     }
 
-    blocks.push(<p key={`p-${index}`}>{renderInline(line)}</p>);
+    const h1 = line.match(/^#\s+(.*)$/);
+    if (h1) {
+      blocks.push(<h1 key={`block-${index}`} className="mt-12 mb-6 font-display text-4xl font-bold leading-tight text-foreground">{renderInline(h1[1])}</h1>);
+      return;
+    }
+    const h2 = line.match(/^##\s+(.*)$/);
+    if (h2) {
+      blocks.push(<h2 key={`block-${index}`} className="mt-10 mb-5 font-display text-3xl font-bold leading-tight text-foreground">{renderInline(h2[1])}</h2>);
+      return;
+    }
+    const h3 = line.match(/^###\s+(.*)$/);
+    if (h3) {
+      blocks.push(<h3 key={`block-${index}`} className="mt-8 mb-4 font-display text-2xl font-bold leading-snug text-foreground">{renderInline(h3[1])}</h3>);
+      return;
+    }
+
+    const listItem = line.match(/^[-*]\s+(.*)$/);
+    if (listItem) {
+      blocks.push(
+        <div key={`block-${index}`} className="mb-3 flex items-start pr-4 font-serif text-lg md:text-xl text-foreground/90 ml-2">
+          <span className="mr-4 font-bold text-brand">•</span>
+          <div className="flex-1">{renderInline(listItem[1])}</div>
+        </div>
+      );
+      return;
+    }
+
+    blocks.push(<p key={`p-${index}`} className="mb-6 font-serif text-lg md:text-xl leading-relaxed text-foreground/90">{renderInline(line)}</p>);
   });
 
   return blocks;
