@@ -10,12 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as QuemSomosRouteImport } from './routes/quem-somos'
+import { Route as PostagensRouteImport } from './routes/postagens'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as CanalizacoesRouteImport } from './routes/canalizacoes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PostagemIdRouteImport } from './routes/postagem.$id'
 import { Route as AssociadosCadastroRouteImport } from './routes/associados.cadastro'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
@@ -60,6 +62,11 @@ const QuemSomosRoute = QuemSomosRouteImport.update({
   path: '/quem-somos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PostagensRoute = PostagensRouteImport.update({
+  id: '/postagens',
+  path: '/postagens',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContatoRoute = ContatoRouteImport.update({
   id: '/contato',
   path: '/contato',
@@ -87,6 +94,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostagemIdRoute = PostagemIdRouteImport.update({
+  id: '/postagem/$id',
+  path: '/postagem/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AssociadosCadastroRoute = AssociadosCadastroRouteImport.update({
@@ -312,9 +324,11 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/canalizacoes': typeof CanalizacoesRoute
   '/contato': typeof ContatoRoute
+  '/postagens': typeof PostagensRoute
   '/quem-somos': typeof QuemSomosRoute
   '/app': typeof AuthenticatedAppRouteWithChildren
   '/associados/cadastro': typeof AssociadosCadastroRoute
+  '/postagem/$id': typeof PostagemIdRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/app/casa': typeof AuthenticatedAppCasaRoute
@@ -358,8 +372,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/canalizacoes': typeof CanalizacoesRoute
   '/contato': typeof ContatoRoute
+  '/postagens': typeof PostagensRoute
   '/quem-somos': typeof QuemSomosRoute
   '/associados/cadastro': typeof AssociadosCadastroRoute
+  '/postagem/$id': typeof PostagemIdRoute
   '/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/app/casa': typeof AuthenticatedAppCasaRoute
   '/app/compras': typeof AuthenticatedAppComprasRoute
@@ -404,9 +420,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/canalizacoes': typeof CanalizacoesRoute
   '/contato': typeof ContatoRoute
+  '/postagens': typeof PostagensRoute
   '/quem-somos': typeof QuemSomosRoute
   '/_authenticated/app': typeof AuthenticatedAppRouteWithChildren
   '/associados/cadastro': typeof AssociadosCadastroRoute
+  '/postagem/$id': typeof PostagemIdRoute
   '/_authenticated/app/acolhimento': typeof AuthenticatedAppAcolhimentoRoute
   '/_authenticated/app/audios': typeof AuthenticatedAppAudiosRouteWithChildren
   '/_authenticated/app/casa': typeof AuthenticatedAppCasaRoute
@@ -452,9 +470,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/canalizacoes'
     | '/contato'
+    | '/postagens'
     | '/quem-somos'
     | '/app'
     | '/associados/cadastro'
+    | '/postagem/$id'
     | '/app/acolhimento'
     | '/app/audios'
     | '/app/casa'
@@ -498,8 +518,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/canalizacoes'
     | '/contato'
+    | '/postagens'
     | '/quem-somos'
     | '/associados/cadastro'
+    | '/postagem/$id'
     | '/app/acolhimento'
     | '/app/casa'
     | '/app/compras'
@@ -543,9 +565,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/canalizacoes'
     | '/contato'
+    | '/postagens'
     | '/quem-somos'
     | '/_authenticated/app'
     | '/associados/cadastro'
+    | '/postagem/$id'
     | '/_authenticated/app/acolhimento'
     | '/_authenticated/app/audios'
     | '/_authenticated/app/casa'
@@ -591,8 +615,10 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CanalizacoesRoute: typeof CanalizacoesRoute
   ContatoRoute: typeof ContatoRoute
+  PostagensRoute: typeof PostagensRoute
   QuemSomosRoute: typeof QuemSomosRoute
   AssociadosCadastroRoute: typeof AssociadosCadastroRoute
+  PostagemIdRoute: typeof PostagemIdRoute
   ApiPublicAudioUploadRoute: typeof ApiPublicAudioUploadRoute
 }
 
@@ -603,6 +629,13 @@ declare module '@tanstack/react-router' {
       path: '/quem-somos'
       fullPath: '/quem-somos'
       preLoaderRoute: typeof QuemSomosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/postagens': {
+      id: '/postagens'
+      path: '/postagens'
+      fullPath: '/postagens'
+      preLoaderRoute: typeof PostagensRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contato': {
@@ -645,6 +678,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/postagem/$id': {
+      id: '/postagem/$id'
+      path: '/postagem/$id'
+      fullPath: '/postagem/$id'
+      preLoaderRoute: typeof PostagemIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/associados/cadastro': {
@@ -1039,8 +1079,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CanalizacoesRoute: CanalizacoesRoute,
   ContatoRoute: ContatoRoute,
+  PostagensRoute: PostagensRoute,
   QuemSomosRoute: QuemSomosRoute,
   AssociadosCadastroRoute: AssociadosCadastroRoute,
+  PostagemIdRoute: PostagemIdRoute,
   ApiPublicAudioUploadRoute: ApiPublicAudioUploadRoute,
 }
 export const routeTree = rootRouteImport

@@ -44,8 +44,7 @@ function PostagensPage() {
           subtitle,
           cover_image_url,
           content,
-          published_at,
-          profiles (full_name, avatar_url)
+          published_at
         `)
         .eq("status", "published")
         .not("published_at", "is", null)
@@ -92,8 +91,7 @@ function PostagensPage() {
             )}
 
             {posts?.map((post) => {
-              const author = (post as any).profiles || {};
-              const authorName = author.full_name || "Instituto Fraternidade";
+              const authorName = "Instituto Fraternidade";
               const displayDate = post.published_at ? new Date(post.published_at) : new Date();
               const excerpt = post.content ? contentExcerpt(post.content) : "";
 
@@ -136,7 +134,7 @@ function PostagensPage() {
 
                   <div className="flex items-center gap-3 pt-3">
                     <Avatar className="h-10 w-10 border border-border/50 shadow-xs">
-                      <AvatarImage src={author.avatar_url} />
+                      
                       <AvatarFallback className="bg-transparent font-serif text-foreground">
                         {authorName.charAt(0).toUpperCase()}
                       </AvatarFallback>

@@ -6,7 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteLayout";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const Route = createFileRoute("/postagem/$id")({
   component: PostagemPage,
@@ -152,8 +152,7 @@ function PostagemPage() {
           cover_image_url,
           content,
           published_at,
-          status,
-          profiles (full_name, avatar_url)
+          status
         `)
         .eq("id", id)
         .eq("status", "published")
@@ -226,14 +225,13 @@ function PostagemPage() {
             <div className="my-12 flex items-center justify-between border-y border-border/40 py-5">
               <div className="flex items-center gap-3.5">
                 <Avatar className="h-12 w-12 border border-border/50 shadow-xs">
-                  <AvatarImage src={(post.profiles as any)?.avatar_url} />
                   <AvatarFallback className="bg-transparent font-serif text-foreground">
-                    {((post.profiles as any)?.full_name || "IF").charAt(0).toUpperCase()}
+                    IF
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-sans text-[15px] font-semibold text-foreground">
-                    {(post.profiles as any)?.full_name || "Instituto Fraternidade"}
+                    Instituto Fraternidade
                   </p>
                   <p className="text-[13px] text-muted-foreground capitalize">
                     {post.published_at ? format(new Date(post.published_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR }) : "Ainda não publicada"}
