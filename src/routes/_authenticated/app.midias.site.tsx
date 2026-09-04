@@ -254,16 +254,14 @@ function SitePostsPage() {
   const saveDraft = useMutation({
     mutationFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      const payload: Record<string, unknown> = {
+      const payload = {
         title: draft.title.trim(),
         subtitle: draft.subtitle.trim() || null,
         cover_image_url: draft.cover_image_url || null,
         content: draft.content,
         status: "draft",
+        ...(session?.user?.id && !draft.id ? { author_id: session.user.id } : {}),
       };
-      if (session?.user?.id && !draft.id) {
-        payload.author_id = session.user.id;
-      }
 
       if (draft.id) {
         const { error } = await supabase
