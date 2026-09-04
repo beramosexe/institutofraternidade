@@ -48,6 +48,8 @@ function PostagensPage() {
           profiles (full_name, avatar_url)
         `)
         .eq("status", "published")
+        .not("published_at", "is", null)
+        .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false });
       
       if (error) throw error;

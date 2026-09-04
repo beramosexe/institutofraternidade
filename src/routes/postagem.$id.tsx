@@ -156,6 +156,9 @@ function PostagemPage() {
           profiles (full_name, avatar_url)
         `)
         .eq("id", id)
+        .eq("status", "published")
+        .not("published_at", "is", null)
+        .lte("published_at", new Date().toISOString())
         .single();
       
       if (error || !data) throw error || new Error("Post não encontrado");
