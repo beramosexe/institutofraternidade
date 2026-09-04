@@ -44,8 +44,7 @@ function PostagensPage() {
           subtitle,
           cover_image_url,
           content,
-          published_at,
-          profiles (full_name, avatar_url)
+          published_at
         `)
         .eq("status", "published")
         .not("published_at", "is", null)

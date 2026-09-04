@@ -152,8 +152,7 @@ function PostagemPage() {
           cover_image_url,
           content,
           published_at,
-          status,
-          profiles (full_name, avatar_url)
+          status
         `)
         .eq("id", id)
         .eq("status", "published")
