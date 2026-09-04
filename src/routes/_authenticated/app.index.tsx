@@ -335,19 +335,21 @@ function QuickAction({ to, icon: Icon, title, accent }: { to: string; icon: any;
   return (
     <Link 
       to={to as any} 
-      className="group flex h-[72px] items-center gap-3 rounded-md border border-border pr-4 py-4 transition-all hover:bg-accent/50"
-      style={{
-        borderLeft: accent ? `3px solid ${accent}` : '1px solid var(--border)',
-        paddingLeft: accent ? '13px' : '16px'
-      }}
+      className="group relative flex h-24 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-md border border-border p-2 transition-all hover:bg-accent/50 sm:h-[72px] sm:flex-row sm:justify-start sm:gap-3 sm:p-4"
     >
+      {accent && (
+        <>
+          <div className="absolute left-0 top-0 h-[3px] w-full sm:hidden" style={{ backgroundColor: accent }} />
+          <div className="absolute bottom-0 left-0 top-0 hidden w-[3px] sm:block" style={{ backgroundColor: accent }} />
+        </>
+      )}
       <div 
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-muted-foreground transition-transform group-hover:scale-110"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-muted-foreground transition-transform group-hover:scale-110 sm:h-10 sm:w-10"
         style={accent ? { color: accent } : undefined}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
-      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+      <span className="w-full line-clamp-2 text-center text-[11px] font-medium leading-[1.1] text-foreground sm:block sm:truncate sm:text-left sm:text-sm sm:leading-normal">
         {title}
       </span>
     </Link>
