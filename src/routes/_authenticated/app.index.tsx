@@ -169,7 +169,7 @@ function Dashboard() {
         </Link>
       )}
 
-      <div>
+      <Card className="p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-xl text-foreground">Acesso Rápido</h2>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -251,7 +251,7 @@ function Dashboard() {
             ))
           )}
         </div>
-      </div>
+      </Card>
 
       <Card className="p-6">
         <div className="flex items-center justify-between">
@@ -298,15 +298,13 @@ function Dashboard() {
 
 function QuickAction({ to, icon: Icon, title }: { to: string; icon: any; title: string }) {
   return (
-    <Link to={to}>
-      <Card className="group flex h-full items-center gap-3 p-4 transition-colors hover:border-brand/40 hover:bg-brand-soft/20">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand transition-transform group-hover:scale-110">
-          <Icon className="h-5 w-5" />
-        </div>
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-          {title}
-        </span>
-      </Card>
+    <Link to={to} className="group flex h-full items-center gap-3 rounded-md border border-border p-4 transition-colors hover:border-brand/40 hover:bg-brand-soft/20">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand transition-transform group-hover:scale-110">
+        <Icon className="h-5 w-5" />
+      </div>
+      <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+        {title}
+      </span>
     </Link>
   );
 }
