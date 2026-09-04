@@ -188,8 +188,9 @@ function Dashboard() {
               <div className="mt-2 max-h-[60vh] space-y-6 overflow-y-auto overflow-x-hidden p-1 pb-4 scrollbar-none">
                 {Object.entries(
                   availableOptions.reduce((acc, opt) => {
-                    if (!acc[opt.section]) acc[opt.section] = [];
-                    acc[opt.section].push(opt);
+                    const section = (opt as { section?: string }).section ?? "Atalhos";
+                    if (!acc[section]) acc[section] = [];
+                    acc[section].push(opt);
                     return acc;
                   }, {} as Record<string, typeof availableOptions>)
                 ).map(([section, opts], idx) => (
