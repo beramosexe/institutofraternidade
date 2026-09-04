@@ -126,7 +126,7 @@ function Dashboard() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      await updateProfileFn({ shortcuts: tempSelected });
+      await updateProfileFn({ data: { shortcuts: tempSelected } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-access"] });
