@@ -91,8 +91,7 @@ function PostagensPage() {
             )}
 
             {posts?.map((post) => {
-              const author = (post as any).profiles || {};
-              const authorName = author.full_name || "Instituto Fraternidade";
+              const authorName = "Instituto Fraternidade";
               const displayDate = post.published_at ? new Date(post.published_at) : new Date();
               const excerpt = post.content ? contentExcerpt(post.content) : "";
 
