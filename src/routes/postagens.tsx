@@ -134,7 +134,7 @@ function PostagensPage() {
 
                   <div className="flex items-center gap-3 pt-3">
                     <Avatar className="h-10 w-10 border border-border/50 shadow-xs">
-                      <AvatarImage src={author.avatar_url} />
+                      
                       <AvatarFallback className="bg-transparent font-serif text-foreground">
                         {authorName.charAt(0).toUpperCase()}
                       </AvatarFallback>
