@@ -40,6 +40,7 @@ import { Route as AuthenticatedAppAssociadosIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedAppAdminIndexRouteImport } from './routes/_authenticated/app.admin.index'
 import { Route as AuthenticatedAppRevisaoIdRouteImport } from './routes/_authenticated/app.revisao.$id'
 import { Route as AuthenticatedAppMidiasSiteRouteImport } from './routes/_authenticated/app.midias.site'
+import { Route as AuthenticatedAppMidiasRedesRouteImport } from './routes/_authenticated/app.midias.redes'
 import { Route as AuthenticatedAppManutencaoIdRouteImport } from './routes/_authenticated/app.manutencao.$id'
 import { Route as AuthenticatedAppAudiosIdRouteImport } from './routes/_authenticated/app.audios.$id'
 import { Route as AuthenticatedAppAssociadosTurmasRouteImport } from './routes/_authenticated/app.associados.turmas'
@@ -219,6 +220,12 @@ const AuthenticatedAppMidiasSiteRoute =
     path: '/midias/site',
     getParentRoute: () => AuthenticatedAppRoute,
   } as any)
+const AuthenticatedAppMidiasRedesRoute =
+  AuthenticatedAppMidiasRedesRouteImport.update({
+    id: '/midias/redes',
+    path: '/midias/redes',
+    getParentRoute: () => AuthenticatedAppRoute,
+  } as any)
 const AuthenticatedAppManutencaoIdRoute =
   AuthenticatedAppManutencaoIdRouteImport.update({
     id: '/manutencao/$id',
@@ -327,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/app/associados/turmas': typeof AuthenticatedAppAssociadosTurmasRoute
   '/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
   '/app/manutencao/$id': typeof AuthenticatedAppManutencaoIdRoute
+  '/app/midias/redes': typeof AuthenticatedAppMidiasRedesRoute
   '/app/midias/site': typeof AuthenticatedAppMidiasSiteRoute
   '/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
   '/app/admin/': typeof AuthenticatedAppAdminIndexRoute
@@ -369,6 +377,7 @@ export interface FileRoutesByTo {
   '/app/associados/turmas': typeof AuthenticatedAppAssociadosTurmasRoute
   '/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
   '/app/manutencao/$id': typeof AuthenticatedAppManutencaoIdRoute
+  '/app/midias/redes': typeof AuthenticatedAppMidiasRedesRoute
   '/app/midias/site': typeof AuthenticatedAppMidiasSiteRoute
   '/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
   '/app/admin': typeof AuthenticatedAppAdminIndexRoute
@@ -415,6 +424,7 @@ export interface FileRoutesById {
   '/_authenticated/app/associados/turmas': typeof AuthenticatedAppAssociadosTurmasRoute
   '/_authenticated/app/audios/$id': typeof AuthenticatedAppAudiosIdRoute
   '/_authenticated/app/manutencao/$id': typeof AuthenticatedAppManutencaoIdRoute
+  '/_authenticated/app/midias/redes': typeof AuthenticatedAppMidiasRedesRoute
   '/_authenticated/app/midias/site': typeof AuthenticatedAppMidiasSiteRoute
   '/_authenticated/app/revisao/$id': typeof AuthenticatedAppRevisaoIdRoute
   '/_authenticated/app/admin/': typeof AuthenticatedAppAdminIndexRoute
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
     | '/app/associados/turmas'
     | '/app/audios/$id'
     | '/app/manutencao/$id'
+    | '/app/midias/redes'
     | '/app/midias/site'
     | '/app/revisao/$id'
     | '/app/admin/'
@@ -503,6 +514,7 @@ export interface FileRouteTypes {
     | '/app/associados/turmas'
     | '/app/audios/$id'
     | '/app/manutencao/$id'
+    | '/app/midias/redes'
     | '/app/midias/site'
     | '/app/revisao/$id'
     | '/app/admin'
@@ -548,6 +560,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/associados/turmas'
     | '/_authenticated/app/audios/$id'
     | '/_authenticated/app/manutencao/$id'
+    | '/_authenticated/app/midias/redes'
     | '/_authenticated/app/midias/site'
     | '/_authenticated/app/revisao/$id'
     | '/_authenticated/app/admin/'
@@ -789,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppMidiasSiteRouteImport
       parentRoute: typeof AuthenticatedAppRoute
     }
+    '/_authenticated/app/midias/redes': {
+      id: '/_authenticated/app/midias/redes'
+      path: '/midias/redes'
+      fullPath: '/app/midias/redes'
+      preLoaderRoute: typeof AuthenticatedAppMidiasRedesRouteImport
+      parentRoute: typeof AuthenticatedAppRoute
+    }
     '/_authenticated/app/manutencao/$id': {
       id: '/_authenticated/app/manutencao/$id'
       path: '/manutencao/$id'
@@ -931,6 +951,7 @@ interface AuthenticatedAppRouteChildren {
   AuthenticatedAppAssociadosIdRoute: typeof AuthenticatedAppAssociadosIdRoute
   AuthenticatedAppAssociadosTurmasRoute: typeof AuthenticatedAppAssociadosTurmasRoute
   AuthenticatedAppManutencaoIdRoute: typeof AuthenticatedAppManutencaoIdRoute
+  AuthenticatedAppMidiasRedesRoute: typeof AuthenticatedAppMidiasRedesRoute
   AuthenticatedAppMidiasSiteRoute: typeof AuthenticatedAppMidiasSiteRoute
   AuthenticatedAppAdminIndexRoute: typeof AuthenticatedAppAdminIndexRoute
   AuthenticatedAppAssociadosIndexRoute: typeof AuthenticatedAppAssociadosIndexRoute
@@ -964,6 +985,7 @@ const AuthenticatedAppRouteChildren: AuthenticatedAppRouteChildren = {
   AuthenticatedAppAssociadosIdRoute: AuthenticatedAppAssociadosIdRoute,
   AuthenticatedAppAssociadosTurmasRoute: AuthenticatedAppAssociadosTurmasRoute,
   AuthenticatedAppManutencaoIdRoute: AuthenticatedAppManutencaoIdRoute,
+  AuthenticatedAppMidiasRedesRoute: AuthenticatedAppMidiasRedesRoute,
   AuthenticatedAppMidiasSiteRoute: AuthenticatedAppMidiasSiteRoute,
   AuthenticatedAppAdminIndexRoute: AuthenticatedAppAdminIndexRoute,
   AuthenticatedAppAssociadosIndexRoute: AuthenticatedAppAssociadosIndexRoute,
