@@ -239,17 +239,23 @@ function Dashboard() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {activeShortcuts.length === 0 ? (
-            <div className="col-span-full rounded-lg border border-dashed border-border py-8 text-center">
-              <p className="text-sm text-muted-foreground">
-                Nenhum atalho configurado.
-              </p>
-            </div>
-          ) : (
-            activeShortcuts.map((s) => (
-              <QuickAction key={s.to} to={s.to} icon={s.icon} title={s.label} />
-            ))
-          )}
+          {activeShortcuts.map((s) => (
+            <QuickAction key={s.to} to={s.to} icon={s.icon} title={s.label} />
+          ))}
+          {emptySlots.map((_, i) => (
+            <button
+              key={`empty-${i}`}
+              onClick={() => setDialogOpen(true)}
+              className="group flex w-full h-full items-center gap-3 rounded-md border border-dashed border-border p-4 text-left transition-colors hover:border-brand/40 hover:bg-brand-soft/20"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-muted-foreground transition-transform group-hover:scale-110 group-hover:bg-brand-soft group-hover:text-brand">
+                <Plus className="h-5 w-5" />
+              </div>
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-muted-foreground group-hover:text-foreground">
+                Adicionar atalho
+              </span>
+            </button>
+          ))}
         </div>
       </Card>
 
