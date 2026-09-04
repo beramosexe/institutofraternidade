@@ -157,7 +157,7 @@
       "file_type": "code",
       "norm_label": "blockkind",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L182"
+      "source_location": "L209"
     },
     {
       "id": "src_routes_authenticated_app_midias_site_draftstate",
@@ -169,7 +169,7 @@
       "file_type": "code",
       "norm_label": "draftstate",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L194"
+      "source_location": "L221"
     },
     {
       "id": "src_routes_authenticated_app_admin_entidades_entityrow",
@@ -1270,7 +1270,7 @@
       "file_type": "code",
       "norm_label": "postagempage()",
       "source_file": "src/routes/postagem.$id.tsx",
-      "source_location": "L140"
+      "source_location": "L167"
     },
     {
       "id": "src_routes_postagem_id_renderinline",
@@ -1325,7 +1325,7 @@
       "file_type": "code",
       "norm_label": "contentexcerpt()",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L169"
+      "source_location": "L196"
     },
     {
       "id": "src_routes_authenticated_app_midias_site_emptydraft",
@@ -1336,7 +1336,7 @@
       "file_type": "code",
       "norm_label": "emptydraft()",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L202"
+      "source_location": "L229"
     },
     {
       "id": "src_routes_authenticated_app_midias_site_renderinline",
@@ -1369,7 +1369,7 @@
       "file_type": "code",
       "norm_label": "sitepostspage()",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L210"
+      "source_location": "L237"
     },
     {
       "id": "src_routes_postagens_contentexcerpt",
@@ -4183,7 +4183,7 @@
       "file_type": "code",
       "norm_label": "block_actions",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L184"
+      "source_location": "L211"
     },
     {
       "id": "src_routes_postagens",
@@ -14184,7 +14184,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L215",
+      "source_location": "L242",
       "weight": 1.0
     },
     {
@@ -14196,7 +14196,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L485",
+      "source_location": "L512",
       "weight": 1.0
     },
     {
@@ -14208,7 +14208,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L606",
+      "source_location": "L633",
       "weight": 1.0
     },
     {
@@ -14220,7 +14220,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L658",
+      "source_location": "L685",
       "weight": 1.0
     },
     {
@@ -14328,7 +14328,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/routes/postagem.$id.tsx",
-      "source_location": "L245",
+      "source_location": "L272",
       "weight": 1.0
     },
     {
@@ -37595,7 +37595,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L169",
+      "source_location": "L196",
       "weight": 1.0
     },
     {
@@ -37606,7 +37606,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L182",
+      "source_location": "L209",
       "weight": 1.0
     },
     {
@@ -37617,7 +37617,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L184",
+      "source_location": "L211",
       "weight": 1.0
     },
     {
@@ -37628,7 +37628,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L194",
+      "source_location": "L221",
       "weight": 1.0
     },
     {
@@ -37639,7 +37639,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/routes/_authenticated/app.midias.site.tsx",
-      "source_location": "L202",
+      "source_location": "L229",
       "weight": 1.0
     },
     {
@@ -39692,5 +39692,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "593a45a8b8b1857f5026a7824815094f84c2d723"
+  "built_at_commit": "a9f208cd95c509be2b5a1e0b3a0fc9ba0e20da22"
 }
