@@ -255,7 +255,7 @@ function Dashboard() {
           </Dialog>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, idx) => {
             const shortcut = activeShortcuts[idx];
             if (shortcut) {
@@ -274,12 +274,12 @@ function Dashboard() {
                 key={`empty-slot-${idx}`}
                 type="button"
                 onClick={() => setDialogOpen(true)}
-                className="group flex h-[72px] items-center justify-center gap-2 rounded-md border border-dashed border-border p-4 transition-colors hover:border-brand/50 hover:bg-accent/40"
+                className="group flex h-24 flex-col items-center justify-center gap-1.5 rounded-md border border-dashed border-border p-2 transition-colors hover:border-brand/50 hover:bg-accent/40 sm:h-[72px] sm:flex-row sm:justify-start sm:gap-3 sm:p-4"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-muted-foreground transition-colors group-hover:bg-brand-soft group-hover:text-brand">
-                  <Plus className="h-4 w-4" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-muted-foreground transition-colors group-hover:bg-brand-soft group-hover:text-brand sm:h-10 sm:w-10">
+                  <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground">
+                <span className="w-full line-clamp-2 text-center text-[11px] font-medium leading-[1.1] text-muted-foreground group-hover:text-foreground sm:block sm:truncate sm:text-left sm:text-sm sm:leading-normal">
                   Adicionar atalho
                 </span>
               </button>
