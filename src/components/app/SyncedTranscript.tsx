@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -54,6 +54,10 @@ interface Props {
   hideTranscript?: boolean;
   /** Altura máxima da lista de transcrição. */
   listMaxHeight?: string;
+  /** Exibe somente o trecho atual e seus vizinhos em uma faixa horizontal. */
+  compactTranscript?: boolean;
+  /** Conteúdo exibido entre o player e a transcrição. */
+  transcriptHeader?: ReactNode;
 }
 
 
@@ -106,6 +110,7 @@ function TimeField({
 export function SyncedTranscript({
   src, segments, editable, editableTimestamps, onChangeSegments, fallbackText,
   onDurationKnown, onFirstPlay, accentColor, hideTranscript, listMaxHeight,
+  compactTranscript = false, transcriptHeader,
 }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -162,15 +167,22 @@ export function SyncedTranscript({
     };
   }, [src]);
 
-  // Auto-scroll active segment
+  const showCompactTranscript = compactTranscript && !editable;
+
+  // Keep the active segment centered inside either transcript view.
   useEffect(() => {
     if (activeIdx < 0 || !listRef.current) return;
     const el = listRef.current.querySelector(`[data-seg='${activeIdx}']`) as HTMLElement | null;
     if (!el) return;
     const list = listRef.current;
+    if (showCompactTranscript) {
+      const target = el.offsetLeft - list.clientWidth / 2 + el.clientWidth / 2;
+      list.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+      return;
+    }
     const target = el.offsetTop - list.clientHeight / 2 + el.clientHeight / 2;
     list.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
-  }, [activeIdx]);
+  }, [activeIdx, showCompactTranscript]);
 
   // Loop the active segment
   useEffect(() => {
@@ -266,12 +278,15 @@ export function SyncedTranscript({
             <SkipBack className="h-5 w-5" />
           </Button>
           <Button
+            size="icon"
             onClick={toggle}
             aria-label={playing ? "Pausar" : "Reproduzir"}
-            className="h-12 w-12 rounded-full"
+            className="h-12 w-12 rounded-full text-primary-foreground shadow-sm"
             style={{ backgroundColor: accent }}
           >
-            {playing ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+            {playing
+              ? <Pause className="h-6 w-6 fill-current" aria-hidden="true" />
+              : <Play className="h-6 w-6 fill-current" aria-hidden="true" />}
           </Button>
           <Button
             size="icon" variant="outline" className="h-10 w-10"
@@ -321,9 +336,11 @@ export function SyncedTranscript({
         )}
       </div>
 
+      {transcriptHeader}
+
       {!hideTranscript && (
         <div className="space-y-2">
-          {segments.length > 3 && !editable && (
+          {segments.length > 3 && !editable && !showCompactTranscript && (
             <div className="flex items-center gap-2">
               <div className="relative min-w-0 flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -342,6 +359,45 @@ export function SyncedTranscript({
               {normalizedSearch && <span className="shrink-0 text-xs text-muted-foreground">{visibleSegments.length} trechos</span>}
             </div>
           )}
+          {showCompactTranscript && segments.length > 0 ? (
+            <div
+              ref={listRef}
+              aria-label="Trechos sincronizados do áudio"
+              className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto rounded-lg border border-border bg-card px-[9%] py-4 scroll-smooth md:px-[16%]"
+            >
+              {segments.map((seg, i) => {
+                const distance = activeIdx < 0 ? Math.abs(i) : Math.abs(i - activeIdx);
+                const visible = distance <= 1;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    data-seg={i}
+                    aria-current={i === activeIdx ? "true" : undefined}
+                    aria-hidden={!visible}
+                    tabIndex={visible ? 0 : -1}
+                    onClick={() => seek(seg.start)}
+                    className={[
+                      "min-h-24 w-[82%] shrink-0 snap-center px-2 py-3 text-left transition-[opacity,transform] duration-500 md:w-[68%]",
+                      i === activeIdx
+                        ? "scale-100 opacity-100"
+                        : visible
+                          ? "scale-95 opacity-35"
+                          : "pointer-events-none scale-90 opacity-0",
+                    ].join(" ")}
+                  >
+                    <span className="mb-2 block font-mono text-[11px] text-muted-foreground">{formatTime(seg.start)}</span>
+                    <span className={i === activeIdx
+                      ? "block font-display text-lg leading-relaxed text-foreground md:text-xl"
+                      : "block text-sm leading-relaxed text-muted-foreground"}
+                    >
+                      {seg.text}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
           <div
             ref={listRef}
             style={{ maxHeight: listMaxHeight ?? "60vh" }}
@@ -451,6 +507,7 @@ export function SyncedTranscript({
           );
         })}
           </div>
+          )}
         </div>
       )}
     </div>
