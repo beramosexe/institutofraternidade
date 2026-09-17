@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { Clock, Edit3, Globe, ImagePlus, MoreHorizontal, Trash, X } from "lucide-react";
+import { ChevronDown, Clock, Edit3, Globe, ImagePlus, Info, MoreHorizontal, Trash, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app/midias/site")({
   head: () => ({
@@ -208,14 +208,14 @@ function contentExcerpt(raw: string): string {
 
 type BlockKind = "quote" | "pullquote" | "dropcap" | "epigraph" | "sidenote" | "caption" | "small";
 
-const BLOCK_ACTIONS: { kind: BlockKind; label: string }[] = [
-  { kind: "quote", label: "Citação" },
-  { kind: "pullquote", label: "Pull quote" },
-  { kind: "dropcap", label: "Drop cap" },
-  { kind: "epigraph", label: "Epígrafe" },
-  { kind: "sidenote", label: "Sidenote" },
-  { kind: "caption", label: "Legenda" },
-  { kind: "small", label: "Texto menor" },
+const BLOCK_ACTIONS: { kind: BlockKind; label: string; description: string; sampleClass: string; sample: string }[] = [
+  { kind: "quote", label: "Citação", description: "Trecho citado com recuo e linha lateral.", sampleClass: "border-l-2 border-brand pl-3 italic text-muted-foreground", sample: "Uma breve citação" },
+  { kind: "pullquote", label: "Frase em destaque", description: "Frase central e marcante entre o texto.", sampleClass: "border-y border-border py-2 text-center font-serif font-semibold text-primary", sample: "Uma ideia para lembrar" },
+  { kind: "dropcap", label: "Letra inicial grande", description: "Abre um parágrafo com a primeira letra ampliada.", sampleClass: "font-serif text-foreground", sample: "A primeira letra ganha destaque." },
+  { kind: "epigraph", label: "Epígrafe", description: "Citação de abertura com nome da fonte.", sampleClass: "border-r-2 border-gold pr-3 text-right font-serif italic", sample: "Palavras de inspiração — Autor" },
+  { kind: "sidenote", label: "Nota lateral", description: "Informação complementar em uma caixa discreta.", sampleClass: "border-l-4 border-brand bg-brand-soft/50 px-3 py-2 text-muted-foreground", sample: "Nota: informação complementar" },
+  { kind: "caption", label: "Legenda", description: "Texto curto para explicar uma imagem.", sampleClass: "text-center font-sans text-xs text-muted-foreground", sample: "Legenda da imagem" },
+  { kind: "small", label: "Texto menor", description: "Observação secundária em tamanho reduzido.", sampleClass: "font-serif text-xs text-muted-foreground", sample: "Uma observação secundária" },
 ];
 
 type DraftState = {
@@ -570,24 +570,29 @@ function SitePostsPage() {
                 <div className="flex flex-wrap items-center gap-1 pt-3">
                   <span className="mr-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">Estilos</span>
                   {BLOCK_ACTIONS.map((action) => (
-                    <button
+                    <Button
                       key={action.kind}
                       type="button"
+                      size="sm"
+                      variant="outline"
                       onClick={() => toggleBlock(action.kind)}
-                      className="h-7 rounded-full border border-border/60 bg-background px-2.5 font-sans text-xs text-muted-foreground transition-colors hover:border-brand/30 hover:bg-brand-soft hover:text-foreground"
+                      className="h-7 rounded-full border-border/60 px-2.5 font-sans text-xs font-normal text-muted-foreground hover:border-brand/30 hover:bg-brand-soft hover:text-foreground"
+                      title={action.description}
                     >
                       {action.label}
-                    </button>
+                    </Button>
                   ))}
                   <Separator orientation="vertical" className="mx-1 h-5" />
-                  <button
+                  <Button
                     type="button"
+                    size="sm"
+                    variant="ghost"
                     onClick={() => toggleInline("==", "texto destacado")}
-                    className="h-7 rounded-full px-2.5 font-sans text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    className="h-7 rounded-full px-2.5 font-sans text-xs font-normal text-muted-foreground hover:bg-accent hover:text-foreground"
                     title="Destacar texto selecionado"
                   >
                     Destaque
-                  </button>
+                  </Button>
                   <Separator orientation="vertical" className="mx-1 h-5" />
                   <Button
                     type="button"
@@ -609,6 +614,55 @@ function SitePostsPage() {
                     Capa
                   </Button>
                 </div>
+
+                <details className="group rounded-md border border-border/50 bg-muted/15">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-sm font-medium text-foreground marker:content-none">
+                    <Info className="h-4 w-4 text-brand" aria-hidden="true" />
+                    O que faz cada recurso?
+                    <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+                  </summary>
+                  <div className="grid gap-2 border-t border-border/40 p-3 sm:grid-cols-2">
+                    {BLOCK_ACTIONS.map((action) => (
+                      <Button
+                        key={`guide-${action.kind}`}
+                        type="button"
+                        variant="ghost"
+                        onClick={() => toggleBlock(action.kind)}
+                        className="h-auto min-h-24 items-stretch justify-start rounded-md border border-border/40 bg-background p-3 text-left whitespace-normal hover:border-brand/40 hover:bg-brand-soft/30"
+                      >
+                        <span className="flex w-full flex-col gap-1.5">
+                          <span className="font-sans text-xs font-semibold text-foreground">{action.label}</span>
+                          <span className={cn("block text-sm leading-snug", action.sampleClass)}>{action.sample}</span>
+                          <span className="font-sans text-[11px] font-normal leading-snug text-muted-foreground">{action.description}</span>
+                        </span>
+                      </Button>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => toggleInline("==", "texto destacado")}
+                      className="h-auto min-h-24 items-stretch justify-start rounded-md border border-border/40 bg-background p-3 text-left whitespace-normal hover:border-brand/40 hover:bg-brand-soft/30"
+                    >
+                      <span className="flex w-full flex-col gap-1.5">
+                        <span className="font-sans text-xs font-semibold text-foreground">Destaque</span>
+                        <span className="block font-serif text-sm"><mark>Palavras importantes</mark></span>
+                        <span className="font-sans text-[11px] font-normal leading-snug text-muted-foreground">Realça o trecho selecionado como um marca-texto.</span>
+                      </span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => openImageDialog("body")}
+                      className="h-auto min-h-24 items-stretch justify-start rounded-md border border-border/40 bg-background p-3 text-left whitespace-normal hover:border-brand/40 hover:bg-brand-soft/30"
+                    >
+                      <span className="flex w-full flex-col gap-1.5">
+                        <span className="font-sans text-xs font-semibold text-foreground">Imagem</span>
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground"><ImagePlus className="h-5 w-5 text-brand" /> Foto com legenda</span>
+                        <span className="font-sans text-[11px] font-normal leading-snug text-muted-foreground">Insere uma imagem no ponto atual do texto.</span>
+                      </span>
+                    </Button>
+                  </div>
+                </details>
 
                 <Textarea
                   ref={contentRef}
