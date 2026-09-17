@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle } from "lucide-react";
+import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 
 export type Segment = { start: number; end: number; text: string };
 
@@ -114,6 +115,7 @@ export function SyncedTranscript({
   const [rate, setRate] = useState(1);
   const [loopSegment, setLoopSegment] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
   const timeRef = useRef(0);
   const onDurationKnownRef = useRef(onDurationKnown);
   useEffect(() => { onDurationKnownRef.current = onDurationKnown; }, [onDurationKnown]);
@@ -184,6 +186,10 @@ export function SyncedTranscript({
 
   function toggle() { playing ? audioRef.current?.pause() : audioRef.current?.play(); }
   function seek(to: number) { if (audioRef.current) audioRef.current.currentTime = to; }
+  const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
+  const visibleSegments = segments
+    .map((segment, index) => ({ segment, index }))
+    .filter(({ segment }) => !normalizedSearch || segment.text.toLocaleLowerCase("pt-BR").includes(normalizedSearch));
 
   function updateSegmentText(i: number, text: string) {
     if (!onChangeSegments) return;
@@ -232,11 +238,11 @@ export function SyncedTranscript({
   }, [timeEditing, focusedIdx, activeIdx, segments]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <audio ref={audioRef} src={src} preload="metadata" />
 
       <div
-        className="sticky top-16 z-10 rounded-xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur md:top-2"
+        className="sticky top-14 z-10 rounded-lg border border-border bg-card/95 p-3 shadow-sm backdrop-blur md:top-2"
         style={{ borderTop: `3px solid ${accent}` }}
       >
         <Slider
@@ -248,9 +254,9 @@ export function SyncedTranscript({
           <span>-{formatTime(Math.max(0, duration - time))}</span>
         </div>
 
-        <div className="mt-3 flex items-center justify-center gap-4">
+        <div className="mt-2 flex items-center justify-center gap-3">
           <Button
-            size="icon" variant="outline" className="h-11 w-11"
+            size="icon" variant="outline" className="h-10 w-10"
             aria-label="Voltar 15 segundos"
             onClick={() => seek(Math.max(0, time - 15))}
           >
@@ -259,13 +265,13 @@ export function SyncedTranscript({
           <Button
             onClick={toggle}
             aria-label={playing ? "Pausar" : "Reproduzir"}
-            className="h-14 w-14 rounded-full"
+            className="h-12 w-12 rounded-full"
             style={{ backgroundColor: accent }}
           >
             {playing ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
           </Button>
           <Button
-            size="icon" variant="outline" className="h-11 w-11"
+            size="icon" variant="outline" className="h-10 w-10"
             aria-label="Avançar 15 segundos"
             onClick={() => seek(Math.min(duration, time + 15))}
           >
@@ -273,13 +279,13 @@ export function SyncedTranscript({
           </Button>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-          <span className="text-xs text-muted-foreground">Velocidade</span>
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+          <span className="mr-1 text-xs text-muted-foreground">Velocidade</span>
           {[0.75, 1, 1.25, 1.5, 2].map((r) => (
             <Button
               key={r} size="sm"
               variant={rate === r ? "default" : "outline"}
-              className="h-8 px-2.5 text-xs"
+              className="h-7 px-2 text-xs"
               onClick={() => setRate(r)}
             >{r}x</Button>
           ))}
@@ -312,12 +318,32 @@ export function SyncedTranscript({
         )}
       </div>
 
-      <div
-        ref={listRef}
-        hidden={hideTranscript}
-        style={{ maxHeight: listMaxHeight ?? "60vh" }}
-        className="overflow-y-auto rounded-lg border border-border bg-card p-3"
-      >
+      {!hideTranscript && (
+        <div className="space-y-2">
+          {segments.length > 3 && !editable && (
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Buscar na transcrição"
+                  className="h-9 pl-9 pr-9 text-sm"
+                />
+                {search && (
+                  <Button size="icon" variant="ghost" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2" onClick={() => setSearch("")} aria-label="Limpar busca">
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+              {normalizedSearch && <span className="shrink-0 text-xs text-muted-foreground">{visibleSegments.length} trechos</span>}
+            </div>
+          )}
+          <div
+            ref={listRef}
+            style={{ maxHeight: listMaxHeight ?? "60vh" }}
+            className="overflow-y-auto rounded-lg border border-border bg-card p-2 md:p-3"
+          >
 
         {segments.length === 0 ? (
           fallbackText ? (
@@ -333,7 +359,9 @@ export function SyncedTranscript({
             </p>
           )
 
-        ) : segments.map((seg, i) => {
+        ) : visibleSegments.length === 0 ? (
+          <p className="p-6 text-center text-sm text-muted-foreground">Nenhum trecho encontrado.</p>
+        ) : visibleSegments.map(({ segment: seg, index: i }) => {
           const invalid = seg.end <= seg.start;
           const overlaps = i > 0 && seg.start < segments[i - 1].end;
           return (
@@ -342,7 +370,7 @@ export function SyncedTranscript({
               data-seg={i}
               onClick={() => timeEditing && setFocusedIdx(i)}
               className={[
-                "group flex gap-3 rounded-md px-3 py-2 transition-colors",
+                "group flex gap-2 rounded-md px-2 py-2 transition-colors md:gap-3 md:px-3",
                 i === activeIdx ? "bg-brand/15" : "hover:bg-accent/50",
                 timeEditing && focusedIdx === i ? "ring-1 ring-brand/40" : "",
               ].join(" ")}
@@ -419,7 +447,9 @@ export function SyncedTranscript({
             </div>
           );
         })}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
