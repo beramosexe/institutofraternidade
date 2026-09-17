@@ -9,6 +9,16 @@ import { SiteHeader, SiteFooter } from "@/components/site/SiteLayout";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const Route = createFileRoute("/postagem/$id")({
+  head: () => ({
+    meta: [
+      { title: "Leitura — Instituto Fraternidade" },
+      { name: "description", content: "Reflexões, mensagens e orações do Instituto Fraternidade." },
+      { property: "og:title", content: "Leitura — Instituto Fraternidade" },
+      { property: "og:description", content: "Reflexões, mensagens e orações do Instituto Fraternidade." },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: PostagemPage,
 });
 
