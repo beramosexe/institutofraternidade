@@ -366,8 +366,10 @@ export function SyncedTranscript({
               aria-label="Trechos sincronizados do áudio"
               className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto rounded-lg border border-border bg-card px-[9%] py-4 scroll-smooth md:px-[16%]"
             >
-              {segments.map((seg, i) => {
-                const distance = activeIdx < 0 ? Math.abs(i) : Math.abs(i - activeIdx);
+              {segments.map((seg, i) => ({ seg, i }))
+                .filter(({ i }) => Math.abs(i - Math.max(0, activeIdx)) <= 1)
+                .map(({ seg, i }) => {
+                const distance = Math.abs(i - Math.max(0, activeIdx));
                 const visible = distance <= 1;
                 return (
                   <button
@@ -379,7 +381,7 @@ export function SyncedTranscript({
                     tabIndex={visible ? 0 : -1}
                     onClick={() => seek(seg.start)}
                     className={[
-                      "h-28 w-[82%] shrink-0 snap-center overflow-hidden px-2 py-3 text-left transition-[opacity,transform] duration-500 md:w-[68%]",
+                      "min-h-28 w-[82%] shrink-0 snap-center self-stretch px-2 py-3 text-left transition-[opacity,transform] duration-500 md:w-[68%]",
                       i === activeIdx
                         ? "scale-100 opacity-100"
                         : visible
@@ -389,7 +391,7 @@ export function SyncedTranscript({
                   >
                     <span className="mb-2 block font-mono text-[11px] text-muted-foreground">{formatTime(seg.start)}</span>
                     <span className={i === activeIdx
-                      ? "line-clamp-3 block font-display text-lg leading-relaxed text-foreground md:text-xl"
+                      ? "block font-display text-lg leading-relaxed text-foreground md:text-xl"
                       : "line-clamp-3 block text-sm leading-relaxed text-muted-foreground"}
                     >
                       {seg.text}
