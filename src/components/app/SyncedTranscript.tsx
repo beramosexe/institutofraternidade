@@ -176,7 +176,9 @@ export function SyncedTranscript({
     if (!el) return;
     const list = listRef.current;
     if (showCompactTranscript) {
-      const target = el.offsetLeft - list.clientWidth / 2 + el.clientWidth / 2;
+      const listRect = list.getBoundingClientRect();
+      const itemRect = el.getBoundingClientRect();
+      const target = list.scrollLeft + itemRect.left - listRect.left - list.clientWidth / 2 + itemRect.width / 2;
       list.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
       return;
     }
@@ -281,8 +283,7 @@ export function SyncedTranscript({
             size="icon"
             onClick={toggle}
             aria-label={playing ? "Pausar" : "Reproduzir"}
-            className="h-12 w-12 rounded-full text-primary-foreground shadow-sm"
-            style={{ backgroundColor: accent }}
+            className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
           >
             {playing
               ? <Pause className="h-6 w-6 fill-current" aria-hidden="true" />
@@ -378,7 +379,7 @@ export function SyncedTranscript({
                     tabIndex={visible ? 0 : -1}
                     onClick={() => seek(seg.start)}
                     className={[
-                      "min-h-24 w-[82%] shrink-0 snap-center px-2 py-3 text-left transition-[opacity,transform] duration-500 md:w-[68%]",
+                      "h-28 w-[82%] shrink-0 snap-center overflow-hidden px-2 py-3 text-left transition-[opacity,transform] duration-500 md:w-[68%]",
                       i === activeIdx
                         ? "scale-100 opacity-100"
                         : visible
@@ -388,8 +389,8 @@ export function SyncedTranscript({
                   >
                     <span className="mb-2 block font-mono text-[11px] text-muted-foreground">{formatTime(seg.start)}</span>
                     <span className={i === activeIdx
-                      ? "block font-display text-lg leading-relaxed text-foreground md:text-xl"
-                      : "block text-sm leading-relaxed text-muted-foreground"}
+                      ? "line-clamp-3 block font-display text-lg leading-relaxed text-foreground md:text-xl"
+                      : "line-clamp-3 block text-sm leading-relaxed text-muted-foreground"}
                     >
                       {seg.text}
                     </span>
