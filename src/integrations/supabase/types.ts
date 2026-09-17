@@ -1276,36 +1276,133 @@ export type Database = {
       }
       social_media_posts: {
         Row: {
+          approval_mode: string
+          approved_at: string | null
+          approved_by: string | null
+          attempt_count: number
           channels: string[]
           content_text: string
           created_at: string
           created_by: string | null
           id: string
+          last_error: string | null
+          media_url: string | null
+          occurrence_at: string | null
+          published_at: string | null
+          reminder_minutes: number | null
           scheduled_for: string | null
+          source: string
           status: string
+          title: string | null
           updated_at: string
+          work_id: string | null
         }
         Insert: {
+          approval_mode?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          attempt_count?: number
           channels?: string[]
           content_text: string
           created_at?: string
           created_by?: string | null
           id?: string
+          last_error?: string | null
+          media_url?: string | null
+          occurrence_at?: string | null
+          published_at?: string | null
+          reminder_minutes?: number | null
           scheduled_for?: string | null
+          source?: string
           status?: string
+          title?: string | null
           updated_at?: string
+          work_id?: string | null
         }
         Update: {
+          approval_mode?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          attempt_count?: number
           channels?: string[]
           content_text?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          last_error?: string | null
+          media_url?: string | null
+          occurrence_at?: string | null
+          published_at?: string | null
+          reminder_minutes?: number | null
           scheduled_for?: string | null
+          source?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+          work_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_media_posts_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_post_deliveries: {
+        Row: {
+          attempt_count: number
+          channel: string
+          created_at: string
+          error_message: string | null
+          id: string
+          last_attempt_at: string | null
+          post_id: string
+          provider_post_id: string | null
+          provider_url: string | null
+          published_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          channel: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          post_id: string
+          provider_post_id?: string | null
+          provider_url?: string | null
+          published_at?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Update: {
+          attempt_count?: number
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          post_id?: string
+          provider_post_id?: string | null
+          provider_url?: string | null
+          published_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_deliveries_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_media_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_items: {
         Row: {
@@ -1574,6 +1671,56 @@ export type Database = {
             foreignKeyName: "work_responsibles_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_social_settings: {
+        Row: {
+          approval_mode: string
+          channels: string[]
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          id: string
+          media_url: string | null
+          reminder_minutes: number[]
+          template_text: string
+          updated_at: string
+          work_id: string
+        }
+        Insert: {
+          approval_mode?: string
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          media_url?: string | null
+          reminder_minutes?: number[]
+          template_text?: string
+          updated_at?: string
+          work_id: string
+        }
+        Update: {
+          approval_mode?: string
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          media_url?: string | null
+          reminder_minutes?: number[]
+          template_text?: string
+          updated_at?: string
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_social_settings_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: true
             referencedRelation: "works"
             referencedColumns: ["id"]
           },
