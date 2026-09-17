@@ -166,7 +166,10 @@ export function SyncedTranscript({
   useEffect(() => {
     if (activeIdx < 0 || !listRef.current) return;
     const el = listRef.current.querySelector(`[data-seg='${activeIdx}']`) as HTMLElement | null;
-    el?.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (!el) return;
+    const list = listRef.current;
+    const target = el.offsetTop - list.clientHeight / 2 + el.clientHeight / 2;
+    list.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
   }, [activeIdx]);
 
   // Loop the active segment
