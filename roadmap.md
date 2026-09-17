@@ -2,3 +2,5 @@
 
 - [x] Adicionar guia visual dos recursos de texto na edição de postagens.
 - [x] Avaliar editor visual direto, sem aba de prévia, e explicar impacto em créditos.
+- [x] Reorganizar a página de visualização dos áudios para priorizar reprodução e transcrição.
+- [ ] Validar a nova visualização dos áudios em desktop e mobile.
