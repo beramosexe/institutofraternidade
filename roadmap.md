@@ -6,3 +6,6 @@
 - [x] Validar a nova visualização dos áudios em desktop e mobile.
 - [x] Simplificar a transcrição compacta com faixa horizontal sincronizada e corrigir o botão de reprodução.
 - [x] Corrigir o corte de trechos longos e compactar o resumo lateral com “Ler mais”.
+- [ ] Criar central de postagens para Instagram e Facebook.
+- [ ] Adicionar lembretes configuráveis por trabalho e aprovação opcional.
+- [ ] Preparar publicação oficial pela Meta e validar a experiência.
