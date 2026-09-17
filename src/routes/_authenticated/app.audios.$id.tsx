@@ -53,6 +53,7 @@ function AudioDetail() {
   const { data: access } = useMyAccess();
   const [transcriptExpanded, setTranscriptExpanded] = useState(false);
   const [managementOpen, setManagementOpen] = useState(false);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   const { data: audio, isLoading } = useQuery({
     queryKey: ["audio", id],
@@ -199,6 +200,7 @@ function AudioDetail() {
   const accent = (audio.works as { color?: string | null } | null)?.color || "hsl(var(--brand))";
   const restricted = audio.access_level !== "public";
   const keywords = (audio.keywords as string[] | null) ?? [];
+  const summaryIsLong = (audio.summary?.length ?? 0) > 360;
 
   const showManagement = canEditTimestamps || canReprocess || canFeature;
 
@@ -344,7 +346,22 @@ function AudioDetail() {
                   <Sparkles className="h-4 w-4" style={{ color: accent }} /> Sobre este áudio
                 </h2>
                 {audio.summary ? (
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{audio.summary}</p>
+                  <div className="space-y-1.5">
+                    <p className={`whitespace-pre-line text-sm leading-relaxed text-foreground ${summaryIsLong && !summaryExpanded ? "line-clamp-6" : ""}`}>
+                      {audio.summary}
+                    </p>
+                    {summaryIsLong && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-1 text-xs text-muted-foreground"
+                        onClick={() => setSummaryExpanded((value) => !value)}
+                      >
+                        {summaryExpanded ? <ChevronUp className="mr-1 h-3.5 w-3.5" /> : <ChevronDown className="mr-1 h-3.5 w-3.5" />}
+                        {summaryExpanded ? "Ler menos" : "Ler mais"}
+                      </Button>
+                    )}
+                  </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     {insightsMutation.isPending ? "Gerando resumo…" : "Resumo ainda não disponível."}
