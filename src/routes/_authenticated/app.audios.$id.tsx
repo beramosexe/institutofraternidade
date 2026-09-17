@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   AlertTriangle, ArrowLeft, Clock, Loader2, RefreshCw, Save, Sparkles,
-  Star, ChevronDown, ChevronUp, Lock, Globe,
+  Star, ChevronDown, ChevronUp, Lock, Globe, Settings2, FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -28,6 +28,16 @@ import { ACCESS_LEVEL_LABELS, AUDIO_STATUS_LABELS, REVIEW_STATUS_LABELS } from "
 
 export const Route = createFileRoute("/_authenticated/app/audios/$id")({
   component: AudioDetail,
+  head: () => ({
+    meta: [
+      { title: "Ouvir áudio | Instituto Fraternidade" },
+      { name: "description", content: "Ouça uma mensagem do Instituto Fraternidade e acompanhe sua transcrição sincronizada." },
+      { property: "og:title", content: "Ouvir áudio | Instituto Fraternidade" },
+      { property: "og:description", content: "Ouça uma mensagem do Instituto Fraternidade e acompanhe sua transcrição sincronizada." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 function AudioDetail() {
@@ -41,7 +51,8 @@ function AudioDetail() {
   const playFn = useServerFn(registerAudioPlay);
   const featuredFn = useServerFn(setAudioFeatured);
   const { data: access } = useMyAccess();
-  const [transcriptView, setTranscriptView] = useState<"closed" | "partial" | "full">("partial");
+  const [transcriptExpanded, setTranscriptExpanded] = useState(false);
+  const [managementOpen, setManagementOpen] = useState(false);
 
   const { data: audio, isLoading } = useQuery({
     queryKey: ["audio", id],
@@ -189,25 +200,27 @@ function AudioDetail() {
   const restricted = audio.access_level !== "public";
   const keywords = (audio.keywords as string[] | null) ?? [];
 
+  const showManagement = canEditTimestamps || canReprocess || canFeature;
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-10">
-      <Link to="/app/audios" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+    <div className="mx-auto max-w-7xl space-y-4 px-4 py-4 md:px-8 md:py-7">
+      <Link to="/app/audios" className="inline-flex min-h-9 items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Voltar à biblioteca
       </Link>
 
-      <div>
+      <header className="border-l-4 pl-4" style={{ borderColor: accent }}>
         <p className="text-xs uppercase tracking-[0.22em]" style={{ color: accent }}>
           {audio.message_source ?? "Mensagem"}
         </p>
-        <h1 className="mt-1 font-display text-2xl text-foreground md:text-3xl">{audio.title}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        <h1 className="mt-1 font-display text-2xl text-foreground md:text-4xl">{audio.title}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
           {audio.works?.name && <span>{audio.works.name}</span>}
           {audio.recorded_at && (
             <span>· Gravada em {format(new Date(`${audio.recorded_at}T12:00:00`), "d 'de' MMM 'de' yyyy", { locale: ptBR })}</span>
           )}
           {(audio.play_count ?? 0) > 0 && <span>· {audio.play_count} reproduções</span>}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <Badge variant={restricted ? "secondary" : "outline"} className="gap-1">
             {restricted ? <Lock className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
             {ACCESS_LEVEL_LABELS[audio.access_level]}
@@ -223,69 +236,12 @@ function AudioDetail() {
               Transcrição: {REVIEW_STATUS_LABELS[transcription.review_status as keyof typeof REVIEW_STATUS_LABELS]}
             </Badge>
           )}
-          {canFeature && (
-            <Button
-              size="sm"
-              variant={audio.is_featured ? "default" : "outline"}
-              className="h-7"
-              disabled={featuredMutation.isPending}
-              onClick={() => featuredMutation.mutate(!audio.is_featured)}
-            >
-              <Star className="mr-1 h-3 w-3" />
-              {audio.is_featured ? "Em destaque" : "Destacar"}
-            </Button>
-          )}
         </div>
 
         {audio.description && (
-          <p className="mt-4 whitespace-pre-line text-muted-foreground">{audio.description}</p>
+          <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{audio.description}</p>
         )}
-      </div>
-
-      {(audio.summary || keywords.length > 0 || canReprocess) && audio.status === "ready" && (
-        <Card className="space-y-3 p-5" style={{ borderLeft: `4px solid ${accent}` }}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 font-display text-lg text-foreground">
-              <Sparkles className="h-4 w-4" style={{ color: accent }} /> Resumo
-            </h2>
-            {canReprocess && (
-              <Button
-                size="sm" variant="outline"
-                disabled={insightsMutation.isPending}
-                onClick={() => insightsMutation.mutate(true)}
-              >
-                {insightsMutation.isPending
-                  ? <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                  : <RefreshCw className="mr-2 h-3 w-3" />}
-                {audio.summary ? "Gerar novamente" : "Gerar resumo"}
-              </Button>
-            )}
-          </div>
-
-          {audio.summary ? (
-            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{audio.summary}</p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              {insightsMutation.isPending
-                ? "Gerando resumo descritivo com IA…"
-                : "Resumo ainda não gerado para este áudio."}
-            </p>
-          )}
-
-          {keywords.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {keywords.map((k) => (
-                <Badge key={k} variant="outline" className="text-[11px]">{k}</Badge>
-              ))}
-            </div>
-          )}
-
-          <p className="pt-1 text-xs text-muted-foreground">
-            Síntese descritiva gerada por IA a partir da transcrição — sem interpretações
-            nem identificação de quem falou.
-          </p>
-        </Card>
-      )}
+      </header>
 
 
       {audio.status !== "ready" ? (
@@ -340,72 +296,104 @@ function AudioDetail() {
 
         <Card className="p-6 text-muted-foreground">Preparando reprodução…</Card>
       ) : (
-        <>
-          {transcription && transcription.review_status !== "reviewed" && (
-            <div className="rounded-md border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-foreground">
-              ⚠ Esta transcrição foi gerada automaticamente e ainda não foi revisada. Pode conter erros.
-            </div>
-          )}
-
-          {canEditTimestamps && (
-            <div className="flex flex-wrap items-center gap-2">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_23rem]">
+          <main className="min-w-0 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 font-display text-lg text-foreground">
+                <FileText className="h-4 w-4" style={{ color: accent }} /> Transcrição sincronizada
+              </h2>
               <Button
                 size="sm"
-                variant={editing ? "default" : "outline"}
-                onClick={() => setEditing((v) => !v)}
+                variant="ghost"
+                className="h-8 shrink-0 text-xs"
+                onClick={() => setTranscriptExpanded((value) => !value)}
               >
-                <Clock className="mr-2 h-4 w-4" />
-                {editing ? "Sair do ajuste de tempos" : "Ajustar tempos e texto"}
+                {transcriptExpanded ? <ChevronUp className="mr-1 h-3.5 w-3.5" /> : <ChevronDown className="mr-1 h-3.5 w-3.5" />}
+                {transcriptExpanded ? "Recolher" : "Ver completa"}
               </Button>
-              {editing && (dirty ? (
-                <Badge variant="outline" className="border-gold/40 bg-gold/10">
-                  <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Salvando…
-                </Badge>
-              ) : saveMutation.isSuccess ? (
-                <Badge variant="outline" className="border-brand/40 bg-brand/10">
-                  <Save className="mr-1 h-3 w-3" /> Salvo
-                </Badge>
-              ) : null)}
             </div>
-          )}
 
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-display text-lg text-foreground">Transcrição</h2>
-            <div className="flex items-center gap-1 rounded-md border border-border p-1">
-              {([
-                ["closed", "Oculta"],
-                ["partial", "Parcial"],
-                ["full", "Completa"],
-              ] as const).map(([v, label]) => (
+            {transcription && transcription.review_status !== "reviewed" && (
+              <p className="flex items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-foreground">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-gold" />
+                Transcrição automática ainda não revisada; pode conter erros.
+              </p>
+            )}
+
+            <SyncedTranscript
+              src={stream.url}
+              segments={segments}
+              editable={editing}
+              editableTimestamps={editing}
+              onChangeSegments={onChangeSegments}
+              fallbackText={transcription?.text ?? undefined}
+              onDurationKnown={handleDurationKnown}
+              onFirstPlay={() => { playFn({ data: { id } }).catch(() => {}); }}
+              accentColor={accent}
+              listMaxHeight={transcriptExpanded ? "none" : "56vh"}
+            />
+          </main>
+
+          <aside className="space-y-4 lg:sticky lg:top-5">
+            {(audio.summary || keywords.length > 0 || canReprocess) && (
+              <section className="space-y-3 border-t-2 border-border pt-4" style={{ borderTopColor: accent }}>
+                <h2 className="flex items-center gap-2 font-display text-lg text-foreground">
+                  <Sparkles className="h-4 w-4" style={{ color: accent }} /> Sobre este áudio
+                </h2>
+                {audio.summary ? (
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{audio.summary}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {insightsMutation.isPending ? "Gerando resumo…" : "Resumo ainda não disponível."}
+                  </p>
+                )}
+                {keywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {keywords.map((keyword) => <Badge key={keyword} variant="outline" className="text-[11px]">{keyword}</Badge>)}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {showManagement && (
+              <section className="border-t border-border pt-3">
                 <Button
-                  key={v}
-                  size="sm"
-                  variant={transcriptView === v ? "default" : "ghost"}
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setTranscriptView(v)}
+                  variant="ghost"
+                  className="h-9 w-full justify-between px-1"
+                  onClick={() => setManagementOpen((value) => !value)}
                 >
-                  {v === "closed" ? <ChevronDown className="mr-1 h-3 w-3" /> : v === "full" ? <ChevronUp className="mr-1 h-3 w-3" /> : null}
-                  {label}
+                  <span className="flex items-center gap-2"><Settings2 className="h-4 w-4" /> Ferramentas de gestão</span>
+                  {managementOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </Button>
-              ))}
-            </div>
-          </div>
-
-          <SyncedTranscript
-            src={stream.url}
-            segments={segments}
-            editable={editing}
-            editableTimestamps={editing}
-            onChangeSegments={onChangeSegments}
-            fallbackText={transcription?.text ?? undefined}
-            onDurationKnown={handleDurationKnown}
-            onFirstPlay={() => { playFn({ data: { id } }).catch(() => {}); }}
-            accentColor={accent}
-            hideTranscript={!editing && transcriptView === "closed"}
-            listMaxHeight={transcriptView === "full" ? "none" : "45vh"}
-          />
-
-        </>
+                {managementOpen && (
+                  <div className="mt-2 grid gap-2">
+                    {canEditTimestamps && (
+                      <Button size="sm" variant={editing ? "default" : "outline"} className="justify-start" onClick={() => setEditing((value) => !value)}>
+                        <Clock className="mr-2 h-4 w-4" /> {editing ? "Encerrar revisão" : "Revisar texto e tempos"}
+                      </Button>
+                    )}
+                    {editing && (dirty ? (
+                      <Badge variant="outline" className="justify-center border-gold/40 bg-gold/10"><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Salvando…</Badge>
+                    ) : saveMutation.isSuccess ? (
+                      <Badge variant="outline" className="justify-center border-brand/40 bg-brand/10"><Save className="mr-1 h-3 w-3" /> Salvo</Badge>
+                    ) : null)}
+                    {canReprocess && (
+                      <Button size="sm" variant="outline" className="justify-start" disabled={insightsMutation.isPending} onClick={() => insightsMutation.mutate(true)}>
+                        {insightsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        {audio.summary ? "Gerar novo resumo" : "Gerar resumo"}
+                      </Button>
+                    )}
+                    {canFeature && (
+                      <Button size="sm" variant={audio.is_featured ? "secondary" : "outline"} className="justify-start" disabled={featuredMutation.isPending} onClick={() => featuredMutation.mutate(!audio.is_featured)}>
+                        <Star className="mr-2 h-4 w-4" /> {audio.is_featured ? "Remover dos destaques" : "Adicionar aos destaques"}
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
+          </aside>
+        </div>
       )}
     </div>
 
