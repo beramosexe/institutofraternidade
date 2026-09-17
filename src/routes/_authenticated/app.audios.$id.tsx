@@ -298,28 +298,6 @@ function AudioDetail() {
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_23rem]">
           <main className="min-w-0 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="flex items-center gap-2 font-display text-lg text-foreground">
-                <FileText className="h-4 w-4" style={{ color: accent }} /> Transcrição sincronizada
-              </h2>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 shrink-0 text-xs"
-                onClick={() => setTranscriptExpanded((value) => !value)}
-              >
-                {transcriptExpanded ? <ChevronUp className="mr-1 h-3.5 w-3.5" /> : <ChevronDown className="mr-1 h-3.5 w-3.5" />}
-                {transcriptExpanded ? "Recolher" : "Ver completa"}
-              </Button>
-            </div>
-
-            {transcription && transcription.review_status !== "reviewed" && (
-              <p className="flex items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-foreground">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-gold" />
-                Transcrição automática ainda não revisada; pode conter erros.
-              </p>
-            )}
-
             <SyncedTranscript
               src={stream.url}
               segments={segments}
@@ -330,7 +308,32 @@ function AudioDetail() {
               onDurationKnown={handleDurationKnown}
               onFirstPlay={() => { playFn({ data: { id } }).catch(() => {}); }}
               accentColor={accent}
+              compactTranscript={!transcriptExpanded}
               listMaxHeight={transcriptExpanded ? "none" : "56vh"}
+              transcriptHeader={(
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="flex items-center gap-2 font-display text-lg text-foreground">
+                      <FileText className="h-4 w-4" style={{ color: accent }} /> Transcrição sincronizada
+                    </h2>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 shrink-0 text-xs"
+                      onClick={() => setTranscriptExpanded((value) => !value)}
+                    >
+                      {transcriptExpanded ? <ChevronUp className="mr-1 h-3.5 w-3.5" /> : <ChevronDown className="mr-1 h-3.5 w-3.5" />}
+                      {transcriptExpanded ? "Recolher" : "Ver completa"}
+                    </Button>
+                  </div>
+                  {transcription && transcription.review_status !== "reviewed" && (
+                    <p className="flex items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-foreground">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-gold" />
+                      Transcrição automática ainda não revisada; pode conter erros.
+                    </p>
+                  )}
+                </div>
+              )}
             />
           </main>
 
