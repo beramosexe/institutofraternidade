@@ -83,6 +83,32 @@ export async function publishCommunication(post: SocialPost) {
     attempt_count: post.attempt_count + 1,
   }).eq("id", post.id);
   if (errors.length) throw new Error(errors.join(" | "));
+
+  if (post.schedule_type === "recurring" && post.recurrence_series_id && post.scheduled_for) {
+    const { data: latest } = await supabaseAdmin
+      .from("social_media_posts")
+      .select("scheduled_for")
+      .eq("recurrence_series_id", post.recurrence_series_id)
+      .order("scheduled_for", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const latestDate = new Date(latest?.scheduled_for ?? post.scheduled_for);
+    const nextDate = new Date(latestDate);
+    nextDate.setDate(nextDate.getDate() + 7);
+    const end = post.recurrence_ends_on ? new Date(`${post.recurrence_ends_on}T23:59:59`) : null;
+    if (!end || nextDate <= end) {
+      const { id: _id, created_at: _createdAt, updated_at: _updatedAt, published_at: _publishedAt, last_error: _lastError, attempt_count: _attemptCount, ...copy } = post;
+      const { error: recurringError } = await supabaseAdmin.from("social_media_posts").insert({
+        ...copy,
+        scheduled_for: nextDate.toISOString(),
+        status: "scheduled",
+        published_at: null,
+        last_error: null,
+        attempt_count: 0,
+      });
+      if (recurringError?.code !== "23505") console.error(`Falha ao ampliar recorrência [${recurringError?.code}]: ${recurringError?.message}`);
+    }
+  }
 }
 
 export const publishPostToMeta = publishCommunication;

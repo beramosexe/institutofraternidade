@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { UserMultiSelect } from "@/components/app/UserMultiSelect";
 import { EntityMultiSelect } from "@/components/app/EntityMultiSelect";
+import { nextWorkOccurrence } from "@/lib/communication-scheduling";
 
 export const Route = createFileRoute("/_authenticated/app/admin/trabalhos")({
   head: () => ({ meta: [
@@ -431,7 +432,7 @@ function WorkLifecycleDialog({ work, action, open, onOpenChange, onSaved }: { wo
   const [newDate, setNewDate] = useState("");
   const [reason, setReason] = useState("");
   const [channels, setChannels] = useState<string[]>(["instagram", "facebook"]);
-  const mutation = useMutation({ mutationFn: () => change({ data: { workId: work.id, action, scope, occurrenceAt: new Date(work.starts_at).toISOString(), newStartsAt: action === "postponed" && newDate ? new Date(newDate).toISOString() : null, reason: reason || null, channels: channels as ("instagram" | "facebook" | "whatsapp" | "email" | "telegram" | "youtube")[] } }), onSuccess: () => { toast.success(action === "postponed" ? "Trabalho adiado e comunicado preparado." : "Trabalho cancelado e comunicado preparado."); onSaved(); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível alterar o trabalho.") });
+  const mutation = useMutation({ mutationFn: () => change({ data: { workId: work.id, action, scope, occurrenceAt: nextWorkOccurrence(work).toISOString(), newStartsAt: action === "postponed" && newDate ? new Date(newDate).toISOString() : null, reason: reason || null, channels: channels as ("instagram" | "facebook" | "whatsapp" | "email" | "telegram" | "youtube")[] } }), onSuccess: () => { toast.success(action === "postponed" ? "Trabalho adiado e comunicado preparado." : "Trabalho cancelado e comunicado preparado."); onSaved(); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível alterar o trabalho.") });
   const toggle = (value: string) => setChannels((old) => old.includes(value) ? old.filter((item) => item !== value) : [...old, value]);
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>{action === "postponed" ? "Adiar" : "Cancelar"} {work.name}</DialogTitle></DialogHeader><div className="space-y-4">
     {work.recurrence === "weekly" && <div><Label>Esta alteração vale para</Label><Select value={scope} onValueChange={(value) => setScope(value as "next" | "series")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="next">Somente a próxima ocorrência</SelectItem><SelectItem value="series">Toda a série semanal</SelectItem></SelectContent></Select></div>}

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { nextWorkOccurrence, offsetMilliseconds, renderWorkCommunication } from "@/lib/communication-scheduling";
 
 const workInput = z.object({
   name: z.string().min(1).max(200),
@@ -21,6 +22,44 @@ const workInput = z.object({
 });
 
 type WorkInput = z.infer<typeof workInput>;
+
+async function rebuildFutureCommunications(workId: string, userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const [{ data: work }, { data: rules }, { data: future }] = await Promise.all([
+    supabaseAdmin.from("works").select("id, name, starts_at, recurrence, recurrence_weekday, recurrence_time, location, status").eq("id", workId).single(),
+    supabaseAdmin.from("work_communication_rules").select("*").eq("work_id", workId).eq("is_active", true),
+    supabaseAdmin.from("social_media_posts").select("id").eq("work_id", workId).in("status", ["draft", "pending_approval", "scheduled", "failed"]).gte("scheduled_for", new Date().toISOString()),
+  ]);
+  if (!work) return;
+  if ((future ?? []).length > 0) {
+    await supabaseAdmin.from("social_media_posts").update({ status: "cancelled", cancellation_reason: "Horário do trabalho atualizado" }).in("id", (future ?? []).map((item) => item.id));
+  }
+  if (["cancelled", "completed", "archived"].includes(work.status)) return;
+  const occurrence = nextWorkOccurrence(work);
+  for (const rule of rules ?? []) {
+    const milliseconds = offsetMilliseconds(rule.offset_value, rule.offset_unit as "minutes" | "hours" | "days" | "weeks");
+    const automatic = rule.approval_mode === "automatic";
+    await supabaseAdmin.from("social_media_posts").insert({
+      title: `${rule.name} · ${work.name}`,
+      content_text: renderWorkCommunication(rule.content_text, work, occurrence),
+      media_url: rule.media_url,
+      channels: rule.channels,
+      scheduled_for: new Date(occurrence.getTime() - milliseconds).toISOString(),
+      status: automatic ? "scheduled" : "draft",
+      approval_mode: rule.approval_mode,
+      approved_at: automatic ? new Date().toISOString() : null,
+      approved_by: automatic ? userId : null,
+      source: "work_reminder",
+      communication_kind: "work_notice",
+      schedule_type: "automatic",
+      work_id: work.id,
+      rule_id: rule.id,
+      occurrence_at: occurrence.toISOString(),
+      reminder_minutes: Math.round(milliseconds / 60_000),
+      created_by: userId,
+    });
+  }
+}
 
 export const listWorks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -110,6 +149,11 @@ export const updateWork = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { responsible_ids, favorite_entity_ids, participant_ids, ...row } = data.patch;
+    const { data: previous } = await context.supabase
+      .from("works")
+      .select("starts_at, recurrence, recurrence_weekday, recurrence_time")
+      .eq("id", data.id)
+      .maybeSingle();
     const { error } = await context.supabase.from("works").update(row).eq("id", data.id);
     if (error) throw new Error(error.message);
     await syncLinks(context.supabase as never, data.id, data.patch);
@@ -117,6 +161,11 @@ export const updateWork = createServerFn({ method: "POST" })
       actor_id: context.userId, entity: "works", entity_id: data.id, action: "update",
       diff: row as never,
     });
+    const scheduleChanged = previous && (
+      previous.starts_at !== row.starts_at || previous.recurrence !== row.recurrence
+      || previous.recurrence_weekday !== row.recurrence_weekday || previous.recurrence_time !== row.recurrence_time
+    );
+    if (scheduleChanged) await rebuildFutureCommunications(data.id, context.userId);
     return { ok: true };
   });
 
@@ -146,8 +195,14 @@ export const changeWorkSchedule = createServerFn({ method: "POST" })
 
     const postponedTo = data.action === "postponed" ? data.newStartsAt : null;
     if (data.scope === "series") {
-      const update = postponedTo
-        ? { status: "published" as const, starts_at: postponedTo }
+      const postponedDate = postponedTo ? new Date(postponedTo) : null;
+      const update = postponedDate
+        ? {
+            status: "published" as const,
+            starts_at: postponedDate.toISOString(),
+            recurrence_weekday: work.recurrence === "weekly" ? postponedDate.getDay() : work.recurrence_weekday,
+            recurrence_time: work.recurrence === "weekly" ? postponedDate.toTimeString().slice(0, 8) : work.recurrence_time,
+          }
         : { status: "cancelled" as const };
       const { error } = await supabaseAdmin.from("works").update(update).eq("id", data.workId);
       if (error) throw new Error(error.message);
