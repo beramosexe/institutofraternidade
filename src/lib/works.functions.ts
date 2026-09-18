@@ -144,10 +144,11 @@ export const changeWorkSchedule = createServerFn({ method: "POST" })
     if (!work) throw new Error("Trabalho não encontrado.");
     if (data.action === "postponed" && !data.newStartsAt) throw new Error("Informe a nova data e hora.");
 
+    const postponedTo = data.action === "postponed" ? data.newStartsAt : null;
     if (data.scope === "series") {
-      const update = data.action === "cancelled"
-        ? { status: "cancelled" as const }
-        : { status: "published" as const, starts_at: data.newStartsAt };
+      const update = postponedTo
+        ? { status: "published" as const, starts_at: postponedTo }
+        : { status: "cancelled" as const };
       const { error } = await supabaseAdmin.from("works").update(update).eq("id", data.workId);
       if (error) throw new Error(error.message);
     } else {
