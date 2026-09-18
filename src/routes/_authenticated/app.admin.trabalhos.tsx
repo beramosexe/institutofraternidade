@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash, CalendarCheck } from "lucide-react";
+import { Plus, Pencil, Trash, CalendarCheck, BellRing, CalendarClock, Ban, MessageCircle, Instagram, Facebook } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,21 +13,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { listWorks, createWork, updateWork, deleteWork, getWorkDetail } from "@/lib/works.functions";
+import { listWorks, createWork, updateWork, deleteWork, getWorkDetail, changeWorkSchedule } from "@/lib/works.functions";
+import { deleteWorkCommunicationRule, listWorkCommunicationRules, saveWorkCommunicationRule } from "@/lib/social-media.functions";
 import { WORK_STATUS_LABELS } from "@/lib/permissions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { UserMultiSelect } from "@/components/app/UserMultiSelect";
 import { EntityMultiSelect } from "@/components/app/EntityMultiSelect";
+import { nextWorkOccurrence } from "@/lib/communication-scheduling";
 
 export const Route = createFileRoute("/_authenticated/app/admin/trabalhos")({
+  head: () => ({ meta: [
+    { title: "Gestão de trabalhos — Instituto Fraternidade" },
+    { name: "description", content: "Gerencie trabalhos, responsáveis, avisos e alterações de agenda." },
+    { property: "og:title", content: "Gestão de trabalhos — Instituto Fraternidade" },
+    { property: "og:description", content: "Gerencie trabalhos, responsáveis, avisos e alterações de agenda." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdminWorks,
 });
 
 type WorkRow = Awaited<ReturnType<typeof listWorks>>[number];
 type Modality = "presencial" | "online" | "hibrido" | "externo";
 type Recurrence = "one_off" | "weekly";
-type Status = "draft" | "published" | "completed" | "archived";
+type Status = "draft" | "published" | "postponed" | "cancelled" | "completed" | "archived";
 type Visibility = "public" | "internal";
 
 const WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -81,6 +90,8 @@ function AdminWorks() {
   const { data: works } = useQuery({ queryKey: ["admin-works"], queryFn: () => list() });
   const [editing, setEditing] = useState<WorkRow | null>(null);
   const [open, setOpen] = useState(false);
+  const [alertsWork, setAlertsWork] = useState<WorkRow | null>(null);
+  const [lifecycle, setLifecycle] = useState<{ work: WorkRow; action: "postponed" | "cancelled" } | null>(null);
 
   const mut = useMutation({
     mutationFn: async (vals: FormPayload) => {
@@ -158,6 +169,15 @@ function AdminWorks() {
                     <CalendarCheck className="h-4 w-4" />
                   </Button>
                 </Link>
+                <Button size="icon" variant="outline" title="Configurar avisos" onClick={() => setAlertsWork(w)}>
+                  <BellRing className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="outline" title="Adiar" onClick={() => setLifecycle({ work: w, action: "postponed" })}>
+                  <CalendarClock className="h-4 w-4" />
+                </Button>
+                <Button size="icon" variant="outline" title="Cancelar" onClick={() => setLifecycle({ work: w, action: "cancelled" })}>
+                  <Ban className="h-4 w-4" />
+                </Button>
                 <Button size="icon" variant="outline" onClick={() => { setEditing(w); setOpen(true); }}>
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -172,6 +192,8 @@ function AdminWorks() {
           </Card>
         ))}
       </div>
+      {alertsWork && <WorkAlertsDialog work={alertsWork} open={!!alertsWork} onOpenChange={(value) => { if (!value) setAlertsWork(null); }} />}
+      {lifecycle && <WorkLifecycleDialog work={lifecycle.work} action={lifecycle.action} open={!!lifecycle} onOpenChange={(value) => { if (!value) setLifecycle(null); }} onSaved={() => { qc.invalidateQueries({ queryKey: ["admin-works"] }); setLifecycle(null); }} />}
     </div>
   );
 }
@@ -314,6 +336,8 @@ function WorkDialog({
               <SelectContent>
                 <SelectItem value="draft">Rascunho</SelectItem>
                 <SelectItem value="published">Publicado</SelectItem>
+                <SelectItem value="postponed">Adiado</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
                 <SelectItem value="completed">Concluído</SelectItem>
                 <SelectItem value="archived">Arquivado</SelectItem>
               </SelectContent>
@@ -366,4 +390,55 @@ function WorkDialog({
       </form>
     </DialogContent>
   );
+}
+
+type Rule = Awaited<ReturnType<typeof listWorkCommunicationRules>>[number];
+type RuleUnit = "minutes" | "hours" | "days" | "weeks";
+const UNIT_LABELS: Record<RuleUnit, string> = { minutes: "minutos", hours: "horas", days: "dias", weeks: "semanas" };
+
+function WorkAlertsDialog({ work, open, onOpenChange }: { work: WorkRow; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const list = useServerFn(listWorkCommunicationRules);
+  const save = useServerFn(saveWorkCommunicationRule);
+  const remove = useServerFn(deleteWorkCommunicationRule);
+  const qc = useQueryClient();
+  const queryKey = ["work-communication-rules", work.id];
+  const { data: rules } = useQuery({ queryKey, queryFn: () => list({ data: { workId: work.id } }) });
+  const [editing, setEditing] = useState<Rule | null>(null);
+  const [name, setName] = useState("Aviso");
+  const [value, setValue] = useState(1);
+  const [unit, setUnit] = useState<RuleUnit>("days");
+  const [channels, setChannels] = useState<string[]>(["instagram", "facebook"]);
+  const [content, setContent] = useState("Participe do nosso trabalho em {{date}} às {{time}}. {{location}}");
+  const [automatic, setAutomatic] = useState(false);
+  const reset = () => { setEditing(null); setName("Aviso"); setValue(1); setUnit("days"); setChannels(["instagram", "facebook"]); setContent("Participe do nosso trabalho em {{date}} às {{time}}. {{location}}"); setAutomatic(false); };
+  const edit = (rule: Rule) => { setEditing(rule); setName(rule.name); setValue(rule.offset_value); setUnit(rule.offset_unit as RuleUnit); setChannels(rule.channels); setContent(rule.content_text); setAutomatic(rule.approval_mode === "automatic"); };
+  const mutation = useMutation({ mutationFn: () => save({ data: { id: editing?.id, work_id: work.id, name, offset_value: value, offset_unit: unit, channels: channels as ("instagram" | "facebook" | "whatsapp" | "email" | "telegram" | "youtube")[], content_text: content, media_url: editing?.media_url ?? null, approval_mode: automatic ? "automatic" : "manual", is_active: true, sort_order: editing?.sort_order ?? (rules?.length ?? 0) } }), onSuccess: () => { toast.success("Aviso salvo."); qc.invalidateQueries({ queryKey }); reset(); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível salvar.") });
+  const removeMutation = useMutation({ mutationFn: (id: string) => remove({ data: { id } }), onSuccess: () => qc.invalidateQueries({ queryKey }) });
+  const toggle = (channel: string) => setChannels((old) => old.includes(channel) ? old.filter((item) => item !== channel) : [...old, channel]);
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl"><DialogHeader><DialogTitle>Avisos de {work.name}</DialogTitle></DialogHeader><div className="space-y-4">
+    <p className="text-sm text-muted-foreground">Adicione quantos avisos precisar. Se o trabalho mudar, os avisos futuros serão recalculados.</p>
+    {(rules ?? []).map((rule) => <Card key={rule.id} className="flex items-center gap-3 p-3"><BellRing className="h-4 w-4 text-brand" /><div className="min-w-0 flex-1"><p className="font-medium">{rule.name}</p><p className="text-xs text-muted-foreground">{rule.offset_value} {UNIT_LABELS[rule.offset_unit as RuleUnit]} antes · {rule.channels.join(", ")} · {rule.approval_mode === "automatic" ? "automático" : "com aprovação"}</p></div><Button size="icon" variant="ghost" onClick={() => edit(rule)}><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="ghost" onClick={() => removeMutation.mutate(rule.id)}><Trash className="h-4 w-4" /></Button></Card>)}
+    <div className="rounded-md border p-4"><div className="grid gap-3 sm:grid-cols-[1fr_7rem_10rem]"><div><Label>Nome do aviso</Label><Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Uma semana antes" /></div><div><Label>Quanto</Label><Input type="number" min={1} value={value} onChange={(event) => setValue(Number(event.target.value))} /></div><div><Label>Antes em</Label><Select value={unit} onValueChange={(next) => setUnit(next as RuleUnit)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{Object.entries(UNIT_LABELS).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select></div></div>
+    <div className="mt-3"><Label>Canais</Label><div className="mt-1 flex flex-wrap gap-2"><Button type="button" size="sm" variant={channels.includes("instagram") ? "default" : "outline"} onClick={() => toggle("instagram")}><Instagram className="mr-1 h-4 w-4" />Instagram</Button><Button type="button" size="sm" variant={channels.includes("facebook") ? "default" : "outline"} onClick={() => toggle("facebook")}><Facebook className="mr-1 h-4 w-4" />Facebook</Button><Button type="button" size="sm" variant={channels.includes("whatsapp") ? "default" : "outline"} onClick={() => toggle("whatsapp")}><MessageCircle className="mr-1 h-4 w-4" />WhatsApp</Button></div></div>
+    <div className="mt-3"><Label>Mensagem</Label><Textarea rows={3} value={content} onChange={(event) => setContent(event.target.value)} placeholder="Escreva o aviso…" /><p className="mt-1 text-xs text-muted-foreground">Data, horário e local do trabalho serão inseridos automaticamente.</p></div>
+    <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={automatic} onChange={(event) => setAutomatic(event.target.checked)} />Agendar automaticamente, sem aprovação manual</label>
+    <div className="mt-4 flex justify-end gap-2">{editing && <Button variant="ghost" onClick={reset}>Cancelar edição</Button>}<Button disabled={!name.trim() || !content.trim() || channels.length === 0 || mutation.isPending} onClick={() => mutation.mutate()}>{editing ? "Atualizar aviso" : "Adicionar aviso"}</Button></div></div>
+  </div><DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Concluir</Button></DialogFooter></DialogContent></Dialog>;
+}
+
+function WorkLifecycleDialog({ work, action, open, onOpenChange, onSaved }: { work: WorkRow; action: "postponed" | "cancelled"; open: boolean; onOpenChange: (open: boolean) => void; onSaved: () => void }) {
+  const change = useServerFn(changeWorkSchedule);
+  const [scope, setScope] = useState<"next" | "series">(work.recurrence === "weekly" ? "next" : "series");
+  const [newDate, setNewDate] = useState("");
+  const [reason, setReason] = useState("");
+  const [channels, setChannels] = useState<string[]>(["instagram", "facebook"]);
+  const mutation = useMutation({ mutationFn: () => change({ data: { workId: work.id, action, scope, occurrenceAt: nextWorkOccurrence(work).toISOString(), newStartsAt: action === "postponed" && newDate ? new Date(newDate).toISOString() : null, reason: reason || null, channels: channels as ("instagram" | "facebook" | "whatsapp" | "email" | "telegram" | "youtube")[] } }), onSuccess: () => { toast.success(action === "postponed" ? "Trabalho adiado e comunicado preparado." : "Trabalho cancelado e comunicado preparado."); onSaved(); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Não foi possível alterar o trabalho.") });
+  const toggle = (value: string) => setChannels((old) => old.includes(value) ? old.filter((item) => item !== value) : [...old, value]);
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>{action === "postponed" ? "Adiar" : "Cancelar"} {work.name}</DialogTitle></DialogHeader><div className="space-y-4">
+    {work.recurrence === "weekly" && <div><Label>Esta alteração vale para</Label><Select value={scope} onValueChange={(value) => setScope(value as "next" | "series")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="next">Somente a próxima ocorrência</SelectItem><SelectItem value="series">Toda a série semanal</SelectItem></SelectContent></Select></div>}
+    {action === "postponed" && <div><Label>Nova data e hora *</Label><Input type="datetime-local" value={newDate} onChange={(event) => setNewDate(event.target.value)} /></div>}
+    <div><Label>Motivo</Label><Textarea rows={3} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Opcional" /></div>
+    <div><Label>Preparar comunicado em</Label><div className="mt-1 flex flex-wrap gap-2">{[["instagram", "Instagram"], ["facebook", "Facebook"], ["whatsapp", "WhatsApp"]].map(([value, label]) => <Button key={value} type="button" size="sm" variant={channels.includes(value) ? "default" : "outline"} onClick={() => toggle(value)}>{label}</Button>)}</div></div>
+    <p className="text-xs text-muted-foreground">O comunicado será criado como rascunho na Central. Publicações já realizadas não serão alteradas.</p>
+  </div><DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Voltar</Button><Button variant={action === "cancelled" ? "destructive" : "default"} disabled={channels.length === 0 || (action === "postponed" && !newDate) || mutation.isPending} onClick={() => mutation.mutate()}>Confirmar e preparar comunicado</Button></DialogFooter></DialogContent></Dialog>;
 }

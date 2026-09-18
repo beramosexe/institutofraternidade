@@ -429,6 +429,120 @@ export type Database = {
           },
         ]
       }
+      communication_destinations: {
+        Row: {
+          channel: string
+          created_at: string
+          created_by: string | null
+          destination_type: string
+          external_id: string | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          destination_type: string
+          external_id?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          destination_type?: string
+          external_id?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      communication_target_links: {
+        Row: {
+          communication_id: string
+          created_at: string
+          destination_id: string
+        }
+        Insert: {
+          communication_id: string
+          created_at?: string
+          destination_id: string
+        }
+        Update: {
+          communication_id?: string
+          created_at?: string
+          destination_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_target_links_communication_id_fkey"
+            columns: ["communication_id"]
+            isOneToOne: false
+            referencedRelation: "social_media_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_target_links_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "communication_destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      communication_templates: {
+        Row: {
+          aesthetic_instruction: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          name: string
+          suggested_channels: string[]
+          text_instruction: string | null
+          updated_at: string
+          visual_reference_url: string | null
+        }
+        Insert: {
+          aesthetic_instruction?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name: string
+          suggested_channels?: string[]
+          text_instruction?: string | null
+          updated_at?: string
+          visual_reference_url?: string | null
+        }
+        Update: {
+          aesthetic_instruction?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name?: string
+          suggested_channels?: string[]
+          text_instruction?: string | null
+          updated_at?: string
+          visual_reference_url?: string | null
+        }
+        Relationships: []
+      }
       communications: {
         Row: {
           created_at: string
@@ -1276,11 +1390,14 @@ export type Database = {
       }
       social_media_posts: {
         Row: {
+          aesthetic_instruction: string | null
           approval_mode: string
           approved_at: string | null
           approved_by: string | null
           attempt_count: number
+          cancellation_reason: string | null
           channels: string[]
+          communication_kind: string
           content_text: string
           created_at: string
           created_by: string | null
@@ -1289,20 +1406,32 @@ export type Database = {
           media_url: string | null
           occurrence_at: string | null
           published_at: string | null
+          recurrence_ends_on: string | null
+          recurrence_series_id: string | null
+          recurrence_time: string | null
+          recurrence_weekday: number | null
           reminder_minutes: number | null
+          rule_id: string | null
+          schedule_type: string
           scheduled_for: string | null
           source: string
           status: string
+          superseded_by: string | null
+          template_id: string | null
           title: string | null
           updated_at: string
+          visual_reference_url: string | null
           work_id: string | null
         }
         Insert: {
+          aesthetic_instruction?: string | null
           approval_mode?: string
           approved_at?: string | null
           approved_by?: string | null
           attempt_count?: number
+          cancellation_reason?: string | null
           channels?: string[]
+          communication_kind?: string
           content_text: string
           created_at?: string
           created_by?: string | null
@@ -1311,20 +1440,32 @@ export type Database = {
           media_url?: string | null
           occurrence_at?: string | null
           published_at?: string | null
+          recurrence_ends_on?: string | null
+          recurrence_series_id?: string | null
+          recurrence_time?: string | null
+          recurrence_weekday?: number | null
           reminder_minutes?: number | null
+          rule_id?: string | null
+          schedule_type?: string
           scheduled_for?: string | null
           source?: string
           status?: string
+          superseded_by?: string | null
+          template_id?: string | null
           title?: string | null
           updated_at?: string
+          visual_reference_url?: string | null
           work_id?: string | null
         }
         Update: {
+          aesthetic_instruction?: string | null
           approval_mode?: string
           approved_at?: string | null
           approved_by?: string | null
           attempt_count?: number
+          cancellation_reason?: string | null
           channels?: string[]
+          communication_kind?: string
           content_text?: string
           created_at?: string
           created_by?: string | null
@@ -1333,15 +1474,45 @@ export type Database = {
           media_url?: string | null
           occurrence_at?: string | null
           published_at?: string | null
+          recurrence_ends_on?: string | null
+          recurrence_series_id?: string | null
+          recurrence_time?: string | null
+          recurrence_weekday?: number | null
           reminder_minutes?: number | null
+          rule_id?: string | null
+          schedule_type?: string
           scheduled_for?: string | null
           source?: string
           status?: string
+          superseded_by?: string | null
+          template_id?: string | null
           title?: string | null
           updated_at?: string
+          visual_reference_url?: string | null
           work_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "social_media_posts_rule_fk"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "work_communication_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_media_posts_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "social_media_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_media_posts_template_fk"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "communication_templates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "social_media_posts_work_id_fkey"
             columns: ["work_id"]
@@ -1353,9 +1524,12 @@ export type Database = {
       }
       social_post_deliveries: {
         Row: {
+          accepted_at: string | null
           attempt_count: number
           channel: string
           created_at: string
+          delivered_at: string | null
+          destination_id: string | null
           error_message: string | null
           id: string
           last_attempt_at: string | null
@@ -1363,13 +1537,18 @@ export type Database = {
           provider_post_id: string | null
           provider_url: string | null
           published_at: string | null
+          read_at: string | null
+          sent_at: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
           attempt_count?: number
           channel: string
           created_at?: string
+          delivered_at?: string | null
+          destination_id?: string | null
           error_message?: string | null
           id?: string
           last_attempt_at?: string | null
@@ -1377,13 +1556,18 @@ export type Database = {
           provider_post_id?: string | null
           provider_url?: string | null
           published_at?: string | null
+          read_at?: string | null
+          sent_at?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
           attempt_count?: number
           channel?: string
           created_at?: string
+          delivered_at?: string | null
+          destination_id?: string | null
           error_message?: string | null
           id?: string
           last_attempt_at?: string | null
@@ -1391,10 +1575,19 @@ export type Database = {
           provider_post_id?: string | null
           provider_url?: string | null
           published_at?: string | null
+          read_at?: string | null
+          sent_at?: string | null
           status?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "social_post_deliveries_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "communication_destinations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "social_post_deliveries_post_id_fkey"
             columns: ["post_id"]
@@ -1591,6 +1784,117 @@ export type Database = {
           },
         ]
       }
+      whatsapp_webhook_events: {
+        Row: {
+          delivery_id: string
+          event: string
+          id: string
+          next_retry_at: string | null
+          payload: Json
+          processed_at: string | null
+          processing_error: string | null
+          received_at: string
+          retry_count: number
+        }
+        Insert: {
+          delivery_id: string
+          event: string
+          id?: string
+          next_retry_at?: string | null
+          payload: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+          retry_count?: number
+        }
+        Update: {
+          delivery_id?: string
+          event?: string
+          id?: string
+          next_retry_at?: string | null
+          payload?: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+          retry_count?: number
+        }
+        Relationships: []
+      }
+      work_communication_rules: {
+        Row: {
+          aesthetic_instruction: string | null
+          approval_mode: string
+          channels: string[]
+          content_text: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          media_url: string | null
+          name: string
+          offset_unit: string
+          offset_value: number
+          sort_order: number
+          template_id: string | null
+          updated_at: string
+          visual_reference_url: string | null
+          work_id: string
+        }
+        Insert: {
+          aesthetic_instruction?: string | null
+          approval_mode?: string
+          channels: string[]
+          content_text: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          media_url?: string | null
+          name: string
+          offset_unit: string
+          offset_value: number
+          sort_order?: number
+          template_id?: string | null
+          updated_at?: string
+          visual_reference_url?: string | null
+          work_id: string
+        }
+        Update: {
+          aesthetic_instruction?: string | null
+          approval_mode?: string
+          channels?: string[]
+          content_text?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          media_url?: string | null
+          name?: string
+          offset_unit?: string
+          offset_value?: number
+          sort_order?: number
+          template_id?: string | null
+          updated_at?: string
+          visual_reference_url?: string | null
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_communication_rules_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "communication_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_communication_rules_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_entity_favorites: {
         Row: {
           created_at: string
@@ -1617,6 +1921,50 @@ export type Database = {
           },
           {
             foreignKeyName: "work_entity_favorites_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_occurrence_exceptions: {
+        Row: {
+          action: string
+          created_at: string
+          created_by: string | null
+          id: string
+          new_starts_at: string | null
+          original_starts_at: string
+          reason: string | null
+          updated_at: string
+          work_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_starts_at?: string | null
+          original_starts_at: string
+          reason?: string | null
+          updated_at?: string
+          work_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          new_starts_at?: string | null
+          original_starts_at?: string
+          reason?: string | null
+          updated_at?: string
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_occurrence_exceptions_work_id_fkey"
             columns: ["work_id"]
             isOneToOne: false
             referencedRelation: "works"
@@ -1922,7 +2270,13 @@ export type Database = {
       membership_status: "pending" | "active" | "inactive"
       review_status: "unreviewed" | "in_review" | "reviewed"
       stock_movement_type: "in" | "out" | "adjustment"
-      work_status: "draft" | "published" | "completed" | "archived"
+      work_status:
+        | "draft"
+        | "published"
+        | "completed"
+        | "archived"
+        | "postponed"
+        | "cancelled"
       work_visibility: "public" | "internal"
     }
     CompositeTypes: {
@@ -2101,7 +2455,14 @@ export const Constants = {
       membership_status: ["pending", "active", "inactive"],
       review_status: ["unreviewed", "in_review", "reviewed"],
       stock_movement_type: ["in", "out", "adjustment"],
-      work_status: ["draft", "published", "completed", "archived"],
+      work_status: [
+        "draft",
+        "published",
+        "completed",
+        "archived",
+        "postponed",
+        "cancelled",
+      ],
       work_visibility: ["public", "internal"],
     },
   },

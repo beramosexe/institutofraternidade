@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Bell, Calendar, CalendarCheck, Headphones, Home, LogOut, Settings, ShoppingCart,
   Users as UsersIcon, History, ShieldCheck, PanelLeft, X, UserCircle, GraduationCap, Clock,
-  Package, Wrench, Banknote, HeartHandshake, ListChecks, ChevronLeft, FileText, Share2, MessageCircle,
+  Package, Wrench, Banknote, HeartHandshake, ListChecks, ChevronLeft, FileText, MessagesSquare,
 } from "lucide-react";
 
 import { useState, type ReactNode } from "react";
@@ -109,8 +109,7 @@ const SECTIONS: NavSection[] = [
     accent: "var(--area-midias)",
     items: [
       { to: "/app/midias/site", label: "Postagens do site", icon: FileText, need: "media.manage" },
-      { to: "/app/midias/redes", label: "Redes sociais", icon: Share2, need: "media.manage" },
-      { to: "/app/midias/comunicados", label: "Comunicados", icon: MessageCircle, need: "media.manage" },
+      { to: "/app/midias/redes", label: "Central de comunicações", icon: MessagesSquare, need: "media.manage" },
     ],
   },
   {
