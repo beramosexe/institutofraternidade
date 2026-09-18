@@ -152,6 +152,8 @@ export const REVIEW_STATUS_LABELS = {
 export const WORK_STATUS_LABELS = {
   draft: "Rascunho",
   published: "Publicado",
+  postponed: "Adiado",
+  cancelled: "Cancelado",
   completed: "Concluído",
   archived: "Arquivado",
 } as const;
