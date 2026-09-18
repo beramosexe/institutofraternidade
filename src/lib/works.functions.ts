@@ -9,7 +9,7 @@ const workInput = z.object({
   ends_at: z.string().optional().nullable(),
   location: z.string().max(200).optional().nullable(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
-  status: z.enum(["draft", "published", "completed", "archived"]),
+  status: z.enum(["draft", "published", "postponed", "cancelled", "completed", "archived"]),
   visibility: z.enum(["public", "internal"]),
   modality: z.enum(["presencial", "online", "hibrido", "externo"]).nullable().optional(),
   recurrence: z.enum(["one_off", "weekly"]).default("one_off"),
@@ -116,6 +116,91 @@ export const updateWork = createServerFn({ method: "POST" })
     await context.supabase.from("audit_logs").insert({
       actor_id: context.userId, entity: "works", entity_id: data.id, action: "update",
       diff: row as never,
+    });
+    return { ok: true };
+  });
+
+const workLifecycleSchema = z.object({
+  workId: z.string().uuid(),
+  action: z.enum(["postponed", "cancelled"]),
+  scope: z.enum(["next", "series"]),
+  occurrenceAt: z.string().datetime(),
+  newStartsAt: z.string().datetime().nullable().optional(),
+  reason: z.string().trim().max(500).nullable().optional(),
+  channels: z.array(z.enum(["instagram", "facebook", "whatsapp", "email", "telegram", "youtube"])).min(1),
+});
+
+export const changeWorkSchedule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: z.infer<typeof workLifecycleSchema>) => workLifecycleSchema.parse(d))
+  .handler(async ({ context, data }) => {
+    const [{ data: admin }, { data: allowed }] = await Promise.all([
+      context.supabase.rpc("is_admin", { _user_id: context.userId }),
+      context.supabase.rpc("has_permission", { _user_id: context.userId, _permission: "work.manage" }),
+    ]);
+    if (!admin && !allowed) throw new Error("Você não tem permissão para alterar trabalhos.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: work } = await supabaseAdmin.from("works").select("*").eq("id", data.workId).single();
+    if (!work) throw new Error("Trabalho não encontrado.");
+    if (data.action === "postponed" && !data.newStartsAt) throw new Error("Informe a nova data e hora.");
+
+    if (data.scope === "series") {
+      const update = data.action === "cancelled"
+        ? { status: "cancelled" as const }
+        : { status: "published" as const, starts_at: data.newStartsAt };
+      const { error } = await supabaseAdmin.from("works").update(update).eq("id", data.workId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin.from("work_occurrence_exceptions").upsert({
+        work_id: data.workId,
+        original_starts_at: data.occurrenceAt,
+        action: data.action,
+        new_starts_at: data.action === "postponed" ? data.newStartsAt : null,
+        reason: data.reason || null,
+        created_by: context.userId,
+      }, { onConflict: "work_id,original_starts_at" });
+      if (error) throw new Error(error.message);
+    }
+
+    const { data: future } = await supabaseAdmin
+      .from("social_media_posts")
+      .select("id")
+      .eq("work_id", data.workId)
+      .in("status", ["draft", "pending_approval", "scheduled", "failed"])
+      .gte("scheduled_for", new Date().toISOString());
+    if ((future ?? []).length > 0) {
+      await supabaseAdmin.from("social_media_posts").update({
+        status: "cancelled",
+        cancellation_reason: data.action === "cancelled" ? "Trabalho cancelado" : "Trabalho adiado",
+      }).in("id", (future ?? []).map((item) => item.id));
+    }
+
+    const occurrence = new Date(data.newStartsAt ?? data.occurrenceAt);
+    const reasonText = data.reason ? ` Motivo: ${data.reason}` : "";
+    const content = data.action === "cancelled"
+      ? `O trabalho ${work.name}, previsto para ${new Date(data.occurrenceAt).toLocaleString("pt-BR")}, foi cancelado.${reasonText}`
+      : `O trabalho ${work.name} foi adiado para ${occurrence.toLocaleString("pt-BR")}.${reasonText}`;
+    const { error: communicationError } = await supabaseAdmin.from("social_media_posts").insert({
+      title: `${data.action === "cancelled" ? "Cancelamento" : "Adiamento"} · ${work.name}`,
+      content_text: content,
+      channels: data.channels,
+      scheduled_for: new Date().toISOString(),
+      status: "draft",
+      source: data.action === "cancelled" ? "work_cancelled" : "work_postponed",
+      communication_kind: data.action === "cancelled" ? "work_cancelled" : "work_postponed",
+      schedule_type: "automatic",
+      work_id: data.workId,
+      occurrence_at: occurrence.toISOString(),
+      approval_mode: "manual",
+      created_by: context.userId,
+    });
+    if (communicationError) throw new Error(communicationError.message);
+    await supabaseAdmin.from("audit_logs").insert({
+      actor_id: context.userId,
+      entity: "works",
+      entity_id: data.workId,
+      action: data.action,
+      diff: data,
     });
     return { ok: true };
   });
