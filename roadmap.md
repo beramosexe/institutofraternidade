@@ -9,8 +9,9 @@
 - [x] Criar central de postagens para Instagram e Facebook.
 - [x] Adicionar lembretes configuráveis por trabalho e aprovação opcional.
 - [ ] Preparar publicação oficial pela Meta e validar a experiência. Bloqueio: autorização e credenciais oficiais da Meta.
-- [ ] Unificar Redes Sociais e Comunicados em uma Central de Comunicações multicanal.
-- [ ] Simplificar publicações pontuais e recorrentes, com data final opcional.
-- [ ] Mover avisos automáticos para Trabalhos e recalcular após alterações.
-- [ ] Adicionar adiamento/cancelamento por ocorrência ou série com comunicados automáticos.
-- [ ] Preparar destinos, templates e referências visuais para WhatsApp e IA. Bloqueio do envio: conexão do WhatsApp Business não concluída.
+- [x] Unificar Redes Sociais e Comunicados em uma Central de Comunicações multicanal.
+- [x] Simplificar publicações pontuais e recorrentes, com data final opcional.
+- [x] Mover avisos automáticos para Trabalhos e recalcular após alterações.
+- [x] Adicionar adiamento/cancelamento por ocorrência ou série com comunicados automáticos.
+- [x] Preparar destinos, templates e referências visuais para WhatsApp e IA.
+- [ ] Ativar envio pelo WhatsApp Business e validar retornos. Bloqueio: conexão oficial não concluída.
