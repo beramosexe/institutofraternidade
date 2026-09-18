@@ -47,6 +47,18 @@ async function assertMediaPermission(
   if (!admin && !allowed) throw new Error("Você não tem permissão para gerenciar comunicações.");
 }
 
+async function assertWorkOrMediaPermission(
+  supabase: import("@supabase/supabase-js").SupabaseClient,
+  userId: string,
+) {
+  const [{ data: admin }, { data: media }, { data: work }] = await Promise.all([
+    supabase.rpc("is_admin", { _user_id: userId }),
+    supabase.rpc("has_permission", { _user_id: userId, _permission: "media.manage" }),
+    supabase.rpc("has_permission", { _user_id: userId, _permission: "work.manage" }),
+  ]);
+  if (!admin && !media && !work) throw new Error("Você não tem permissão para configurar avisos.");
+}
+
 export const listSocialCenter = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -140,7 +152,7 @@ export const saveWorkCommunicationRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: z.infer<typeof ruleSchema>) => ruleSchema.parse(input))
   .handler(async ({ context, data }) => {
-    await assertMediaPermission(context.supabase, context.userId);
+    await assertWorkOrMediaPermission(context.supabase, context.userId);
     const { id, ...values } = data;
     const row = { ...values, media_url: values.media_url || null, created_by: context.userId };
     const query = id
@@ -155,10 +167,24 @@ export const deleteWorkCommunicationRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
-    await assertMediaPermission(context.supabase, context.userId);
+    await assertWorkOrMediaPermission(context.supabase, context.userId);
     const { error } = await context.supabase.from("work_communication_rules").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const listWorkCommunicationRules = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { workId: string }) => z.object({ workId: z.string().uuid() }).parse(input))
+  .handler(async ({ context, data }) => {
+    await assertWorkOrMediaPermission(context.supabase, context.userId);
+    const { data: rules, error } = await context.supabase
+      .from("work_communication_rules")
+      .select("*")
+      .eq("work_id", data.workId)
+      .order("sort_order");
+    if (error) throw new Error(error.message);
+    return rules ?? [];
   });
 
 export const generateWorkReminders = createServerFn({ method: "POST" })
