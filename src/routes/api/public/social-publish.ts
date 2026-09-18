@@ -16,7 +16,7 @@ export const Route = createFileRoute("/api/public/social-publish")({
         if (!configuredSecret || suppliedSecret !== configuredSecret) return json({ error: "Não autorizado." }, 401);
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { publishPostToMeta } = await import("@/lib/social-media.server");
+        const { publishCommunication } = await import("@/lib/social-media.server");
         const { data: posts, error } = await supabaseAdmin
           .from("social_media_posts")
           .select("*")
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/public/social-publish")({
         let failed = 0;
         for (const post of posts ?? []) {
           try {
-            await publishPostToMeta(post);
+            await publishCommunication(post);
             published += 1;
           } catch {
             failed += 1;
