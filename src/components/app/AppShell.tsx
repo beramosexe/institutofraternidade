@@ -65,6 +65,7 @@ const SECTIONS: NavSection[] = [
     items: [
       { to: "/app/associados", label: "Gestão de associados", icon: UsersIcon, need: "member.manage" },
       { to: "/app/associados/turmas", label: "Turmas e níveis", icon: GraduationCap, need: "class.manage" },
+      { to: "/app/listas-presenca", label: "Listas de presença", icon: CalendarCheck, need: "attendance.manage" },
     ],
   },
   {
