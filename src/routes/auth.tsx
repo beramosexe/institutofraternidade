@@ -4,7 +4,6 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,13 +51,13 @@ function AuthPage() {
           <TabsContent value="signup"><SignUpForm /></TabsContent>
         </Tabs>
 
-        <div className="my-6 flex items-center gap-3">
+        {false && <div className="my-6 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
           <span className="text-xs uppercase tracking-wider text-muted-foreground">ou</span>
           <div className="h-px flex-1 bg-border" />
         </div>
 
-        <GoogleButton />
+        }
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Ainda não tenho conta —{" "}
