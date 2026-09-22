@@ -10,6 +10,7 @@ ALTER TABLE public.social_media_posts
   ADD COLUMN IF NOT EXISTS communication_kind text NOT NULL DEFAULT 'publication',
   ADD COLUMN IF NOT EXISTS schedule_type text NOT NULL DEFAULT 'one_off',
   ADD COLUMN IF NOT EXISTS recurrence_weekday smallint,
+  ADD COLUMN IF NOT EXISTS recurrence_weekdays smallint[],
   ADD COLUMN IF NOT EXISTS recurrence_time time,
   ADD COLUMN IF NOT EXISTS recurrence_ends_on date,
   ADD COLUMN IF NOT EXISTS recurrence_series_id uuid,
@@ -27,6 +28,7 @@ ALTER TABLE public.social_media_posts
   ADD CONSTRAINT social_media_posts_kind_check CHECK (communication_kind IN ('publication','work_notice','work_postponed','work_cancelled','operational_alert')),
   ADD CONSTRAINT social_media_posts_schedule_check CHECK (schedule_type IN ('one_off','recurring','automatic')),
   ADD CONSTRAINT social_media_posts_recurrence_weekday_check CHECK (recurrence_weekday IS NULL OR recurrence_weekday BETWEEN 0 AND 6),
+  ADD CONSTRAINT social_media_posts_recurrence_weekdays_check CHECK (recurrence_weekdays IS NULL OR recurrence_weekdays <@ ARRAY[0,1,2,3,4,5,6]::smallint[]),
   ADD CONSTRAINT social_media_posts_recurring_fields_check CHECK (schedule_type <> 'recurring' OR (recurrence_weekday IS NOT NULL AND recurrence_time IS NOT NULL));
 
 INSERT INTO public.social_media_posts (
