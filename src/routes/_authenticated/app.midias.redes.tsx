@@ -36,10 +36,11 @@ type Schedule = "one_off" | "recurring" | "automatic";
 type Draft = {
   id?: string; title: string; content_text: string; media_url: string; channels: Channel[];
   scheduled_for: string; status: Status; schedule_type: Schedule; recurrence_weekday: number | null;
+  recurrence_weekdays: number[];
   recurrence_time: string; recurrence_ends_on: string;
 };
 
-const EMPTY: Draft = { title: "", content_text: "", media_url: "", channels: ["facebook"], scheduled_for: "", status: "draft", schedule_type: "one_off", recurrence_weekday: null, recurrence_time: "19:00", recurrence_ends_on: "" };
+const EMPTY: Draft = { title: "", content_text: "", media_url: "", channels: ["facebook"], scheduled_for: "", status: "draft", schedule_type: "one_off", recurrence_weekday: null, recurrence_weekdays: [], recurrence_time: "19:00", recurrence_ends_on: "" };
 const WEEKDAYS = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
 const CHANNELS: { value: Channel; label: string; icon: typeof Facebook; ready?: keyof Awaited<ReturnType<typeof getMetaConnectionStatus>> }[] = [
   { value: "instagram", label: "Instagram", icon: Instagram, ready: "metaConfigured" },
@@ -81,7 +82,8 @@ function CommunicationsCenter() {
       media_url: draft.media_url || null,
       scheduled_for: draft.scheduled_for ? new Date(draft.scheduled_for).toISOString() : null,
       recurrence_time: draft.schedule_type === "recurring" ? `${draft.recurrence_time}:00` : null,
-      recurrence_weekday: draft.schedule_type === "recurring" ? draft.recurrence_weekday : null,
+      recurrence_weekday: draft.schedule_type === "recurring" ? (draft.recurrence_weekdays[0] ?? draft.recurrence_weekday) : null,
+      recurrence_weekdays: draft.schedule_type === "recurring" ? draft.recurrence_weekdays : [],
       recurrence_ends_on: draft.schedule_type === "recurring" ? draft.recurrence_ends_on || null : null,
     } }),
     onSuccess: () => { toast.success(draft.schedule_type === "recurring" ? "Recorrência criada." : "Comunicação salva."); setDialogOpen(false); invalidate(); },
@@ -113,7 +115,7 @@ function CommunicationsCenter() {
       id: post.id, title: post.title ?? "", content_text: post.content_text, media_url: post.media_url ?? "",
       channels: post.channels as Channel[], scheduled_for: post.scheduled_for ? new Date(post.scheduled_for).toISOString().slice(0, 16) : "",
       status: post.status as Status, schedule_type: post.schedule_type as Schedule,
-      recurrence_weekday: post.recurrence_weekday, recurrence_time: post.recurrence_time?.slice(0, 5) ?? "19:00",
+      recurrence_weekday: post.recurrence_weekday, recurrence_weekdays: post.recurrence_weekdays ?? (post.recurrence_weekday == null ? [] : [post.recurrence_weekday]), recurrence_time: post.recurrence_time?.slice(0, 5) ?? "19:00",
       recurrence_ends_on: post.recurrence_ends_on ?? "",
     } : EMPTY);
     setDialogOpen(true);
@@ -174,7 +176,7 @@ function CommunicationDialog({ open, onOpenChange, draft, setDraft, saving, onSa
     <div><Label>Texto *</Label><Textarea rows={6} value={draft.content_text} onChange={(event) => setDraft((old) => ({ ...old, content_text: event.target.value }))} placeholder="Escreva a mensagem que as pessoas receberão…" /></div>
     <div><Label>Canais *</Label><div className="mt-1 flex flex-wrap gap-2">{CHANNELS.map((item) => { const Icon = item.icon; return <Button key={item.value} type="button" variant={draft.channels.includes(item.value) ? "default" : "outline"} onClick={() => toggle(item.value)}><Icon className="mr-2 h-4 w-4" />{item.label}</Button>; })}</div></div>
     <div className="grid gap-4 sm:grid-cols-2"><div><Label>Quando</Label><Select value={draft.schedule_type} onValueChange={(value) => setDraft((old) => ({ ...old, schedule_type: value as Schedule }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="one_off">Uma vez</SelectItem><SelectItem value="recurring">Toda semana</SelectItem></SelectContent></Select></div>{draft.schedule_type === "one_off" && <div><Label>Data e hora</Label><Input type="datetime-local" value={draft.scheduled_for} onChange={(event) => setDraft((old) => ({ ...old, scheduled_for: event.target.value }))} /></div>}</div>
-    {draft.schedule_type === "recurring" && <div className="rounded-md border p-4"><p className="mb-3 text-sm font-medium">Repetir toda semana</p><div className="grid gap-3 sm:grid-cols-3"><div><Label>Dia</Label><Select value={draft.recurrence_weekday == null ? "" : String(draft.recurrence_weekday)} onValueChange={(value) => setDraft((old) => ({ ...old, recurrence_weekday: Number(value) }))}><SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger><SelectContent>{WEEKDAYS.map((day, index) => <SelectItem key={day} value={String(index)}>{day}</SelectItem>)}</SelectContent></Select></div><div><Label>Horário</Label><Input type="time" value={draft.recurrence_time} onChange={(event) => setDraft((old) => ({ ...old, recurrence_time: event.target.value }))} /></div><div><Label>Termina em</Label><Input type="date" value={draft.recurrence_ends_on} onChange={(event) => setDraft((old) => ({ ...old, recurrence_ends_on: event.target.value }))} /></div></div><p className="mt-2 text-xs text-muted-foreground">Deixe a data final vazia para continuar sem término. As próximas semanas serão preparadas automaticamente.</p></div>}
+    {draft.schedule_type === "recurring" && <div className="rounded-md border p-4"><p className="mb-3 text-sm font-medium">Repetir semanalmente</p><div><Label>Dias da semana</Label><div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">{WEEKDAYS.map((day, index) => { const selected = draft.recurrence_weekdays.includes(index); return <Button key={day} type="button" size="sm" variant={selected ? "default" : "outline"} onClick={() => setDraft((old) => ({ ...old, recurrence_weekdays: selected ? old.recurrence_weekdays.filter((item) => item !== index) : [...old.recurrence_weekdays, index].sort((a, b) => a - b), recurrence_weekday: selected ? old.recurrence_weekdays.filter((item) => item !== index)[0] ?? null : old.recurrence_weekday ?? index }))}>{day}</Button>; })}</div></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><div><Label>Horário</Label><Input type="time" value={draft.recurrence_time} onChange={(event) => setDraft((old) => ({ ...old, recurrence_time: event.target.value }))} /></div><div><Label>Termina em</Label><Input type="date" value={draft.recurrence_ends_on} onChange={(event) => setDraft((old) => ({ ...old, recurrence_ends_on: event.target.value }))} /></div></div><p className="mt-2 text-xs text-muted-foreground">Escolha um ou mais dias. Deixe a data final vazia para repetir sem término.</p></div>}
     <div><Label>Imagem</Label><label className="mt-1 flex min-h-28 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed bg-muted text-sm text-muted-foreground">{draft.media_url ? <img src={draft.media_url} alt="Prévia" className="max-h-52 w-full object-contain" /> : <><ImagePlus className="mr-2 h-5 w-5" />{uploading ? "Enviando…" : "Escolher imagem"}</>}<input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); }} /></label>{draft.channels.includes("instagram") && <p className="mt-1 text-xs text-muted-foreground">A imagem é obrigatória para Instagram.</p>}</div>
   </div><DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button disabled={saving || !draft.title.trim() || !draft.content_text.trim() || draft.channels.length === 0} onClick={onSave}>Salvar e preparar</Button></DialogFooter></DialogContent></Dialog>;
 }
