@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { nextWorkOccurrence, offsetMilliseconds, recurringDates, recurringDatesMultiple, renderWorkCommunication } from "@/lib/communication-scheduling";
+import { nextWorkOccurrence, offsetMilliseconds, recurringDates, renderWorkCommunication } from "@/lib/communication-scheduling";
 
 const channelSchema = z.enum(["instagram", "facebook", "whatsapp", "email", "telegram", "youtube"]);
 const channelsSchema = z.array(channelSchema).min(1).max(6);
@@ -18,7 +18,6 @@ const postSchema = z.object({
   status: statusSchema,
   schedule_type: scheduleSchema.default("one_off"),
   recurrence_weekday: z.number().int().min(0).max(6).nullable().optional(),
-  recurrence_weekdays: z.array(z.number().int().min(0).max(6)).min(1).max(7).nullable().optional(),
   recurrence_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).nullable().optional(),
   recurrence_ends_on: z.string().date().nullable().optional(),
 });
@@ -88,8 +87,8 @@ export const saveSocialPost = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     await assertMediaPermission(context.supabase, context.userId);
     if (data.channels.includes("instagram") && !data.media_url) throw new Error("Escolha uma imagem para publicar no Instagram.");
-    if (data.schedule_type === "recurring" && (!(data.recurrence_weekdays?.length) || !data.recurrence_time)) {
-      throw new Error("Escolha pelo menos um dia da semana e o horário da recorrência.");
+    if (data.schedule_type === "recurring" && (data.recurrence_weekday == null || !data.recurrence_time)) {
+      throw new Error("Escolha o dia da semana e o horário da recorrência.");
     }
     const { id, ...values } = data;
     const row = {
@@ -97,8 +96,6 @@ export const saveSocialPost = createServerFn({ method: "POST" })
       media_url: values.media_url || null,
       scheduled_for: values.scheduled_for || null,
       recurrence_time: values.recurrence_time || null,
-      recurrence_weekday: values.schedule_type === "recurring" ? (values.recurrence_weekdays?.[0] ?? values.recurrence_weekday ?? null) : null,
-      recurrence_weekdays: values.schedule_type === "recurring" ? (values.recurrence_weekdays ?? []) : null,
       recurrence_ends_on: values.recurrence_ends_on || null,
       communication_kind: "publication",
       source: "manual",
@@ -113,7 +110,7 @@ export const saveSocialPost = createServerFn({ method: "POST" })
     const seriesId = values.schedule_type === "recurring" ? crypto.randomUUID() : null;
     if (values.schedule_type === "recurring") {
       const start = values.scheduled_for ? new Date(values.scheduled_for) : new Date();
-      const dates = recurringDatesMultiple(values.recurrence_weekdays ?? [values.recurrence_weekday ?? 0], values.recurrence_time ?? "19:00", start, values.recurrence_ends_on ?? null);
+      const dates = recurringDates(values.recurrence_weekday ?? 0, values.recurrence_time ?? "19:00", start, values.recurrence_ends_on ?? null);
       const inserts = dates.map((date) => ({ ...row, scheduled_for: date.toISOString(), recurrence_series_id: seriesId, created_by: context.userId }));
       const { data: created, error } = await context.supabase.from("social_media_posts").insert(inserts).select("id");
       if (error) throw new Error(error.message);

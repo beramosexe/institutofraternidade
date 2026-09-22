@@ -51,23 +51,3 @@ export function recurringDates(weekday: number, time: string, startsAt: Date, en
   }
   return dates;
 }
-export function recurringDatesMultiple(weekdays: number[], time: string, startsAt: Date, endsOn: string | null, count = 12) {
-  const selected = [...new Set(weekdays)].filter((day) => day >= 0 && day <= 6).sort((a, b) => a - b);
-  const end = endsOn ? new Date(`${endsOn}T23:59:59`) : null;
-  const [hours, minutes] = time.split(":").map(Number);
-  const dates: Date[] = [];
-  const cursor = new Date(startsAt);
-  cursor.setHours(hours ?? 19, minutes ?? 0, 0, 0);
-  for (let week = 0; dates.length < count; week += 1) {
-    for (const weekday of selected) {
-      const occurrence = new Date(cursor);
-      const delta = ((weekday - cursor.getDay() + 7) % 7) + week * 7;
-      occurrence.setDate(cursor.getDate() + delta);
-      if (occurrence < startsAt) continue;
-      if (end && occurrence > end) return dates;
-      dates.push(occurrence);
-      if (dates.length >= count) break;
-    }
-  }
-  return dates.sort((a, b) => a.getTime() - b.getTime());
-}
