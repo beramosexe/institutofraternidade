@@ -69,14 +69,6 @@ const SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Acolhimento",
-    accent: "var(--area-acolhimento)",
-    items: [
-      { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
-      { to: "/app/listas-presenca", label: "Listas de presença", icon: CalendarCheck, need: "attendance.manage" },
-    ],
-  },
-  {
     label: "Gestão Áudios e Revisão",
     accent: "var(--area-audios)",
     items: [
