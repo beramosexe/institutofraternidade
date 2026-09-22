@@ -69,18 +69,19 @@ const SECTIONS: NavSection[] = [
     ],
   },
   {
+    label: "Acolhimento",
+    accent: "var(--area-acolhimento)",
+    items: [
+      { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
+      { to: "/app/listas-presenca", label: "Listas de presença", icon: CalendarCheck, need: "attendance.manage" },
+    ],
+  },
+  {
     label: "Gestão Áudios e Revisão",
     accent: "var(--area-audios)",
     items: [
       { to: "/app/admin/audios", label: "Gestão de áudios", icon: Headphones, need: "audio.edit_any" },
       { to: "/app/revisao", label: "Revisão de transcrições", icon: ListChecks, need: "transcription.review" },
-    ],
-  },
-  {
-    label: "Acolhimento",
-    accent: "var(--area-acolhimento)",
-    items: [
-      { to: "/app/acolhimento", label: "Controle de presença", icon: CalendarCheck, need: "attendance.manage" },
     ],
   },
   {
