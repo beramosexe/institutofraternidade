@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Search, UserRound } from "lucide-react";
+import { Copy, ExternalLink, Plus, Search, UserRound } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/app/associados/")({
 });
 
 function PeoplePage() {
+  const signupUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/associados/cadastro`;
   const listFn = useServerFn(listPeople);
   const createFn = useServerFn(createPerson);
   const qc = useQueryClient();
@@ -74,7 +75,7 @@ function PeoplePage() {
           <h1 className="mt-1 font-display text-3xl text-foreground">Pessoas</h1>
           <p className="mt-1 text-muted-foreground">Cadastre visitantes, acompanhe sua trajetória e identifique quem já faz parte da associação.</p>
         </div>
-        <Button onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" /> Adicionar pessoa</Button>
+        <div className="flex flex-wrap gap-2"><Button variant="outline" asChild><a href={signupUrl} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Link de cadastro</a></Button><Button onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" /> Adicionar pessoa</Button></div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
