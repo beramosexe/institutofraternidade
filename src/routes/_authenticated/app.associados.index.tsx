@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { GraduationCap, Search, UserCheck } from "lucide-react";
+import { Copy, ExternalLink, GraduationCap, Search, UserCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +47,11 @@ function MembersPage() {
   const filtered = useMemo(() => { const term = q.trim().toLowerCase(); const rows = (members ?? []).filter((m: any) => m.membership_status !== "pending"); if (!term) return rows; return rows.filter((m: any) => (m.full_name ?? "").toLowerCase().includes(term) || (m.email ?? "").toLowerCase().includes(term)); }, [members, q]);
 
   return <div className="mx-auto max-w-6xl space-y-8 p-6 md:p-10">
-    <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.22em] text-brand">Minhas áreas</p><h1 className="mt-1 font-display text-3xl text-foreground">Gestão de associados</h1><p className="mt-1 text-muted-foreground">Valide cadastros, configure contas, turmas, funções e acompanhe o histórico.</p></div><Button asChild variant="outline"><Link to="/app/associados/turmas"><GraduationCap className="mr-2 h-4 w-4" /> Turmas</Link></Button></div>
+    <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.22em] text-brand">Minhas áreas</p><h1 className="mt-1 font-display text-3xl text-foreground">Gestão de associados</h1><p className="mt-1 text-muted-foreground">Valide cadastros, configure contas, turmas, funções e acompanhe o histórico.</p></div><div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={copySignupLink}><Copy className="mr-2 h-4 w-4" /> Copiar link de cadastro</Button>
+          <Button asChild variant="outline"><Link to="/associados/cadastro" target="_blank"><ExternalLink className="mr-2 h-4 w-4" /> Abrir cadastro</Link></Button>
+          <Button asChild variant="outline"><Link to="/app/associados/turmas"><GraduationCap className="mr-2 h-4 w-4" /> Turmas</Link></Button>
+        </div></div>
     <section className="space-y-3"><h2 className="font-display text-xl text-foreground">Cadastros pendentes {pending.length > 0 && <Badge className="ml-2">{pending.length}</Badge>}</h2>
       {isLoading ? <p className="text-muted-foreground">Carregando…</p> : pending.length === 0 ? <Card className="p-6 text-muted-foreground">Nenhum cadastro aguardando validação.</Card> : pending.map((m: any) => <Card key={m.id} className="flex flex-wrap items-center justify-between gap-3 p-4"><div><p className="font-medium text-foreground">{m.full_name ?? "Sem nome"}</p><p className="text-xs text-muted-foreground">{m.email}{m.phone ? ` · ${m.phone}` : ""}</p></div><div className="flex gap-2"><Button size="sm" onClick={() => openValidate(m)}><UserCheck className="mr-2 h-4 w-4" /> Validar</Button><Button asChild size="sm" variant="outline"><Link to="/app/associados/$id" params={{ id: m.id }}>Configurar</Link></Button></div></Card>)}
     </section>
