@@ -22,17 +22,28 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 /** Cria a conta do associado pelo formulário público. A conta nasce pendente e sem cargos. */
 export const signUpAssociate = createServerFn({ method: "POST" })
   .inputValidator((d: {
-    full_name: string; email: string; phone?: string; password: string;
+    full_name: string; email: string; phone?: string; password: string; pin: string;
   }) =>
     z.object({
       full_name: z.string().min(3).max(120),
       email: z.string().email().max(160),
       phone: z.string().max(40).optional(),
       password: z.string().min(8).max(72),
+      pin: z.string().trim().min(1).max(60),
     }).parse(d),
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: pinRow, error: pinError } = await supabaseAdmin
+      .from("system_settings")
+      .select("value")
+      .eq("key", "signup_pin")
+      .maybeSingle();
+    if (pinError) throw new Error(pinError.message);
+    if (!pinRow?.value || String(pinRow.value).trim() !== data.pin.trim()) {
+      throw new Error("PIN de cadastro inválido.");
+    }
 
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
