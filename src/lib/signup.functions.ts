@@ -1,3 +1,20 @@
+/** Valida o PIN público configurado pela administração. */
+export const checkSignupPin = createServerFn({ method: "POST" })
+  .inputValidator((d: { pin: string }) => z.object({ pin: z.string().trim().min(1).max(60) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("system_settings")
+      .select("value")
+      .eq("key", "signup_pin")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row?.value || String(row.value).trim() !== data.pin.trim()) {
+      throw new Error("PIN de cadastro inválido.");
+    }
+    return { ok: true };
+  });
+
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
