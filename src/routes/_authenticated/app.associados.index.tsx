@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/app/associados/")({
   component: MembersPage,
 });
 
-function MembersPage() {
+async function copySignupLink() {\n  const url = `${window.location.origin}/associados/cadastro`;\n  try {\n    await navigator.clipboard.writeText(url);\n    toast.success("Link de cadastro copiado.");\n  } catch {\n    toast.error("Não foi possível copiar o link automaticamente.");\n  }\n}\n\nfunction MembersPage() {
   const listFn = useServerFn(listMembers); const validateFn = useServerFn(validateMember);
   const classesFn = useServerFn(listClasses); const rolesFn = useServerFn(listRoles);
   const qc = useQueryClient(); const { data: access } = useMyAccess(); const [q, setQ] = useState("");
