@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { signUpAssociate } from "@/lib/signup.functions";
+import { checkSignupPin, signUpAssociate } from "@/lib/signup.functions";
 
 export const Route = createFileRoute("/associados/cadastro")({
   head: () => ({
@@ -35,15 +35,17 @@ export const Route = createFileRoute("/associados/cadastro")({
 function SignupPage() {
   const navigate = useNavigate();
   const signUp = useServerFn(signUpAssociate);
+  const checkPin = useServerFn(checkSignupPin);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [pin, setPin] = useState("");
+  const [pinVerified, setPinVerified] = useState(false);
 
   const signMut = useMutation({
-    mutationFn: () => signUp({ data: { full_name: fullName, email, phone, password } }),
+    mutationFn: () => signUp({ data: { full_name: fullName, email, phone, password, pin } }),
     onSuccess: () => {
       toast.success("Cadastro criado! Faça login para acompanhar a validação.");
       navigate({ to: "/auth" });
@@ -63,6 +65,28 @@ function SignupPage() {
         </p>
 
         <Card className="mt-8 p-6">
+          {!pinVerified ? (
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  await checkPin({ data: { pin } });
+                  setPinVerified(true);
+                  toast.success("PIN confirmado. Agora preencha seus dados.");
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+            >
+              <div className="space-y-2">
+                <Label htmlFor="pin">PIN de cadastro</Label>
+                <Input id="pin" value={pin} onChange={(e) => setPin(e.target.value)} required autoFocus />
+                <p className="text-xs text-muted-foreground">Use o PIN recebido da equipe do Instituto.</p>
+              </div>
+              <Button type="submit" className="w-full">Continuar</Button>
+            </form>
+          ) : (
           <form
             className="space-y-4"
             onSubmit={(e) => {
@@ -110,7 +134,11 @@ function SignupPage() {
             <p className="text-xs text-muted-foreground">
               Seu cadastro será analisado manualmente antes de liberar o acesso de associado.
             </p>
+            <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setPinVerified(false)}>
+              Trocar PIN
+            </button>
           </form>
+          )}
 
           <p className="mt-6 text-sm text-muted-foreground">
             Já tem conta? <Link to="/auth" className="text-brand underline">Entrar</Link>
