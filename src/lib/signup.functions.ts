@@ -3,13 +3,14 @@ export const checkSignupPin = createServerFn({ method: "POST" })
   .inputValidator((d: { pin: string }) => z.object({ pin: z.string().trim().min(1).max(60) }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { verifyPin } = await import("@/lib/signup.server");
     const { data: row, error } = await supabaseAdmin
       .from("system_settings")
       .select("value")
       .eq("key", "signup_pin")
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!row?.value || String(row.value).trim() !== data.pin.trim()) {
+    if (!row?.value || !verifyPin(data.pin, String(row.value))) {
       throw new Error("PIN de cadastro inválido.");
     }
     return { ok: true };
@@ -35,13 +36,14 @@ export const signUpAssociate = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const { verifyPin } = await import("@/lib/signup.server");
     const { data: pinRow, error: pinError } = await supabaseAdmin
       .from("system_settings")
       .select("value")
       .eq("key", "signup_pin")
       .maybeSingle();
     if (pinError) throw new Error(pinError.message);
-    if (!pinRow?.value || String(pinRow.value).trim() !== data.pin.trim()) {
+    if (!pinRow?.value || !verifyPin(data.pin, String(pinRow.value))) {
       throw new Error("PIN de cadastro inválido.");
     }
 
