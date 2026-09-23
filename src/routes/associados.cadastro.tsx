@@ -18,12 +18,12 @@ export const Route = createFileRoute("/associados/cadastro")({
       {
         name: "description",
         content:
-          "Área de cadastro para associados do Instituto Fraternidade. É necessário o PIN fornecido pelo Instituto.",
+          "Formulário público de cadastro para associados do Instituto Fraternidade, sujeito à validação da equipe.",
       },
       { property: "og:title", content: "Cadastro de associados — Instituto Fraternidade" },
       {
         property: "og:description",
-        content: "Crie sua conta de associado do Instituto Fraternidade com o PIN de cadastro.",
+        content: "Solicite seu cadastro de associado do Instituto Fraternidade.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -41,7 +41,7 @@ function SignupPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const pinMut = useMutation({
+  const signMut = useMutation({
     mutationFn: () => signUp({ data: { full_name: fullName, email, phone, password } }),
     onSuccess: () => {
       toast.success("Cadastro criado! Faça login para acompanhar a validação.");
