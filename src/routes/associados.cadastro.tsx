@@ -40,6 +40,7 @@ function SignupPage() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [pin, setPin] = useState("");
 
   const signMut = useMutation({
     mutationFn: () => signUp({ data: { full_name: fullName, email, phone, password } }),
