@@ -2,28 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** Verifica o PIN de cadastro. Público, mas nunca devolve o PIN. */
-export const checkSignupPin = createServerFn({ method: "POST" })
-  .inputValidator((d: { pin: string }) => z.object({ pin: z.string().min(3).max(60) }).parse(d))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { verifyPin, SIGNUP_PIN_KEY } = await import("@/lib/signup.server");
-    const { data: row } = await supabaseAdmin
-      .from("system_settings")
-      .select("value")
-      .eq("key", SIGNUP_PIN_KEY)
-      .maybeSingle();
-    if (!row?.value) return { ok: false as const, reason: "unconfigured" as const };
-    return { ok: verifyPin(data.pin, row.value), reason: "invalid" as const };
-  });
-
-/** Cria a conta do associado após validar o PIN. A conta nasce pendente, sem cargos. */
+/** Cria a conta do associado pelo formulário público. A conta nasce pendente e sem cargos. */
 export const signUpAssociate = createServerFn({ method: "POST" })
   .inputValidator((d: {
-    pin: string; full_name: string; email: string; phone?: string; password: string;
+    full_name: string; email: string; phone?: string; password: string;
   }) =>
     z.object({
-      pin: z.string().min(3).max(60),
       full_name: z.string().min(3).max(120),
       email: z.string().email().max(160),
       phone: z.string().max(40).optional(),
@@ -32,20 +16,16 @@ export const signUpAssociate = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { verifyPin, SIGNUP_PIN_KEY } = await import("@/lib/signup.server");
-
-    const { data: row } = await supabaseAdmin
-      .from("system_settings")
-      .select("value")
-      .eq("key", SIGNUP_PIN_KEY)
-      .maybeSingle();
-    if (!verifyPin(data.pin, row?.value)) throw new Error("PIN de cadastro inválido.");
 
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
-      user_metadata: { full_name: data.full_name, phone: data.phone ?? null },
+      user_metadata: {
+        full_name: data.full_name,
+        phone: data.phone ?? null,
+        signup_source: "associate_signup",
+      },
     });
     if (error) {
       if (/already/i.test(error.message)) throw new Error("Já existe uma conta com este e-mail.");
@@ -53,10 +33,22 @@ export const signUpAssociate = createServerFn({ method: "POST" })
     }
 
     if (created.user) {
+      await supabaseAdmin.from("profiles").update({
+        full_name: data.full_name,
+        phone: data.phone ?? null,
+        membership_status: "pending",
+        validated_at: null,
+        validated_by: null,
+      }).eq("id", created.user.id);
+
+      // Segurança de compatibilidade: o trigger de usuários pode ter atribuído
+      // um cargo padrão antes desta versão do fluxo.
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", created.user.id);
+
       await supabaseAdmin.from("member_events").insert({
         user_id: created.user.id,
         kind: "member.signup",
-        title: "Cadastro criado pelo formulário de associados",
+        title: "Cadastro solicitado pelo formulário público",
       });
       await supabaseAdmin.from("audit_logs").insert({
         entity: "members",
