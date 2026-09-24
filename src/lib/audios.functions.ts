@@ -169,18 +169,15 @@ export const getAudioStreamUrl = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!audio) throw new Error("Áudio não encontrado ou sem acesso.");
-    // Use admin signed URL because anon storage uses uploaded_by folder which differs from current user.
+    // Audio files are stored in R2; Supabase only stores metadata.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: signed, error: sErr } = await supabaseAdmin.storage
-      .from("audios")
-      .createSignedUrl(audio.storage_path, 60 * 60);
-    if (sErr) throw new Error(sErr.message);
+    const signedUrl = await getSignedDownloadUrl(audio.storage_path, 60 * 60);
 
     await supabaseAdmin.from("audit_logs").insert({
       actor_id: userId, entity: "audios", entity_id: audio.id, action: "stream",
     });
 
-    return { url: signed.signedUrl };
+    return { url: signedUrl };
   });
 
 /** Public signed url for public audios (no auth required). */
@@ -198,11 +195,8 @@ export const getPublicAudioUrl = createServerFn({ method: "POST" })
     if (!audio || audio.access_level !== "public" || audio.status !== "ready") {
       throw new Error("Áudio não disponível publicamente.");
     }
-    const { data: signed, error } = await supabaseAdmin.storage
-      .from("audios")
-      .createSignedUrl(audio.storage_path, 60 * 60);
-    if (error) throw new Error(error.message);
-    return { url: signed.signedUrl };
+    const signedUrl = await getSignedDownloadUrl(audio.storage_path, 60 * 60);
+    return { url: signedUrl };
   });
 
 /** Archive / restore / delete / reprocess */
@@ -253,8 +247,8 @@ export const deleteAudio = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("audios").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     if (audio?.storage_path) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin.storage.from("audios").remove([audio.storage_path]);
+      const { deleteObject } = await import("@/lib/r2/storage.server");
+      await deleteObject(audio.storage_path);
     }
     await context.supabase.from("audit_logs").insert({
       actor_id: context.userId, entity: "audios", entity_id: data.id, action: "delete",
