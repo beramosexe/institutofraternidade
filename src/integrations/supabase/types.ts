@@ -299,6 +299,57 @@ export type Database = {
         }
         Relationships: []
       }
+      system_error_logs: {
+        Row: {
+          id: string
+          created_at: string
+          category: string
+          event: string
+          message: string
+          user_id: string | null
+          audio_id: string | null
+          request_id: string | null
+          metadata: Json
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          category: string
+          event: string
+          message: string
+          user_id?: string | null
+          audio_id?: string | null
+          request_id?: string | null
+          metadata?: Json
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          category?: string
+          event?: string
+          message?: string
+          user_id?: string | null
+          audio_id?: string | null
+          request_id?: string | null
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_error_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_error_logs_audio_id_fkey"
+            columns: ["audio_id"]
+            isOneToOne: false
+            referencedRelation: "audios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       channeling_entities: {
         Row: {
           created_at: string
