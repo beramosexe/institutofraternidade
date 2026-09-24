@@ -1,23 +1,33 @@
 -- communications
-DROP POLICY IF EXISTS "Leitura de comunicados por autenticados" ON public.communications;
-CREATE POLICY "communications_read_staff" ON public.communications
-FOR SELECT TO authenticated
-USING (
-  created_by = auth.uid()
-  OR public.is_admin(auth.uid())
-  OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
-  OR public.has_permission(auth.uid(), 'notification.manage'::app_permission)
-);
+DO $
+BEGIN
+  IF to_regclass('public.communications') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "Leitura de comunicados por autenticados" ON public.communications;
+    CREATE POLICY "communications_read_staff" ON public.communications
+    FOR SELECT TO authenticated
+    USING (
+      created_by = auth.uid()
+      OR public.is_admin(auth.uid())
+      OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
+      OR public.has_permission(auth.uid(), 'notification.manage'::app_permission)
+    );
+  END IF;
+END $;
 
 -- social_media_posts
-DROP POLICY IF EXISTS "Leitura de agendamentos sociais por autenticados" ON public.social_media_posts;
-CREATE POLICY "social_posts_read_staff" ON public.social_media_posts
-FOR SELECT TO authenticated
-USING (
-  created_by = auth.uid()
-  OR public.is_admin(auth.uid())
-  OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
-);
+DO $
+BEGIN
+  IF to_regclass('public.social_media_posts') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "Leitura de agendamentos sociais por autenticados" ON public.social_media_posts;
+    CREATE POLICY "social_posts_read_staff" ON public.social_media_posts
+    FOR SELECT TO authenticated
+    USING (
+      created_by = auth.uid()
+      OR public.is_admin(auth.uid())
+      OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
+    );
+  END IF;
+END $;
 
 -- maintenance_quotes
 DROP POLICY IF EXISTS "mq_read" ON public.maintenance_quotes;
@@ -90,15 +100,20 @@ USING (EXISTS (
 ));
 
 -- site_posts: public only sees published
-DROP POLICY IF EXISTS "Leitura pública de posts do site" ON public.site_posts;
-CREATE POLICY "site_posts_public_read_published" ON public.site_posts
-FOR SELECT TO anon, authenticated
-USING (
-  (status = 'published' AND published_at IS NOT NULL AND published_at <= now())
-  OR author_id = auth.uid()
-  OR public.is_admin(auth.uid())
-  OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
-);
+DO $
+BEGIN
+  IF to_regclass('public.site_posts') IS NOT NULL THEN
+    DROP POLICY IF EXISTS "Leitura pública de posts do site" ON public.site_posts;
+    CREATE POLICY "site_posts_public_read_published" ON public.site_posts
+    FOR SELECT TO anon, authenticated
+    USING (
+      (status = 'published' AND published_at IS NOT NULL AND published_at <= now())
+      OR author_id = auth.uid()
+      OR public.is_admin(auth.uid())
+      OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
+    );
+  END IF;
+END $;
 
 -- Trigger functions never need EXECUTE grants
 REVOKE ALL ON FUNCTION public.apply_stock_movement() FROM PUBLIC, anon, authenticated;

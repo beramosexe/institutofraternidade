@@ -1,3 +1,111 @@
+-- Recovery bootstrap for the media schema.
+-- The original CREATE TABLE migrations for these legacy media tables were not
+-- present in the versioned migration history. Creating them here lets both the
+-- partially migrated remote database and clean installations converge without
+-- editing Supabase migration history.
+
+CREATE TABLE IF NOT EXISTS public.communications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  message text NOT NULL,
+  platforms text[] NOT NULL DEFAULT ARRAY['whatsapp']::text[],
+  status text NOT NULL DEFAULT 'draft',
+  sent_at timestamptz,
+  created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.communications TO authenticated;
+GRANT ALL ON public.communications TO service_role;
+ALTER TABLE public.communications ENABLE ROW LEVEL SECURITY;
+
+CREATE TRIGGER tg_communications_updated_at
+BEFORE UPDATE ON public.communications
+FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "communications_read_staff" ON public.communications;
+  CREATE POLICY "communications_read_staff"
+    ON public.communications FOR SELECT TO authenticated
+    USING (
+      created_by = auth.uid()
+      OR public.is_admin(auth.uid())
+      OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
+      OR public.has_permission(auth.uid(), 'notification.manage'::app_permission)
+    );
+
+  DROP POLICY IF EXISTS "Gerenciamento de comunicados pelo criador" ON public.communications;
+  CREATE POLICY "Gerenciamento de comunicados pelo criador"
+    ON public.communications FOR ALL TO authenticated
+    USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid());
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.site_posts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  subtitle text,
+  content text,
+  cover_image_url text,
+  status text NOT NULL DEFAULT 'draft',
+  published_at timestamptz,
+  author_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+GRANT SELECT ON TABLE public.site_posts TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.site_posts TO authenticated;
+GRANT ALL ON TABLE public.site_posts TO service_role;
+ALTER TABLE public.site_posts ENABLE ROW LEVEL SECURITY;
+
+CREATE TRIGGER tg_site_posts_updated_at
+BEFORE UPDATE ON public.site_posts
+FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE INDEX IF NOT EXISTS site_posts_status_published_idx
+  ON public.site_posts(status, published_at DESC);
+
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "site_posts_public_read_published" ON public.site_posts;
+  CREATE POLICY "site_posts_public_read_published"
+    ON public.site_posts FOR SELECT TO anon, authenticated
+    USING (
+      (status = 'published' AND published_at IS NOT NULL AND published_at <= now())
+      OR author_id = auth.uid()
+      OR public.is_admin(auth.uid())
+      OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
+    );
+
+  DROP POLICY IF EXISTS "Autores gerenciam seus próprios posts no site" ON public.site_posts;
+  CREATE POLICY "Autores gerenciam seus próprios posts no site"
+    ON public.site_posts FOR ALL TO authenticated
+    USING (author_id = auth.uid()) WITH CHECK (author_id = auth.uid());
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.social_media_posts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_text text NOT NULL,
+  channels text[] NOT NULL DEFAULT ARRAY['instagram']::text[],
+  scheduled_for timestamptz,
+  status text NOT NULL DEFAULT 'draft',
+  created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.social_media_posts TO authenticated;
+GRANT ALL ON public.social_media_posts TO service_role;
+ALTER TABLE public.social_media_posts ENABLE ROW LEVEL SECURITY;
+
+CREATE TRIGGER tg_social_media_posts_updated_at
+BEFORE UPDATE ON public.social_media_posts
+FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE INDEX IF NOT EXISTS social_media_posts_created_idx
+  ON public.social_media_posts(created_at DESC);
+
 ALTER TABLE public.social_media_posts
   ADD COLUMN IF NOT EXISTS title text,
   ADD COLUMN IF NOT EXISTS media_url text,
