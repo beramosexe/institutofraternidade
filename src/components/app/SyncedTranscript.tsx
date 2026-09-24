@@ -198,7 +198,7 @@ export function SyncedTranscript({
         event: "media_stalled",
         message: "A reprodução foi interrompida pelo carregamento do áudio.",
         metadata: details,
-      }).catch((error) => console.error("[SyncedTranscript] erro ao registrar log", error));
+      } }).catch((error) => console.error("[SyncedTranscript] erro ao registrar log", error));
     };
 
     a.addEventListener("timeupdate", onTime);
