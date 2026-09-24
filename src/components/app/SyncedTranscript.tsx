@@ -252,7 +252,42 @@ export function SyncedTranscript({
     if (audioRef.current) audioRef.current.playbackRate = rate;
   }, [rate]);
 
-  function toggle() { playing ? audioRef.current?.pause() : audioRef.current?.play(); }
+  async function toggle() {
+    const audio = audioRef.current;
+
+    console.log("[PLAYER] toggle", {
+      audio,
+      src: audio?.currentSrc || src,
+      paused: audio?.paused,
+      readyState: audio?.readyState,
+      networkState: audio?.networkState,
+      duration: audio?.duration,
+    });
+
+    if (!audio) {
+      console.error("[PLAYER] elemento <audio> não encontrado");
+      return;
+    }
+
+    if (playing) {
+      audio.pause();
+      return;
+    }
+
+    try {
+      await audio.play();
+      console.log("[PLAYER] play() executado com sucesso");
+    } catch (error) {
+      console.error("[PLAYER] play() falhou", {
+        error,
+        src: audio.currentSrc || src,
+        readyState: audio.readyState,
+        networkState: audio.networkState,
+        errorCode: audio.error?.code,
+        errorMessage: audio.error?.message,
+      });
+    }
+  }
   function seek(to: number) { if (audioRef.current) audioRef.current.currentTime = to; }
   const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
   const visibleSegments = segments
