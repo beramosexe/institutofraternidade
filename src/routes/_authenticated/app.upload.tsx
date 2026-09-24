@@ -17,6 +17,7 @@ import { useMyAccess } from "@/components/app/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { suggestAudioTitle } from "@/lib/audio-title";
 import { UploadTokens } from "@/components/app/UploadTokens";
+import { recordSystemError } from "@/lib/system-error-logs.functions";
 
 const OTHER_VALUE = "__other__";
 const NONE_VALUE = "__none__";
@@ -94,14 +95,49 @@ function UploadPage() {
       });
       path = key;
 
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type || "application/octet-stream",
-        },
-      });
+      let uploadResponse: Response;
+      try {
+        uploadResponse = await fetch(uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+        });
+      } catch (error) {
+        void recordSystemError({
+          category: "audio_upload",
+          event: "r2_put_failed",
+          message: error instanceof Error ? error.message : String(error),
+          userId: user.id,
+          metadata: {
+            stage: "browser_put",
+            fileName: file.name,
+            fileSizeBytes: file.size,
+            mimeType: file.type || "application/octet-stream",
+            origin: window.location.origin,
+            uploadHost: (() => { try { return new URL(uploadUrl).hostname; } catch { return null; } })(),
+          },
+        }).catch((logError) => console.error("[Upload] erro ao registrar log", logError));
+        throw new Error("Falha ao enviar o arquivo para o armazenamento.");
+      }
+
       if (!uploadResponse.ok) {
+        void recordSystemError({
+          category: "audio_upload",
+          event: "r2_put_http_error",
+          message: `Upload para o armazenamento retornou HTTP ${uploadResponse.status}.`,
+          userId: user.id,
+          metadata: {
+            stage: "browser_put_response",
+            httpStatus: uploadResponse.status,
+            fileName: file.name,
+            fileSizeBytes: file.size,
+            mimeType: file.type || "application/octet-stream",
+            origin: window.location.origin,
+            uploadHost: (() => { try { return new URL(uploadUrl).hostname; } catch { return null; } })(),
+          },
+        }).catch((logError) => console.error("[Upload] erro ao registrar log", logError));
         throw new Error(`Falha no upload para o armazenamento (HTTP ${uploadResponse.status}).`);
       }
 
