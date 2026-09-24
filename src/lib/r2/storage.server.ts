@@ -24,6 +24,22 @@ export async function uploadObject(
   return key;
 }
 
+export async function getSignedUploadUrl(
+  key: string,
+  expiresIn = 900,
+  contentType?: string,
+) {
+  return getSignedUrl(
+    r2Client,
+    new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: key,
+      ContentType: contentType,
+    }),
+    { expiresIn },
+  );
+}
+
 export async function getSignedDownloadUrl(
   key: string,
   expiresIn = 3600,
