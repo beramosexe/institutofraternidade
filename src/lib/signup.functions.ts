@@ -1,3 +1,7 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 /** Valida o PIN público configurado pela administração. */
 export const checkSignupPin = createServerFn({ method: "POST" })
   .inputValidator((d: { pin: string }) => z.object({ pin: z.string().trim().min(1).max(60) }).parse(d))
