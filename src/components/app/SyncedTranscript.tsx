@@ -3,6 +3,7 @@ import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, S
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
+import { recordSystemError } from "@/lib/system-error-logs.functions";
 
 export type Segment = { start: number; end: number; text: string };
 
@@ -162,22 +163,41 @@ export function SyncedTranscript({
     const onPause = () => setPlaying(false);
     const onError = () => {
       const mediaError = a.error;
-      console.error("[SyncedTranscript] Falha na reprodução", {
-        code: mediaError?.code,
-        message: mediaError?.message,
+      const details = {
+        stage: "html_audio_error",
+        code: mediaError?.code ?? null,
+        message: mediaError?.message ?? null,
         networkState: a.networkState,
         readyState: a.readyState,
         currentTime: a.currentTime,
-        duration: a.duration,
-        src: a.currentSrc,
-      });
+        duration: Number.isFinite(a.duration) ? a.duration : null,
+        srcHost: (() => {
+          try { return new URL(a.currentSrc || src).hostname; } catch { return null; }
+        })(),
+      };
+      console.error("[SyncedTranscript] Falha na reprodução", details);
+      void recordSystemError({
+        category: "audio_playback",
+        event: "media_error",
+        message: mediaError?.message || "Falha ao reproduzir o áudio.",
+        audioId: undefined,
+        metadata: details,
+      }).catch((error) => console.error("[SyncedTranscript] erro ao registrar log", error));
     };
     const onStalled = () => {
-      console.warn("[SyncedTranscript] Reprodução interrompida pelo carregamento", {
+      const details = {
+        stage: "html_audio_stalled",
         networkState: a.networkState,
         readyState: a.readyState,
         currentTime: a.currentTime,
-      });
+      };
+      console.warn("[SyncedTranscript] Reprodução interrompida pelo carregamento", details);
+      void recordSystemError({
+        category: "audio_playback",
+        event: "media_stalled",
+        message: "A reprodução foi interrompida pelo carregamento do áudio.",
+        metadata: details,
+      }).catch((error) => console.error("[SyncedTranscript] erro ao registrar log", error));
     };
 
     a.addEventListener("timeupdate", onTime);
