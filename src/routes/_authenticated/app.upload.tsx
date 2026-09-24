@@ -47,6 +47,7 @@ function UploadPage() {
   const [messageSourceOther, setMessageSourceOther] = useState("");
   const [accessLevel, setAccessLevel] = useState<"public" | "associates" | "work_participants" | "attendees_only">("associates");
   const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const { data: works } = useQuery({
     queryKey: ["works-options"],
@@ -98,12 +99,30 @@ function UploadPage() {
 
       let uploadResponse: Response;
       try {
-        uploadResponse = await fetch(uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: {
-            "Content-Type": file.type || "application/octet-stream",
-          },
+        uploadResponse = await new Promise<Response>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+
+          xhr.upload.addEventListener("progress", (event) => {
+            if (!event.lengthComputable) return;
+            setUploadProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)));
+          });
+
+          xhr.addEventListener("load", () => {
+            resolve(
+              new Response(xhr.responseText, {
+                status: xhr.status,
+                statusText: xhr.statusText,
+              }),
+            );
+          });
+          xhr.addEventListener("error", () => reject(new Error("Falha de rede durante o upload.")));
+          xhr.addEventListener("abort", () => reject(new Error("Upload cancelado.")));
+          xhr.addEventListener("timeout", () => reject(new Error("O upload demorou demais e expirou.")));
+
+          setUploadProgress(0);
+          xhr.send(file);
         });
       } catch (error) {
         void reportError({
@@ -181,6 +200,7 @@ function UploadPage() {
       toast.error(e instanceof Error ? e.message : "Falha ao enviar áudio.");
     } finally {
       setBusy(false);
+      setUploadProgress(0);
     }
   }
 
@@ -306,8 +326,22 @@ function UploadPage() {
 
           <Button type="submit" disabled={busy || !file} className="w-full md:w-auto">
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadIcon className="mr-2 h-4 w-4" />}
-            Enviar áudio
+            {busy ? `Enviando ${uploadProgress}%` : "Enviar áudio"}
           </Button>
+          {busy && (
+            <div className="mt-3 space-y-1.5 md:max-w-md">
+              <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+                <div
+                  className="h-full rounded-full bg-brand transition-[width] duration-200"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Enviando arquivo para o armazenamento…</span>
+                <span>{uploadProgress}%</span>
+              </div>
+            </div>
+          )}
         </Card>
       </form>
 
