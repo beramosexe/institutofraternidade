@@ -25,8 +25,8 @@ grant all on public.people to service_role;
 
 create policy people_manage on public.people
   for all to authenticated
-  using (public.is_admin(auth.uid()) or public.has_permission(auth.uid(), 'members.manage'))
-  with check (public.is_admin(auth.uid()) or public.has_permission(auth.uid(), 'members.manage'));
+  using (public.is_admin(auth.uid()) or public.has_permission(auth.uid(), 'member.manage'))
+  with check (public.is_admin(auth.uid()) or public.has_permission(auth.uid(), 'member.manage'));
 
 alter table public.attendance
   add column if not exists person_id uuid references public.people(id) on delete set null;
