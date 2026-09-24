@@ -12,13 +12,21 @@ type LogErrorInput = {
   metadata?: Record<string, unknown>;
 };
 
-async function getPersistence() {
-  return import("@/lib/system-error-logs.server");
-}
-
 export async function recordSystemError(input: LogErrorInput) {
-  const { persistSystemError } = await getPersistence();
-  return persistSystemError(input);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { randomUUID } = await import("crypto");
+  const requestId = input.requestId ?? randomUUID();
+  const { error } = await supabaseAdmin.from("system_error_logs").insert({
+    category: input.category.slice(0, 80),
+    event: input.event.slice(0, 120),
+    message: input.message.slice(0, 2000),
+    user_id: input.userId ?? null,
+    audio_id: input.audioId ?? null,
+    request_id: requestId,
+    metadata: (input.metadata ?? {}) as never,
+  });
+  if (error) console.error("[SystemErrorLog] Falha ao persistir erro", error.message, input);
+  return requestId;
 }
 
 export function errorMessage(error: unknown) {
@@ -38,8 +46,7 @@ export const reportSystemError = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => clientLogSchema.parse(input))
   .handler(async ({ context, data }) => {
-    const { persistSystemError } = await getPersistence();
-    return persistSystemError({
+    return recordSystemError({
       ...data,
       userId: context.userId,
     });
