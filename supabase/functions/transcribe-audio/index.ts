@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface Body { audio_id: string }
+interface Body { audio_id: string; audio_url: string }
 
 interface Segment { start: number; end: number; text: string }
 
@@ -23,9 +23,18 @@ Deno.serve(async (req) => {
   let currentAudioId: string | null = null;
 
   try {
-    const { audio_id } = (await req.json()) as Body;
+    const { audio_id, audio_url } = (await req.json()) as Body;
     if (!audio_id) return json({ error: "audio_id required" }, 400);
+    if (!audio_url) return json({ error: "audio_url required" }, 400);
     currentAudioId = audio_id;
+
+    const signedUrl = new URL(audio_url);
+    if (
+      signedUrl.protocol !== "https:" ||
+      !signedUrl.hostname.endsWith(".r2.cloudflarestorage.com")
+    ) {
+      throw new Error("Invalid R2 audio URL");
+    }
 
 
     const supabase = createClient(
@@ -54,12 +63,26 @@ Deno.serve(async (req) => {
       audio_id, job_type: "transcribe", status: "running", started_at: new Date().toISOString(),
     });
 
-    // Download audio file from storage
-    const { data: blob, error: dErr } = await supabase.storage.from("audios").download(audio.storage_path);
-    if (dErr || !blob) throw new Error("Failed to download audio: " + (dErr?.message ?? "no blob"));
+    // Download the original directly from R2 using the short-lived signed URL.
+    let audioResponse: Response;
+    try {
+      audioResponse = await fetch(signedUrl);
+    } catch (e) {
+      throw new Error(
+        `Failed to fetch audio from R2: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+    if (!audioResponse.ok) {
+      throw new Error(
+        `Failed to download audio from R2: ${audioResponse.status} ${audioResponse.statusText}`,
+      );
+    }
 
-    const arrayBuffer = await blob.arrayBuffer();
-    const mime = audio.mime_type || blob.type || "audio/mpeg";
+    const arrayBuffer = await audioResponse.arrayBuffer();
+    const mime =
+      audio.mime_type ||
+      audioResponse.headers.get("content-type") ||
+      "audio/mpeg";
     const extension = mimeToExtension(mime);
 
     // Build multipart form data for STT endpoint
