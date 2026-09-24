@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,51 @@ function parsePrecise(v: string): number | null {
   const secs = parseInt(m[2], 10);
   const frac = m[3] ? parseInt(m[3].padEnd(3, "0"), 10) / 1000 : 0;
   return mins * 60 + secs + frac;
+}
+
+
+function findSegmentAtTime(segments: Segment[], time: number): number {
+  let low = 0;
+  let high = segments.length - 1;
+  let candidate = -1;
+
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (segments[mid].start <= time) {
+      candidate = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  if (
+    candidate >= 0 &&
+    time >= segments[candidate].start &&
+    time < segments[candidate].end
+  ) {
+    return candidate;
+  }
+
+  return -1;
+}
+
+function findLastStartedSegment(segments: Segment[], time: number): number {
+  let low = 0;
+  let high = segments.length - 1;
+  let candidate = -1;
+
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (segments[mid].start <= time) {
+      candidate = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  return candidate;
 }
 
 interface Props {
@@ -124,6 +169,7 @@ export function SyncedTranscript({
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const timeRef = useRef(0);
+  const lastUiTimeUpdateRef = useRef(0);
   const onDurationKnownRef = useRef(onDurationKnown);
   useEffect(() => { onDurationKnownRef.current = onDurationKnown; }, [onDurationKnown]);
   const firstPlayRef = useRef(false);
@@ -135,12 +181,18 @@ export function SyncedTranscript({
 
 
   const timeEditing = !!(editable && editableTimestamps);
-  const activeIdx = segments.findIndex((s) => time >= s.start && time < s.end);
+  // O player pode ter milhares de segmentos. Use busca binária em vez de
+  // percorrer toda a transcrição a cada atualização do currentTime.
+  const activeIdx = useMemo(
+    () => findSegmentAtTime(segments, time),
+    [segments, time],
+  );
   // No modo compacto, durante um silêncio entre segmentos, mantenha o último
   // trecho já iniciado. Antes do primeiro trecho, use o primeiro como fallback.
-  const compactIdx = segments.reduce((last, segment, index) => {
-    return time >= segment.start ? index : last;
-  }, -1);
+  const compactIdx = useMemo(
+    () => findLastStartedSegment(segments, time),
+    [segments, time],
+  );
   const compactFocusIdx = compactIdx >= 0 ? compactIdx : 0;
 
   useEffect(() => { timeRef.current = time; }, [time]);
@@ -148,7 +200,14 @@ export function SyncedTranscript({
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onTime = () => setTime(a.currentTime);
+    const onTime = () => {
+      const now = performance.now();
+      // A reprodução não depende do React. Limitamos apenas as atualizações
+      // visuais para evitar rerenders excessivos em áudios longos.
+      if (now - lastUiTimeUpdateRef.current < 200) return;
+      lastUiTimeUpdateRef.current = now;
+      setTime(a.currentTime);
+    };
     const onDur = () => {
       const d = a.duration || 0;
       setDuration(d);
@@ -162,7 +221,10 @@ export function SyncedTranscript({
         onFirstPlayRef.current?.();
       }
     };
-    const onPause = () => setPlaying(false);
+    const onPause = () => {
+      setPlaying(false);
+      setTime(a.currentTime);
+    };
     const onError = () => {
       const mediaError = a.error;
       const details = {
@@ -288,11 +350,25 @@ export function SyncedTranscript({
       });
     }
   }
-  function seek(to: number) { if (audioRef.current) audioRef.current.currentTime = to; }
+  function seek(to: number) {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = to;
+    timeRef.current = to;
+    setTime(to);
+  }
   const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
-  const visibleSegments = segments
-    .map((segment, index) => ({ segment, index }))
-    .filter(({ segment }) => !normalizedSearch || segment.text.toLocaleLowerCase("pt-BR").includes(normalizedSearch));
+  const visibleSegments = useMemo(
+    () =>
+      segments
+        .map((segment, index) => ({ segment, index }))
+        .filter(
+          ({ segment }) =>
+            !normalizedSearch ||
+            segment.text.toLocaleLowerCase("pt-BR").includes(normalizedSearch),
+        ),
+    [segments, normalizedSearch],
+  );
 
   function updateSegmentText(i: number, text: string) {
     if (!onChangeSegments) return;
@@ -452,9 +528,13 @@ export function SyncedTranscript({
               aria-label="Trechos sincronizados do áudio"
               className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto rounded-lg border border-border bg-card px-[9%] py-4 scroll-smooth md:px-[16%]"
             >
-              {segments.map((seg, i) => ({ seg, i }))
-                .filter(({ i }) => Math.abs(i - compactFocusIdx) <= 1)
-                .map(({ seg, i }) => {
+              {segments
+                .slice(
+                  Math.max(0, compactFocusIdx - 1),
+                  Math.min(segments.length, compactFocusIdx + 2),
+                )
+                .map((seg, offset) => {
+                const i = Math.max(0, compactFocusIdx - 1) + offset;
                 const distance = Math.abs(i - compactFocusIdx);
                 const visible = distance <= 1;
                 return (
