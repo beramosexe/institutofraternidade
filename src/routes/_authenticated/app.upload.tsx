@@ -17,7 +17,7 @@ import { useMyAccess } from "@/components/app/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { suggestAudioTitle } from "@/lib/audio-title";
 import { UploadTokens } from "@/components/app/UploadTokens";
-import { recordSystemError } from "@/lib/system-error-logs.functions";
+import { reportSystemError } from "@/lib/system-error-logs.functions";
 
 const OTHER_VALUE = "__other__";
 const NONE_VALUE = "__none__";
@@ -34,7 +34,7 @@ function UploadPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const register = useServerFn(registerAudio);
-  const createUploadUrl = useServerFn(createAudioUploadUrl);
+  const createUploadUrl = useServerFn(createAudioUploadUrl);\n  const reportError = useServerFn(reportSystemError);
 
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -105,7 +105,7 @@ function UploadPage() {
           },
         });
       } catch (error) {
-        void recordSystemError({
+        void reportError({ data: {
           category: "audio_upload",
           event: "r2_put_failed",
           message: error instanceof Error ? error.message : String(error),
