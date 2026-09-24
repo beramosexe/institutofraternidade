@@ -238,15 +238,6 @@ export function SyncedTranscript({
       });
     };
     const onPlaying = () => setBuffering(false);
-    const onWaiting = () => {
-      setBuffering(true);
-      console.warn("[PLAYER] aguardando dados do áudio", {
-        currentTime: a.currentTime,
-        readyState: a.readyState,
-        networkState: a.networkState,
-        duration: Number.isFinite(a.duration) ? a.duration : null,
-      });
-    };
     const onCanPlay = () => {
       setBuffering(false);
       console.log("[PLAYER] áudio pronto para reprodução", {
