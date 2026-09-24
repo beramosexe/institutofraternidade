@@ -225,6 +225,31 @@ export function SyncedTranscript({
       setPlaying(false);
       setTime(a.currentTime);
     };
+    const onWaiting = () => {
+      console.warn("[PLAYER] aguardando dados do áudio", {
+        currentTime: a.currentTime,
+        readyState: a.readyState,
+        networkState: a.networkState,
+        duration: Number.isFinite(a.duration) ? a.duration : null,
+      });
+    };
+    const onCanPlay = () => {
+      console.log("[PLAYER] áudio pronto para reprodução", {
+        currentTime: a.currentTime,
+        readyState: a.readyState,
+        networkState: a.networkState,
+        duration: Number.isFinite(a.duration) ? a.duration : null,
+      });
+    };
+    const onLoadedMetadata = () => {
+      console.log("[PLAYER] metadata carregada", {
+        currentTime: a.currentTime,
+        readyState: a.readyState,
+        networkState: a.networkState,
+        duration: Number.isFinite(a.duration) ? a.duration : null,
+        src: a.currentSrc || src,
+      });
+    };
     const onError = () => {
       const mediaError = a.error;
       const details = {
@@ -267,13 +292,20 @@ export function SyncedTranscript({
     a.addEventListener("durationchange", onDur);
     a.addEventListener("play", onPlay);
     a.addEventListener("pause", onPause);
+    a.addEventListener("waiting", onWaiting);
+    a.addEventListener("canplay", onCanPlay);
+    a.addEventListener("loadedmetadata", onLoadedMetadata);
     a.addEventListener("error", onError);
     a.addEventListener("stalled", onStalled);
+    a.load();
     return () => {
       a.removeEventListener("timeupdate", onTime);
       a.removeEventListener("durationchange", onDur);
       a.removeEventListener("play", onPlay);
       a.removeEventListener("pause", onPause);
+      a.removeEventListener("waiting", onWaiting);
+      a.removeEventListener("canplay", onCanPlay);
+      a.removeEventListener("loadedmetadata", onLoadedMetadata);
       a.removeEventListener("error", onError);
       a.removeEventListener("stalled", onStalled);
     };
