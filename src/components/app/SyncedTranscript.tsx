@@ -133,6 +133,11 @@ export function SyncedTranscript({
 
   const timeEditing = !!(editable && editableTimestamps);
   const activeIdx = segments.findIndex((s) => time >= s.start && time < s.end);
+  // No modo compacto, durante um silêncio entre segmentos, mantenha o último
+  // trecho já iniciado em vez de voltar para o início da transcrição.
+  const compactIdx = segments.reduce((last, segment, index) => {
+    return time >= segment.start ? index : last;
+  }, -1);
 
   useEffect(() => { timeRef.current = time; }, [time]);
 
@@ -367,16 +372,16 @@ export function SyncedTranscript({
               className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto rounded-lg border border-border bg-card px-[9%] py-4 scroll-smooth md:px-[16%]"
             >
               {segments.map((seg, i) => ({ seg, i }))
-                .filter(({ i }) => Math.abs(i - Math.max(0, activeIdx)) <= 1)
+                .filter(({ i }) => Math.abs(i - Math.max(0, compactIdx)) <= 1)
                 .map(({ seg, i }) => {
-                const distance = Math.abs(i - Math.max(0, activeIdx));
+                const distance = Math.abs(i - Math.max(0, compactIdx));
                 const visible = distance <= 1;
                 return (
                   <button
                     key={i}
                     type="button"
                     data-seg={i}
-                    aria-current={i === activeIdx ? "true" : undefined}
+                    aria-current={i === compactIdx ? "true" : undefined}
                     aria-hidden={!visible}
                     tabIndex={visible ? 0 : -1}
                     onClick={() => seek(seg.start)}
@@ -390,7 +395,7 @@ export function SyncedTranscript({
                     ].join(" ")}
                   >
                     <span className="mb-2 block font-mono text-[11px] text-muted-foreground">{formatTime(seg.start)}</span>
-                    <span className={i === activeIdx
+                    <span className={i === compactIdx
                       ? "block font-display text-lg leading-relaxed text-foreground md:text-xl"
                       : "line-clamp-3 block text-sm leading-relaxed text-muted-foreground"}
                     >
