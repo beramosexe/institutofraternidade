@@ -34,7 +34,8 @@ function UploadPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const register = useServerFn(registerAudio);
-  const createUploadUrl = useServerFn(createAudioUploadUrl);\n  const reportError = useServerFn(reportSystemError);
+  const createUploadUrl = useServerFn(createAudioUploadUrl);
+  const reportError = useServerFn(reportSystemError);
 
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
