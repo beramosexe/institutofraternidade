@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";\nimport { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -128,7 +129,8 @@ export function SyncedTranscript({
   const firstPlayRef = useRef(false);
   const onFirstPlayRef = useRef(onFirstPlay);
   useEffect(() => { onFirstPlayRef.current = onFirstPlay; }, [onFirstPlay]);
-  const accent = accentColor || "hsl(var(--brand))";\n  const reportError = useServerFn(reportSystemError);
+  const accent = accentColor || "hsl(var(--brand))";
+  const reportError = useServerFn(reportSystemError);
 
 
 
@@ -176,13 +178,12 @@ export function SyncedTranscript({
         })(),
       };
       console.error("[SyncedTranscript] Falha na reprodução", details);
-      void recordSystemError({
+      void reportError({ data: {
         category: "audio_playback",
         event: "media_error",
         message: mediaError?.message || "Falha ao reproduzir o áudio.",
-        audioId: undefined,
         metadata: details,
-      }).catch((error) => console.error("[SyncedTranscript] erro ao registrar log", error));
+      } }).catch((error) => console.error("[SyncedTranscript] erro ao registrar log", error));
     };
     const onStalled = () => {
       const details = {
@@ -192,7 +193,7 @@ export function SyncedTranscript({
         currentTime: a.currentTime,
       };
       console.warn("[SyncedTranscript] Reprodução interrompida pelo carregamento", details);
-      void recordSystemError({
+      void reportError({ data: {
         category: "audio_playback",
         event: "media_stalled",
         message: "A reprodução foi interrompida pelo carregamento do áudio.",
