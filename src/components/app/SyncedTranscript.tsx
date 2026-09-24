@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";\nimport { useServerFn } from "@tanstack/react-start";
 import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { recordSystemError } from "@/lib/system-error-logs.functions";
+import { reportSystemError } from "@/lib/system-error-logs.functions";
 
 export type Segment = { start: number; end: number; text: string };
 
@@ -128,7 +128,7 @@ export function SyncedTranscript({
   const firstPlayRef = useRef(false);
   const onFirstPlayRef = useRef(onFirstPlay);
   useEffect(() => { onFirstPlayRef.current = onFirstPlay; }, [onFirstPlay]);
-  const accent = accentColor || "hsl(var(--brand))";
+  const accent = accentColor || "hsl(var(--brand))";\n  const reportError = useServerFn(reportSystemError);
 
 
 
