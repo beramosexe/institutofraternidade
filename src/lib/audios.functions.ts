@@ -1,6 +1,32 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getSignedDownloadUrl, getSignedUploadUrl } from "@/lib/r2/storage.server";
+
+/** Issues a short-lived R2 upload URL after validating audio upload permission. */
+export const createAudioUploadUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { file_name: string; mime_type: string }) =>
+    z.object({
+      file_name: z.string().min(1).max(255),
+      mime_type: z.string().min(1).max(100),
+    }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: canUpload, error: permErr } = await supabase.rpc("has_permission", {
+      _user_id: userId, _permission: "audio.upload",
+    });
+    if (permErr) throw new Error(permErr.message);
+    if (!canUpload) throw new Error("Você não tem permissão para enviar áudios.");
+
+    const rawExt = data.file_name.includes(".") ? data.file_name.split(".").pop() : "";
+    const ext = rawExt && /^[a-z0-9]{1,8}$/i.test(rawExt) ? rawExt.toLowerCase() : "mp3";
+    const key = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const uploadUrl = await getSignedUploadUrl(key, 15 * 60, data.mime_type);
+
+    return { key, uploadUrl };
+  });
 
 /** Create the DB row for an uploaded audio and trigger transcription. */
 export const registerAudio = createServerFn({ method: "POST" })
