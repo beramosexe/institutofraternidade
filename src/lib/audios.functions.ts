@@ -22,7 +22,7 @@ export const createAudioUploadUrl = createServerFn({ method: "POST" })
 
     const rawExt = data.file_name.includes(".") ? data.file_name.split(".").pop() : "";
     const ext = rawExt && /^[a-z0-9]{1,8}$/i.test(rawExt) ? rawExt.toLowerCase() : "mp3";
-    const key = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const key = `originals/${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
     const uploadUrl = await getSignedUploadUrl(key, 15 * 60, data.mime_type);
 
     return { key, uploadUrl };
@@ -60,7 +60,7 @@ export const registerAudio = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    if (!data.storage_path.startsWith(`${userId}/`)) {
+    if (!data.storage_path.startsWith(`originals/${userId}/`)) {
       throw new Error("Caminho de armazenamento inválido.");
     }
     // Verify upload permission server-side, then use admin client to bypass RLS
