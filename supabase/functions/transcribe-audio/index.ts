@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
       language: "pt-BR",
       smart_format: "true",
       punctuate: "true",
+      paragraphs: "true",
       utterances: "true",
       diarize_model: "latest",
     });
@@ -125,8 +126,32 @@ Deno.serve(async (req) => {
     const dg = await resp.json();
     console.log("Deepgram response keys:", Object.keys(dg));
 
+    // Prefer sentence-level timestamps from Deepgram Paragraphs.
+    // This produces readable synced chunks instead of one segment per word.
+    const alternative = dg?.results?.channels?.[0]?.alternatives?.[0];
+    const paragraphGroups = alternative?.paragraphs?.paragraphs;
+    const sentenceSegments: Segment[] = Array.isArray(paragraphGroups)
+      ? paragraphGroups.flatMap((paragraph: {
+          sentences?: Array<{ start: number; end: number; text: string }>;
+        }) =>
+          Array.isArray(paragraph.sentences)
+            ? paragraph.sentences.map((sentence) => ({
+                start: Number(sentence.start),
+                end: Number(sentence.end),
+                text: String(sentence.text ?? "").trim(),
+              }))
+            : [],
+        ).filter(
+          (s: Segment) =>
+            s.text.length > 0 &&
+            Number.isFinite(s.start) &&
+            Number.isFinite(s.end) &&
+            s.end > s.start,
+        )
+      : [];
+
     const rawUtterances = dg?.results?.utterances;
-    const segments: Segment[] = Array.isArray(rawUtterances)
+    const utteranceSegments: Segment[] = Array.isArray(rawUtterances)
       ? rawUtterances.map((u: {
           start: number;
           end: number;
@@ -140,12 +165,15 @@ Deno.serve(async (req) => {
         })).filter((s: Segment) => s.text.length > 0)
       : [];
 
-    const fallbackText =
-      dg?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? "";
+    const segments =
+      sentenceSegments.length > 0
+        ? sentenceSegments
+        : utteranceSegments;
 
-    const text = segments.length > 0
-      ? segments.map((s) => s.text).join(" ").trim()
-      : String(fallbackText).trim();
+    const fallbackText =
+      alternative?.transcript ?? "";
+
+    const text = String(fallbackText).trim() || segments.map((s) => s.text).join(" ").trim();
 
     if (!text) {
       throw new Error("Transcription returned empty text");
