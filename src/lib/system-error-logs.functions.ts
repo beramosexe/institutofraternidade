@@ -1,8 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { randomUUID } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type LogErrorInput = {
   category: string;
@@ -14,26 +12,12 @@ type LogErrorInput = {
   metadata?: Record<string, unknown>;
 };
 
-async function persistSystemError(input: LogErrorInput) {
-  const requestId = input.requestId ?? randomUUID();
-  const { error } = await supabaseAdmin.from("system_error_logs").insert({
-    category: input.category.slice(0, 80),
-    event: input.event.slice(0, 120),
-    message: input.message.slice(0, 2000),
-    user_id: input.userId ?? null,
-    audio_id: input.audioId ?? null,
-    request_id: requestId,
-    metadata: (input.metadata ?? {}) as never,
-  });
-
-  if (error) {
-    console.error("[SystemErrorLog] Falha ao persistir erro", error.message, input);
-  }
-
-  return requestId;
+async function getPersistence() {
+  return import("@/lib/system-error-logs.server");
 }
 
 export async function recordSystemError(input: LogErrorInput) {
+  const { persistSystemError } = await getPersistence();
   return persistSystemError(input);
 }
 
@@ -69,6 +53,7 @@ export const listSystemErrorLogs = createServerFn({ method: "GET" })
     if (adminErr) throw new Error(adminErr.message);
     if (!isAdmin) throw new Error("Acesso negado.");
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("system_error_logs")
       .select("id, created_at, category, event, message, user_id, audio_id, request_id, metadata")
@@ -105,6 +90,7 @@ export const clearSystemErrorLogs = createServerFn({ method: "POST" })
     if (adminErr) throw new Error(adminErr.message);
     if (!isAdmin) throw new Error("Acesso negado.");
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let query = supabaseAdmin.from("system_error_logs").delete().not("id", "is", null);
     if (data.before) query = query.lt("created_at", data.before);
 
