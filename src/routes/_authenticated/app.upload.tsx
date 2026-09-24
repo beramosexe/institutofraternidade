@@ -21,7 +21,7 @@ import { UploadTokens } from "@/components/app/UploadTokens";
 const OTHER_VALUE = "__other__";
 const NONE_VALUE = "__none__";
 
-const ACCEPT = ".mp3,.m4a,.wav,.webm,.ogg,.aac,audio/*";
+const ACCEPT = "audio/*,video/mp4,video/quicktime,video/webm,.mp3,.m4a,.wav,.webm,.ogg,.aac,.flac,.opus,.mp4,.mov,.mkv";
 const MAX_BYTES = 500 * 1024 * 1024;
 
 export const Route = createFileRoute("/_authenticated/app/upload")({
@@ -128,7 +128,7 @@ function UploadPage() {
           access_level: accessLevel,
           storage_path: path,
           file_size_bytes: file.size,
-          mime_type: file.type || `audio/${ext}`,
+          mime_type: file.type || "application/octet-stream",
         },
       });
 
