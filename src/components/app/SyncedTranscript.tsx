@@ -160,16 +160,39 @@ export function SyncedTranscript({
       }
     };
     const onPause = () => setPlaying(false);
+    const onError = () => {
+      const mediaError = a.error;
+      console.error("[SyncedTranscript] Falha na reprodução", {
+        code: mediaError?.code,
+        message: mediaError?.message,
+        networkState: a.networkState,
+        readyState: a.readyState,
+        currentTime: a.currentTime,
+        duration: a.duration,
+        src: a.currentSrc,
+      });
+    };
+    const onStalled = () => {
+      console.warn("[SyncedTranscript] Reprodução interrompida pelo carregamento", {
+        networkState: a.networkState,
+        readyState: a.readyState,
+        currentTime: a.currentTime,
+      });
+    };
 
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("durationchange", onDur);
     a.addEventListener("play", onPlay);
     a.addEventListener("pause", onPause);
+    a.addEventListener("error", onError);
+    a.addEventListener("stalled", onStalled);
     return () => {
       a.removeEventListener("timeupdate", onTime);
       a.removeEventListener("durationchange", onDur);
       a.removeEventListener("play", onPlay);
       a.removeEventListener("pause", onPause);
+      a.removeEventListener("error", onError);
+      a.removeEventListener("stalled", onStalled);
     };
   }, [src]);
 
@@ -263,7 +286,7 @@ export function SyncedTranscript({
 
   return (
     <div className="flex flex-col gap-3">
-      <audio ref={audioRef} src={src} preload="metadata" />
+      <audio ref={audioRef} src={src} preload="auto" crossOrigin="anonymous" />
 
       <div
         className="sticky top-14 z-10 rounded-lg border border-border bg-card/95 p-3 shadow-sm backdrop-blur md:top-2"
