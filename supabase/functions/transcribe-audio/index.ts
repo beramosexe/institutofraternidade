@@ -165,10 +165,12 @@ Deno.serve(async (req) => {
         })).filter((s: Segment) => s.text.length > 0)
       : [];
 
-    const segments =
+    const rawSegments =
       sentenceSegments.length > 0
         ? sentenceSegments
         : utteranceSegments;
+
+    const segments = groupTranscriptSegments(rawSegments);
 
     const fallbackText =
       alternative?.transcript ?? "";
@@ -257,6 +259,78 @@ Deno.serve(async (req) => {
     return json({ error: msg }, 500);
   }
 });
+
+function groupTranscriptSegments(input: Segment[]): Segment[] {
+  if (input.length === 0) return [];
+
+  const result: Segment[] = [];
+  let current: Segment | null = null;
+
+  const strongEnd = /[.!?…]+["'”»)]*$/;
+  const softEnd = /[,;:—-]+["'”»)]*$/;
+
+  const wordCount = (text: string) =>
+    text.trim().split(/\s+/).filter(Boolean).length;
+
+  const normalizeJoin = (left: string, right: string) => {
+    const a = left.trim();
+    const b = right.trim();
+    if (!a) return b;
+    if (!b) return a;
+    return /[([{\/-–—]$/.test(a) ? a + b : a + " " + b;
+  };
+
+  const looksLikeContinuation = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return true;
+    if (softEnd.test(trimmed) || !strongEnd.test(trimmed)) return true;
+    const lastWord = trimmed.split(/\s+/).slice(-1)[0] ?? "";
+    return /^(e|mas|porém|porque|que|quando|como|se|então|ou|ou seja|a|o|as|os|um|uma|isso|essa|esse|esta|este|para|de|do|da|dos|das|com|sem|sobre|entre|também|já|ainda|não|sim)$/i.test(lastWord);
+  };
+
+  for (const segment of input) {
+    if (!current) {
+      current = { ...segment };
+      continue;
+    }
+
+    const combinedText = normalizeJoin(current.text, segment.text);
+    const combinedWords = wordCount(combinedText);
+    const gap = Math.max(0, segment.start - current.end);
+    const currentWords = wordCount(current.text);
+    const canContinue =
+      currentWords < 18 ||
+      softEnd.test(current.text) ||
+      looksLikeContinuation(current.text);
+    const naturalPause = gap >= 1.4;
+    const hardLimit = currentWords >= 40;
+
+    if (hardLimit || naturalPause || (!canContinue && combinedWords > 24)) {
+      result.push(current);
+      current = { ...segment };
+      continue;
+    }
+
+    current = {
+      start: current.start,
+      end: segment.end,
+      text: combinedText,
+      ...(segment.speaker !== undefined
+        ? { speaker: segment.speaker }
+        : current.speaker !== undefined
+          ? { speaker: current.speaker }
+          : {}),
+    };
+
+    if (strongEnd.test(current.text) && combinedWords >= 24) {
+      result.push(current);
+      current = null;
+    }
+  }
+
+  if (current) result.push(current);
+  return result;
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
