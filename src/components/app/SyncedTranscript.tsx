@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
+import { reportSystemError } from "@/lib/system-error-logs.functions";
 
 export type Segment = { start: number; end: number; text: string };
 
@@ -32,6 +34,51 @@ function parsePrecise(v: string): number | null {
   const secs = parseInt(m[2], 10);
   const frac = m[3] ? parseInt(m[3].padEnd(3, "0"), 10) / 1000 : 0;
   return mins * 60 + secs + frac;
+}
+
+
+function findSegmentAtTime(segments: Segment[], time: number): number {
+  let low = 0;
+  let high = segments.length - 1;
+  let candidate = -1;
+
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (segments[mid].start <= time) {
+      candidate = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  if (
+    candidate >= 0 &&
+    time >= segments[candidate].start &&
+    time < segments[candidate].end
+  ) {
+    return candidate;
+  }
+
+  return -1;
+}
+
+function findLastStartedSegment(segments: Segment[], time: number): number {
+  let low = 0;
+  let high = segments.length - 1;
+  let candidate = -1;
+
+  while (low <= high) {
+    const mid = (low + high) >> 1;
+    if (segments[mid].start <= time) {
+      candidate = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  return candidate;
 }
 
 interface Props {
@@ -117,29 +164,51 @@ export function SyncedTranscript({
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [buffering, setBuffering] = useState(false);
   const [rate, setRate] = useState(1);
   const [loopSegment, setLoopSegment] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const timeRef = useRef(0);
+  const lastUiTimeUpdateRef = useRef(0);
   const onDurationKnownRef = useRef(onDurationKnown);
   useEffect(() => { onDurationKnownRef.current = onDurationKnown; }, [onDurationKnown]);
   const firstPlayRef = useRef(false);
   const onFirstPlayRef = useRef(onFirstPlay);
   useEffect(() => { onFirstPlayRef.current = onFirstPlay; }, [onFirstPlay]);
   const accent = accentColor || "hsl(var(--brand))";
+  const reportError = useServerFn(reportSystemError);
 
 
 
   const timeEditing = !!(editable && editableTimestamps);
-  const activeIdx = segments.findIndex((s) => time >= s.start && time < s.end);
+  // O player pode ter milhares de segmentos. Use busca binária em vez de
+  // percorrer toda a transcrição a cada atualização do currentTime.
+  const activeIdx = useMemo(
+    () => findSegmentAtTime(segments, time),
+    [segments, time],
+  );
+  // No modo compacto, durante um silêncio entre segmentos, mantenha o último
+  // trecho já iniciado. Antes do primeiro trecho, use o primeiro como fallback.
+  const compactIdx = useMemo(
+    () => findLastStartedSegment(segments, time),
+    [segments, time],
+  );
+  const compactFocusIdx = compactIdx >= 0 ? compactIdx : 0;
 
   useEffect(() => { timeRef.current = time; }, [time]);
 
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onTime = () => setTime(a.currentTime);
+    const onTime = () => {
+      const now = performance.now();
+      // A reprodução não depende do React. Limitamos apenas as atualizações
+      // visuais para evitar rerenders excessivos em áudios longos.
+      if (now - lastUiTimeUpdateRef.current < 200) return;
+      lastUiTimeUpdateRef.current = now;
+      setTime(a.currentTime);
+    };
     const onDur = () => {
       const d = a.duration || 0;
       setDuration(d);
@@ -148,31 +217,115 @@ export function SyncedTranscript({
 
     const onPlay = () => {
       setPlaying(true);
+      setBuffering(a.readyState < HTMLMediaElement.HAVE_FUTURE_DATA);
       if (!firstPlayRef.current) {
         firstPlayRef.current = true;
         onFirstPlayRef.current?.();
       }
     };
-    const onPause = () => setPlaying(false);
+    const onPause = () => {
+      setPlaying(false);
+      setBuffering(false);
+      setTime(a.currentTime);
+    };
+    const onWaiting = () => {
+      setBuffering(true);
+      console.warn("[PLAYER] aguardando dados do áudio", {
+        currentTime: a.currentTime,
+        readyState: a.readyState,
+        networkState: a.networkState,
+        duration: Number.isFinite(a.duration) ? a.duration : null,
+      });
+    };
+    const onPlaying = () => setBuffering(false);
+    const onCanPlay = () => {
+      setBuffering(false);
+      console.log("[PLAYER] áudio pronto para reprodução", {
+        currentTime: a.currentTime,
+        readyState: a.readyState,
+        networkState: a.networkState,
+        duration: Number.isFinite(a.duration) ? a.duration : null,
+      });
+    };
+    const onLoadedMetadata = () => {
+      console.log("[PLAYER] metadata carregada", {
+        currentTime: a.currentTime,
+        readyState: a.readyState,
+        networkState: a.networkState,
+        duration: Number.isFinite(a.duration) ? a.duration : null,
+        src: a.currentSrc || src,
+      });
+    };
+    const onError = () => {
+      const mediaError = a.error;
+      const details = {
+        stage: "html_audio_error",
+        code: mediaError?.code ?? null,
+        message: mediaError?.message ?? null,
+        networkState: a.networkState,
+        readyState: a.readyState,
+        currentTime: a.currentTime,
+        duration: Number.isFinite(a.duration) ? a.duration : null,
+        srcHost: (() => {
+          try { return new URL(a.currentSrc || src).hostname; } catch { return null; }
+        })(),
+      };
+      console.error("[SyncedTranscript] Falha na reprodução", details);
+      void reportError({ data: {
+        category: "audio_playback",
+        event: "media_error",
+        message: mediaError?.message || "Falha ao reproduzir o áudio.",
+        metadata: details,
+      } }).catch((error) => console.error("[SyncedTranscript] erro ao registrar log", error));
+    };
+    const onStalled = () => {
+      const details = {
+        stage: "html_audio_stalled",
+        networkState: a.networkState,
+        readyState: a.readyState,
+        currentTime: a.currentTime,
+      };
+      console.warn("[SyncedTranscript] Reprodução interrompida pelo carregamento", details);
+      void reportError({ data: {
+        category: "audio_playback",
+        event: "media_stalled",
+        message: "A reprodução foi interrompida pelo carregamento do áudio.",
+        metadata: details,
+      } }).catch((error) => console.error("[SyncedTranscript] erro ao registrar log", error));
+    };
 
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("durationchange", onDur);
     a.addEventListener("play", onPlay);
     a.addEventListener("pause", onPause);
+    a.addEventListener("waiting", onWaiting);
+    a.addEventListener("playing", onPlaying);
+    a.addEventListener("canplay", onCanPlay);
+    a.addEventListener("loadedmetadata", onLoadedMetadata);
+    a.addEventListener("error", onError);
+    a.addEventListener("stalled", onStalled);
+    a.load();
     return () => {
       a.removeEventListener("timeupdate", onTime);
       a.removeEventListener("durationchange", onDur);
       a.removeEventListener("play", onPlay);
       a.removeEventListener("pause", onPause);
+      a.removeEventListener("waiting", onWaiting);
+      a.removeEventListener("playing", onPlaying);
+      a.removeEventListener("canplay", onCanPlay);
+      a.removeEventListener("loadedmetadata", onLoadedMetadata);
+      a.removeEventListener("error", onError);
+      a.removeEventListener("stalled", onStalled);
     };
   }, [src]);
 
   const showCompactTranscript = compactTranscript && !editable;
 
-  // Keep the active segment centered inside either transcript view.
+  // Keep the relevant segment centered inside either transcript view.
   useEffect(() => {
-    if (activeIdx < 0 || !listRef.current) return;
-    const el = listRef.current.querySelector(`[data-seg='${activeIdx}']`) as HTMLElement | null;
+    const targetIdx = showCompactTranscript ? compactFocusIdx : activeIdx;
+    if (targetIdx < 0 || !listRef.current) return;
+    const el = listRef.current.querySelector(`[data-seg='${targetIdx}']`) as HTMLElement | null;
     if (!el) return;
     const list = listRef.current;
     if (showCompactTranscript) {
@@ -184,7 +337,7 @@ export function SyncedTranscript({
     }
     const target = el.offsetTop - list.clientHeight / 2 + el.clientHeight / 2;
     list.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
-  }, [activeIdx, showCompactTranscript]);
+  }, [activeIdx, compactFocusIdx, showCompactTranscript]);
 
   // Loop the active segment
   useEffect(() => {
@@ -201,12 +354,61 @@ export function SyncedTranscript({
     if (audioRef.current) audioRef.current.playbackRate = rate;
   }, [rate]);
 
-  function toggle() { playing ? audioRef.current?.pause() : audioRef.current?.play(); }
-  function seek(to: number) { if (audioRef.current) audioRef.current.currentTime = to; }
+  async function toggle() {
+    const audio = audioRef.current;
+
+    console.log("[PLAYER] toggle", {
+      audio,
+      src: audio?.currentSrc || src,
+      paused: audio?.paused,
+      readyState: audio?.readyState,
+      networkState: audio?.networkState,
+      duration: audio?.duration,
+    });
+
+    if (!audio) {
+      console.error("[PLAYER] elemento <audio> não encontrado");
+      return;
+    }
+
+    if (playing) {
+      audio.pause();
+      return;
+    }
+
+    try {
+      await audio.play();
+      console.log("[PLAYER] play() executado com sucesso");
+    } catch (error) {
+      console.error("[PLAYER] play() falhou", {
+        error,
+        src: audio.currentSrc || src,
+        readyState: audio.readyState,
+        networkState: audio.networkState,
+        errorCode: audio.error?.code,
+        errorMessage: audio.error?.message,
+      });
+    }
+  }
+  function seek(to: number) {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = to;
+    timeRef.current = to;
+    setTime(to);
+  }
   const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
-  const visibleSegments = segments
-    .map((segment, index) => ({ segment, index }))
-    .filter(({ segment }) => !normalizedSearch || segment.text.toLocaleLowerCase("pt-BR").includes(normalizedSearch));
+  const visibleSegments = useMemo(
+    () =>
+      segments
+        .map((segment, index) => ({ segment, index }))
+        .filter(
+          ({ segment }) =>
+            !normalizedSearch ||
+            segment.text.toLocaleLowerCase("pt-BR").includes(normalizedSearch),
+        ),
+    [segments, normalizedSearch],
+  );
 
   function updateSegmentText(i: number, text: string) {
     if (!onChangeSegments) return;
@@ -256,7 +458,7 @@ export function SyncedTranscript({
 
   return (
     <div className="flex flex-col gap-3">
-      <audio ref={audioRef} src={src} preload="metadata" />
+      <audio ref={audioRef} src={src} preload="auto" crossOrigin="anonymous" />
 
       <div
         className="sticky top-14 z-10 rounded-lg border border-border bg-card/95 p-3 shadow-sm backdrop-blur md:top-2"
@@ -285,9 +487,11 @@ export function SyncedTranscript({
             aria-label={playing ? "Pausar" : "Reproduzir"}
             className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
           >
-            {playing
-              ? <Pause className="h-6 w-6 fill-current" aria-hidden="true" />
-              : <Play className="h-6 w-6 fill-current" aria-hidden="true" />}
+            {buffering
+              ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+              : playing
+                ? <Pause className="h-6 w-6 fill-current" aria-hidden="true" />
+                : <Play className="h-6 w-6 fill-current" aria-hidden="true" />}
           </Button>
           <Button
             size="icon" variant="outline" className="h-10 w-10"
@@ -366,23 +570,27 @@ export function SyncedTranscript({
               aria-label="Trechos sincronizados do áudio"
               className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto rounded-lg border border-border bg-card px-[9%] py-4 scroll-smooth md:px-[16%]"
             >
-              {segments.map((seg, i) => ({ seg, i }))
-                .filter(({ i }) => Math.abs(i - Math.max(0, activeIdx)) <= 1)
-                .map(({ seg, i }) => {
-                const distance = Math.abs(i - Math.max(0, activeIdx));
+              {segments
+                .slice(
+                  Math.max(0, compactFocusIdx - 1),
+                  Math.min(segments.length, compactFocusIdx + 2),
+                )
+                .map((seg, offset) => {
+                const i = Math.max(0, compactFocusIdx - 1) + offset;
+                const distance = Math.abs(i - compactFocusIdx);
                 const visible = distance <= 1;
                 return (
                   <button
                     key={i}
                     type="button"
                     data-seg={i}
-                    aria-current={i === activeIdx ? "true" : undefined}
+                    aria-current={i === compactIdx ? "true" : undefined}
                     aria-hidden={!visible}
                     tabIndex={visible ? 0 : -1}
                     onClick={() => seek(seg.start)}
                     className={[
                       "min-h-28 w-[82%] shrink-0 snap-center self-stretch px-2 py-3 text-left transition-[opacity,transform] duration-500 md:w-[68%]",
-                      i === activeIdx
+                      i === compactFocusIdx
                         ? "scale-100 opacity-100"
                         : visible
                           ? "scale-95 opacity-35"
@@ -390,7 +598,7 @@ export function SyncedTranscript({
                     ].join(" ")}
                   >
                     <span className="mb-2 block font-mono text-[11px] text-muted-foreground">{formatTime(seg.start)}</span>
-                    <span className={i === activeIdx
+                    <span className={i === compactIdx
                       ? "block font-display text-lg leading-relaxed text-foreground md:text-xl"
                       : "line-clamp-3 block text-sm leading-relaxed text-muted-foreground"}
                     >

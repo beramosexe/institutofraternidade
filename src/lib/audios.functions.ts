@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getSignedDownloadUrl, getSignedUploadUrl } from "@/lib/r2/storage.server";
+import { recordSystemError, errorMessage } from "@/lib/system-error-logs.functions";
 
 /** Issues a short-lived R2 upload URL after validating audio upload permission. */
 export const createAudioUploadUrl = createServerFn({ method: "POST" })
@@ -22,10 +23,25 @@ export const createAudioUploadUrl = createServerFn({ method: "POST" })
 
     const rawExt = data.file_name.includes(".") ? data.file_name.split(".").pop() : "";
     const ext = rawExt && /^[a-z0-9]{1,8}$/i.test(rawExt) ? rawExt.toLowerCase() : "mp3";
-    const key = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    const uploadUrl = await getSignedUploadUrl(key, 15 * 60, data.mime_type);
-
-    return { key, uploadUrl };
+    const key = `originals/${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    try {
+      const uploadUrl = await getSignedUploadUrl(key, 15 * 60, data.mime_type);
+      return { key, uploadUrl };
+    } catch (error) {
+      await recordSystemError({
+        category: "audio_upload",
+        event: "signed_upload_url_failed",
+        message: errorMessage(error),
+        userId,
+        metadata: {
+          stage: "create_signed_url",
+          fileName: data.file_name,
+          mimeType: data.mime_type,
+          r2Key: key,
+        },
+      });
+      throw error;
+    }
   });
 
 /** Create the DB row for an uploaded audio and trigger transcription. */
@@ -60,7 +76,7 @@ export const registerAudio = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    if (!data.storage_path.startsWith(`${userId}/`)) {
+    if (!data.storage_path.startsWith(`originals/${userId}/`)) {
       throw new Error("Caminho de armazenamento inválido.");
     }
     // Verify upload permission server-side, then use admin client to bypass RLS
@@ -78,7 +94,21 @@ export const registerAudio = createServerFn({ method: "POST" })
       .insert({ ...data, uploaded_by: userId, status: "transcribing" })
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      await recordSystemError({
+        category: "audio_processing",
+        event: "audio_registration_failed",
+        message: error.message,
+        userId,
+        metadata: {
+          stage: "register_audio",
+          storagePath: data.storage_path,
+          mimeType: data.mime_type,
+          fileSizeBytes: data.file_size_bytes,
+        },
+      });
+      throw new Error(error.message);
+    }
 
     // processing_jobs / audit_logs block INSERT via RLS — use the admin client.
     const { error: jobErr } = await supabaseAdmin.from("processing_jobs").insert({
@@ -92,11 +122,53 @@ export const registerAudio = createServerFn({ method: "POST" })
     });
     if (auditErr) console.error("audit_logs insert failed", auditErr.message);
 
-    // Fire-and-forget edge function invocation
+    // Generate a short-lived R2 URL so the Edge Function can fetch the uploaded object.
+    let audioUrl: string;
     try {
-      await supabase.functions.invoke("transcribe-audio", { body: { audio_id: row.id } });
+      audioUrl = await getSignedDownloadUrl(data.storage_path, 60 * 60);
+    } catch (error) {
+      await recordSystemError({
+        category: "r2",
+        event: "signed_download_url_failed",
+        message: errorMessage(error),
+        userId,
+        audioId: row.id,
+        metadata: { stage: "transcription_source", storagePath: data.storage_path },
+      });
+      throw error;
+    }
+
+    // Fire-and-forget edge function invocation.
+    try {
+      const { error: transcriptionError } = await supabase.functions.invoke(
+        "transcribe-audio",
+        { body: { audio_id: row.id, audio_url: audioUrl } },
+      );
+      if (transcriptionError) {
+        await recordSystemError({
+          category: "transcription",
+          event: "transcribe_invoke_failed",
+          message: transcriptionError.message || "Falha ao iniciar a transcrição.",
+          userId,
+          audioId: row.id,
+          metadata: { stage: "edge_function_invoke" },
+        });
+        console.error("transcribe-audio invoke failed", transcriptionError);
+        throw new Error(transcriptionError.message || "Falha ao iniciar a transcrição.");
+      }
     } catch (e) {
+      if (!(e && typeof e === "object" && "name" in e && (e as { name?: string }).name === "Error")) {
+        await recordSystemError({
+          category: "transcription",
+          event: "transcribe_invoke_exception",
+          message: errorMessage(e),
+          userId,
+          audioId: row.id,
+          metadata: { stage: "edge_function_invoke_exception" },
+        });
+      }
       console.error("transcribe-audio invoke failed", e);
+      throw e instanceof Error ? e : new Error("Falha ao iniciar a transcrição.");
     }
 
     return row;
@@ -158,18 +230,15 @@ export const getAudioStreamUrl = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!audio) throw new Error("Áudio não encontrado ou sem acesso.");
-    // Use admin signed URL because anon storage uses uploaded_by folder which differs from current user.
+    // Audio files are stored in R2; Supabase only stores metadata.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: signed, error: sErr } = await supabaseAdmin.storage
-      .from("audios")
-      .createSignedUrl(audio.storage_path, 60 * 60);
-    if (sErr) throw new Error(sErr.message);
+    const signedUrl = await getSignedDownloadUrl(audio.storage_path, 60 * 60);
 
     await supabaseAdmin.from("audit_logs").insert({
       actor_id: userId, entity: "audios", entity_id: audio.id, action: "stream",
     });
 
-    return { url: signed.signedUrl };
+    return { url: signedUrl };
   });
 
 /** Public signed url for public audios (no auth required). */
@@ -187,11 +256,8 @@ export const getPublicAudioUrl = createServerFn({ method: "POST" })
     if (!audio || audio.access_level !== "public" || audio.status !== "ready") {
       throw new Error("Áudio não disponível publicamente.");
     }
-    const { data: signed, error } = await supabaseAdmin.storage
-      .from("audios")
-      .createSignedUrl(audio.storage_path, 60 * 60);
-    if (error) throw new Error(error.message);
-    return { url: signed.signedUrl };
+    const signedUrl = await getSignedDownloadUrl(audio.storage_path, 60 * 60);
+    return { url: signedUrl };
   });
 
 /** Archive / restore / delete / reprocess */
@@ -242,8 +308,8 @@ export const deleteAudio = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("audios").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     if (audio?.storage_path) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin.storage.from("audios").remove([audio.storage_path]);
+      const { deleteObject } = await import("@/lib/r2/storage.server");
+      await deleteObject(audio.storage_path);
     }
     await context.supabase.from("audit_logs").insert({
       actor_id: context.userId, entity: "audios", entity_id: data.id, action: "delete",
@@ -257,7 +323,7 @@ export const reprocessAudio = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     // Authorize before using the admin client (which bypasses RLS).
     const { data: audioRow } = await context.supabase
-      .from("audios").select("id, uploaded_by").eq("id", data.id).maybeSingle();
+      .from("audios").select("id, uploaded_by, storage_path").eq("id", data.id).maybeSingle();
     if (!audioRow) throw new Error("Áudio não encontrado ou sem acesso.");
     if (audioRow.uploaded_by !== context.userId) {
       const [{ data: canReprocess }, { data: canEdit }] = await Promise.all([
@@ -283,9 +349,22 @@ export const reprocessAudio = createServerFn({ method: "POST" })
       actor_id: context.userId, entity: "audios", entity_id: data.id, action: "reprocess",
     });
 
-    try {
-      await context.supabase.functions.invoke("transcribe-audio", { body: { audio_id: data.id } });
-    } catch (e) { console.error(e); }
+    const audioUrl = await getSignedDownloadUrl(
+      audioRow.storage_path,
+      60 * 60,
+    );
+
+    const { error: transcriptionError } = await context.supabase.functions.invoke(
+      "transcribe-audio",
+      { body: { audio_id: data.id, audio_url: audioUrl } },
+    );
+    if (transcriptionError) {
+      console.error("transcribe-audio reprocess failed", transcriptionError);
+      throw new Error(
+        transcriptionError.message || "Falha ao iniciar a transcrição.",
+      );
+    }
+
     return { ok: true };
   });
 
