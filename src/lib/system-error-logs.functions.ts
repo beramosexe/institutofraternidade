@@ -14,7 +14,7 @@ type LogErrorInput = {
   metadata?: Record<string, unknown>;
 };
 
-export async function recordSystemError(input: LogErrorInput) {
+async function persistSystemError(input: LogErrorInput) {
   const requestId = input.requestId ?? randomUUID();
   const { error } = await supabaseAdmin.from("system_error_logs").insert({
     category: input.category.slice(0, 80),
@@ -33,9 +33,32 @@ export async function recordSystemError(input: LogErrorInput) {
   return requestId;
 }
 
+export async function recordSystemError(input: LogErrorInput) {
+  return persistSystemError(input);
+}
+
 export function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
+
+const clientLogSchema = z.object({
+  category: z.string().min(1).max(80),
+  event: z.string().min(1).max(120),
+  message: z.string().min(1).max(2000),
+  audioId: z.string().uuid().nullable().optional(),
+  requestId: z.string().uuid().nullable().optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+export const reportSystemError = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => clientLogSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    return persistSystemError({
+      ...data,
+      userId: context.userId,
+    });
+  });
 
 export const listSystemErrorLogs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
