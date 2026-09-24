@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X } from "lucide-react";
+import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -164,6 +164,7 @@ export function SyncedTranscript({
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [buffering, setBuffering] = useState(false);
   const [rate, setRate] = useState(1);
   const [loopSegment, setLoopSegment] = useState(false);
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
@@ -216,6 +217,7 @@ export function SyncedTranscript({
 
     const onPlay = () => {
       setPlaying(true);
+      setBuffering(a.readyState < HTMLMediaElement.HAVE_FUTURE_DATA);
       if (!firstPlayRef.current) {
         firstPlayRef.current = true;
         onFirstPlayRef.current?.();
@@ -223,8 +225,20 @@ export function SyncedTranscript({
     };
     const onPause = () => {
       setPlaying(false);
+      setBuffering(false);
       setTime(a.currentTime);
     };
+    const onWaiting = () => {
+      setBuffering(true);
+      console.warn("[PLAYER] aguardando dados do áudio", {
+        currentTime: a.currentTime,
+        readyState: a.readyState,
+        networkState: a.networkState,
+        duration: Number.isFinite(a.duration) ? a.duration : null,
+      });
+    };
+    const onPlaying = () => setBuffering(false);
+    const onCanPlay = () => setBuffering(false);
     const onWaiting = () => {
       console.warn("[PLAYER] aguardando dados do áudio", {
         currentTime: a.currentTime,
@@ -293,6 +307,7 @@ export function SyncedTranscript({
     a.addEventListener("play", onPlay);
     a.addEventListener("pause", onPause);
     a.addEventListener("waiting", onWaiting);
+    a.addEventListener("playing", onPlaying);
     a.addEventListener("canplay", onCanPlay);
     a.addEventListener("loadedmetadata", onLoadedMetadata);
     a.addEventListener("error", onError);
@@ -304,6 +319,7 @@ export function SyncedTranscript({
       a.removeEventListener("play", onPlay);
       a.removeEventListener("pause", onPause);
       a.removeEventListener("waiting", onWaiting);
+      a.removeEventListener("playing", onPlaying);
       a.removeEventListener("canplay", onCanPlay);
       a.removeEventListener("loadedmetadata", onLoadedMetadata);
       a.removeEventListener("error", onError);
@@ -479,9 +495,11 @@ export function SyncedTranscript({
             aria-label={playing ? "Pausar" : "Reproduzir"}
             className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
           >
-            {playing
-              ? <Pause className="h-6 w-6 fill-current" aria-hidden="true" />
-              : <Play className="h-6 w-6 fill-current" aria-hidden="true" />}
+            {buffering
+              ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
+              : playing
+                ? <Pause className="h-6 w-6 fill-current" aria-hidden="true" />
+                : <Play className="h-6 w-6 fill-current" aria-hidden="true" />}
           </Button>
           <Button
             size="icon" variant="outline" className="h-10 w-10"
