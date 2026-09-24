@@ -134,10 +134,11 @@ export function SyncedTranscript({
   const timeEditing = !!(editable && editableTimestamps);
   const activeIdx = segments.findIndex((s) => time >= s.start && time < s.end);
   // No modo compacto, durante um silêncio entre segmentos, mantenha o último
-  // trecho já iniciado em vez de voltar para o início da transcrição.
+  // trecho já iniciado. Antes do primeiro trecho, use o primeiro como fallback.
   const compactIdx = segments.reduce((last, segment, index) => {
     return time >= segment.start ? index : last;
   }, -1);
+  const compactFocusIdx = compactIdx >= 0 ? compactIdx : 0;
 
   useEffect(() => { timeRef.current = time; }, [time]);
 
@@ -174,10 +175,11 @@ export function SyncedTranscript({
 
   const showCompactTranscript = compactTranscript && !editable;
 
-  // Keep the active segment centered inside either transcript view.
+  // Keep the relevant segment centered inside either transcript view.
   useEffect(() => {
-    if (activeIdx < 0 || !listRef.current) return;
-    const el = listRef.current.querySelector(`[data-seg='${activeIdx}']`) as HTMLElement | null;
+    const targetIdx = showCompactTranscript ? compactFocusIdx : activeIdx;
+    if (targetIdx < 0 || !listRef.current) return;
+    const el = listRef.current.querySelector(`[data-seg='${targetIdx}']`) as HTMLElement | null;
     if (!el) return;
     const list = listRef.current;
     if (showCompactTranscript) {
@@ -189,7 +191,7 @@ export function SyncedTranscript({
     }
     const target = el.offsetTop - list.clientHeight / 2 + el.clientHeight / 2;
     list.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
-  }, [activeIdx, showCompactTranscript]);
+  }, [activeIdx, compactFocusIdx, showCompactTranscript]);
 
   // Loop the active segment
   useEffect(() => {
@@ -372,9 +374,9 @@ export function SyncedTranscript({
               className="scrollbar-none flex snap-x snap-mandatory gap-3 overflow-x-auto rounded-lg border border-border bg-card px-[9%] py-4 scroll-smooth md:px-[16%]"
             >
               {segments.map((seg, i) => ({ seg, i }))
-                .filter(({ i }) => Math.abs(i - Math.max(0, compactIdx)) <= 1)
+                .filter(({ i }) => Math.abs(i - compactFocusIdx) <= 1)
                 .map(({ seg, i }) => {
-                const distance = Math.abs(i - Math.max(0, compactIdx));
+                const distance = Math.abs(i - compactFocusIdx);
                 const visible = distance <= 1;
                 return (
                   <button
@@ -387,7 +389,7 @@ export function SyncedTranscript({
                     onClick={() => seek(seg.start)}
                     className={[
                       "min-h-28 w-[82%] shrink-0 snap-center self-stretch px-2 py-3 text-left transition-[opacity,transform] duration-500 md:w-[68%]",
-                      i === activeIdx
+                      i === compactFocusIdx
                         ? "scale-100 opacity-100"
                         : visible
                           ? "scale-95 opacity-35"
