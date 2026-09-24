@@ -1,5 +1,5 @@
 -- communications
-DO $
+DO $$
 BEGIN
   IF to_regclass('public.communications') IS NOT NULL THEN
     DROP POLICY IF EXISTS "Leitura de comunicados por autenticados" ON public.communications;
@@ -12,10 +12,10 @@ BEGIN
       OR public.has_permission(auth.uid(), 'notification.manage'::app_permission)
     );
   END IF;
-END $;
+END $$;
 
 -- social_media_posts
-DO $
+DO $$
 BEGIN
   IF to_regclass('public.social_media_posts') IS NOT NULL THEN
     DROP POLICY IF EXISTS "Leitura de agendamentos sociais por autenticados" ON public.social_media_posts;
@@ -27,7 +27,7 @@ BEGIN
       OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
     );
   END IF;
-END $;
+END $$;
 
 -- maintenance_quotes
 DROP POLICY IF EXISTS "mq_read" ON public.maintenance_quotes;
@@ -100,7 +100,7 @@ USING (EXISTS (
 ));
 
 -- site_posts: public only sees published
-DO $
+DO $$
 BEGIN
   IF to_regclass('public.site_posts') IS NOT NULL THEN
     DROP POLICY IF EXISTS "Leitura pública de posts do site" ON public.site_posts;
@@ -113,7 +113,7 @@ BEGIN
       OR public.has_permission(auth.uid(), 'media.manage'::app_permission)
     );
   END IF;
-END $;
+END $$;
 
 -- Trigger functions never need EXECUTE grants
 REVOKE ALL ON FUNCTION public.apply_stock_movement() FROM PUBLIC, anon, authenticated;
