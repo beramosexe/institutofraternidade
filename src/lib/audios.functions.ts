@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getSignedDownloadUrl, getSignedUploadUrl } from "@/lib/r2/storage.server";
+import { recordSystemError, errorMessage } from "@/lib/system-error-logs.functions";
 
 /** Issues a short-lived R2 upload URL after validating audio upload permission. */
 export const createAudioUploadUrl = createServerFn({ method: "POST" })
@@ -23,9 +24,24 @@ export const createAudioUploadUrl = createServerFn({ method: "POST" })
     const rawExt = data.file_name.includes(".") ? data.file_name.split(".").pop() : "";
     const ext = rawExt && /^[a-z0-9]{1,8}$/i.test(rawExt) ? rawExt.toLowerCase() : "mp3";
     const key = `originals/${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    const uploadUrl = await getSignedUploadUrl(key, 15 * 60, data.mime_type);
-
-    return { key, uploadUrl };
+    try {
+      const uploadUrl = await getSignedUploadUrl(key, 15 * 60, data.mime_type);
+      return { key, uploadUrl };
+    } catch (error) {
+      await recordSystemError({
+        category: "audio_upload",
+        event: "signed_upload_url_failed",
+        message: errorMessage(error),
+        userId,
+        metadata: {
+          stage: "create_signed_url",
+          fileName: data.file_name,
+          mimeType: data.mime_type,
+          r2Key: key,
+        },
+      });
+      throw error;
+    }
   });
 
 /** Create the DB row for an uploaded audio and trigger transcription. */
@@ -78,7 +94,21 @@ export const registerAudio = createServerFn({ method: "POST" })
       .insert({ ...data, uploaded_by: userId, status: "transcribing" })
       .select()
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      await recordSystemError({
+        category: "audio_processing",
+        event: "audio_registration_failed",
+        message: error.message,
+        userId,
+        metadata: {
+          stage: "register_audio",
+          storagePath: data.storage_path,
+          mimeType: data.mime_type,
+          fileSizeBytes: data.file_size_bytes,
+        },
+      });
+      throw new Error(error.message);
+    }
 
     // processing_jobs / audit_logs block INSERT via RLS — use the admin client.
     const { error: jobErr } = await supabaseAdmin.from("processing_jobs").insert({
@@ -93,7 +123,20 @@ export const registerAudio = createServerFn({ method: "POST" })
     if (auditErr) console.error("audit_logs insert failed", auditErr.message);
 
     // Generate a short-lived R2 URL so the Edge Function can fetch the uploaded object.
-    const audioUrl = await getSignedDownloadUrl(data.storage_path, 60 * 60);
+    let audioUrl: string;
+    try {
+      audioUrl = await getSignedDownloadUrl(data.storage_path, 60 * 60);
+    } catch (error) {
+      await recordSystemError({
+        category: "r2",
+        event: "signed_download_url_failed",
+        message: errorMessage(error),
+        userId,
+        audioId: row.id,
+        metadata: { stage: "transcription_source", storagePath: data.storage_path },
+      });
+      throw error;
+    }
 
     // Fire-and-forget edge function invocation.
     try {
@@ -102,10 +145,28 @@ export const registerAudio = createServerFn({ method: "POST" })
         { body: { audio_id: row.id, audio_url: audioUrl } },
       );
       if (transcriptionError) {
+        await recordSystemError({
+          category: "transcription",
+          event: "transcribe_invoke_failed",
+          message: transcriptionError.message || "Falha ao iniciar a transcrição.",
+          userId,
+          audioId: row.id,
+          metadata: { stage: "edge_function_invoke" },
+        });
         console.error("transcribe-audio invoke failed", transcriptionError);
         throw new Error(transcriptionError.message || "Falha ao iniciar a transcrição.");
       }
     } catch (e) {
+      if (!(e && typeof e === "object" && "name" in e && (e as { name?: string }).name === "Error")) {
+        await recordSystemError({
+          category: "transcription",
+          event: "transcribe_invoke_exception",
+          message: errorMessage(e),
+          userId,
+          audioId: row.id,
+          metadata: { stage: "edge_function_invoke_exception" },
+        });
+      }
       console.error("transcribe-audio invoke failed", e);
       throw e instanceof Error ? e : new Error("Falha ao iniciar a transcrição.");
     }
