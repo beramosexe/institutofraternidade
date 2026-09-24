@@ -20,10 +20,6 @@ export const checkSignupPin = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
 /** Cria a conta do associado pelo formulário público. A conta nasce pendente e sem cargos. */
 export const signUpAssociate = createServerFn({ method: "POST" })
   .inputValidator((d: {
