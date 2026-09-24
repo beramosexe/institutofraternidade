@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { registerAudio } from "@/lib/audios.functions";
+import { createAudioUploadUrl, registerAudio } from "@/lib/audios.functions";
 import { listEntitiesForWork } from "@/lib/entities.functions";
 import { useMyAccess } from "@/components/app/AppShell";
 import { useAuth } from "@/lib/auth-context";
@@ -33,6 +33,7 @@ function UploadPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const register = useServerFn(registerAudio);
+  const createUploadUrl = useServerFn(createAudioUploadUrl);
 
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -82,14 +83,27 @@ function UploadPage() {
     if (!title.trim()) { toast.error("Informe um título."); return; }
 
     setBusy(true);
-    const ext = file.name.split(".").pop() || "mp3";
-    const path = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    let path = "";
 
     try {
-      const { error: upErr } = await supabase.storage
-        .from("audios")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) throw upErr;
+      const { key, uploadUrl } = await createUploadUrl({
+        data: {
+          file_name: file.name,
+          mime_type: file.type || "application/octet-stream",
+        },
+      });
+      path = key;
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+      });
+      if (!uploadResponse.ok) {
+        throw new Error(`Falha no upload para o armazenamento (HTTP ${uploadResponse.status}).`);
+      }
 
       // Resolve message source from entity choice
       let resolvedSource: string | undefined;
