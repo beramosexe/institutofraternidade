@@ -97,11 +97,17 @@ export const registerAudio = createServerFn({ method: "POST" })
 
     // Fire-and-forget edge function invocation.
     try {
-      await supabase.functions.invoke("transcribe-audio", {
-        body: { audio_id: row.id, audio_url: audioUrl },
-      });
+      const { error: transcriptionError } = await supabase.functions.invoke(
+        "transcribe-audio",
+        { body: { audio_id: row.id, audio_url: audioUrl } },
+      );
+      if (transcriptionError) {
+        console.error("transcribe-audio invoke failed", transcriptionError);
+        throw new Error(transcriptionError.message || "Falha ao iniciar a transcrição.");
+      }
     } catch (e) {
       console.error("transcribe-audio invoke failed", e);
+      throw e instanceof Error ? e : new Error("Falha ao iniciar a transcrição.");
     }
 
     return row;
@@ -293,11 +299,17 @@ export const reprocessAudio = createServerFn({ method: "POST" })
       60 * 60,
     );
 
-    try {
-      await context.supabase.functions.invoke("transcribe-audio", {
-        body: { audio_id: data.id, audio_url: audioUrl },
-      });
-    } catch (e) { console.error(e); }
+    const { error: transcriptionError } = await context.supabase.functions.invoke(
+      "transcribe-audio",
+      { body: { audio_id: data.id, audio_url: audioUrl } },
+    );
+    if (transcriptionError) {
+      console.error("transcribe-audio reprocess failed", transcriptionError);
+      throw new Error(
+        transcriptionError.message || "Falha ao iniciar a transcrição.",
+      );
+    }
+
     return { ok: true };
   });
 
