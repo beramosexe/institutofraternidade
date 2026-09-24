@@ -38,6 +38,7 @@ export const reportSystemError = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => clientLogSchema.parse(input))
   .handler(async ({ context, data }) => {
+    const { persistSystemError } = await getPersistence();
     return persistSystemError({
       ...data,
       userId: context.userId,
