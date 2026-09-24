@@ -92,9 +92,14 @@ export const registerAudio = createServerFn({ method: "POST" })
     });
     if (auditErr) console.error("audit_logs insert failed", auditErr.message);
 
-    // Fire-and-forget edge function invocation
+    // Generate a short-lived R2 URL so the Edge Function can fetch the uploaded object.
+    const audioUrl = await getSignedDownloadUrl(data.storage_path, 60 * 60);
+
+    // Fire-and-forget edge function invocation.
     try {
-      await supabase.functions.invoke("transcribe-audio", { body: { audio_id: row.id } });
+      await supabase.functions.invoke("transcribe-audio", {
+        body: { audio_id: row.id, audio_url: audioUrl },
+      });
     } catch (e) {
       console.error("transcribe-audio invoke failed", e);
     }
@@ -257,7 +262,7 @@ export const reprocessAudio = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     // Authorize before using the admin client (which bypasses RLS).
     const { data: audioRow } = await context.supabase
-      .from("audios").select("id, uploaded_by").eq("id", data.id).maybeSingle();
+      .from("audios").select("id, uploaded_by, storage_path").eq("id", data.id).maybeSingle();
     if (!audioRow) throw new Error("Áudio não encontrado ou sem acesso.");
     if (audioRow.uploaded_by !== context.userId) {
       const [{ data: canReprocess }, { data: canEdit }] = await Promise.all([
@@ -283,8 +288,15 @@ export const reprocessAudio = createServerFn({ method: "POST" })
       actor_id: context.userId, entity: "audios", entity_id: data.id, action: "reprocess",
     });
 
+    const audioUrl = await getSignedDownloadUrl(
+      audioRow.storage_path,
+      60 * 60,
+    );
+
     try {
-      await context.supabase.functions.invoke("transcribe-audio", { body: { audio_id: data.id } });
+      await context.supabase.functions.invoke("transcribe-audio", {
+        body: { audio_id: data.id, audio_url: audioUrl },
+      });
     } catch (e) { console.error(e); }
     return { ok: true };
   });
