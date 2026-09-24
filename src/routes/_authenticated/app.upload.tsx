@@ -105,37 +105,43 @@ function UploadPage() {
           },
         });
       } catch (error) {
-        void reportError({ data: {
-          category: "audio_upload",
-          event: "r2_put_failed",
-          message: error instanceof Error ? error.message : String(error),
-          userId: user.id,
-          metadata: {
-            stage: "browser_put",
-            fileName: file.name,
-            fileSizeBytes: file.size,
-            mimeType: file.type || "application/octet-stream",
-            origin: window.location.origin,
-            uploadHost: (() => { try { return new URL(uploadUrl).hostname; } catch { return null; } })(),
+        void reportError({
+          data: {
+            category: "audio_upload",
+            event: "r2_put_failed",
+            message: error instanceof Error ? error.message : String(error),
+            metadata: {
+              stage: "browser_put",
+              fileName: file.name,
+              fileSizeBytes: file.size,
+              mimeType: file.type || "application/octet-stream",
+              origin: window.location.origin,
+              uploadHost: (() => {
+                try { return new URL(uploadUrl).hostname; } catch { return null; }
+              })(),
+            },
           },
         }).catch((logError) => console.error("[Upload] erro ao registrar log", logError));
         throw new Error("Falha ao enviar o arquivo para o armazenamento.");
       }
 
       if (!uploadResponse.ok) {
-        void recordSystemError({
-          category: "audio_upload",
-          event: "r2_put_http_error",
-          message: `Upload para o armazenamento retornou HTTP ${uploadResponse.status}.`,
-          userId: user.id,
-          metadata: {
-            stage: "browser_put_response",
-            httpStatus: uploadResponse.status,
-            fileName: file.name,
-            fileSizeBytes: file.size,
-            mimeType: file.type || "application/octet-stream",
-            origin: window.location.origin,
-            uploadHost: (() => { try { return new URL(uploadUrl).hostname; } catch { return null; } })(),
+        void reportError({
+          data: {
+            category: "audio_upload",
+            event: "r2_put_http_error",
+            message: `Upload para o armazenamento retornou HTTP ${uploadResponse.status}.`,
+            metadata: {
+              stage: "browser_put_response",
+              httpStatus: uploadResponse.status,
+              fileName: file.name,
+              fileSizeBytes: file.size,
+              mimeType: file.type || "application/octet-stream",
+              origin: window.location.origin,
+              uploadHost: (() => {
+                try { return new URL(uploadUrl).hostname; } catch { return null; }
+              })(),
+            },
           },
         }).catch((logError) => console.error("[Upload] erro ao registrar log", logError));
         throw new Error(`Falha no upload para o armazenamento (HTTP ${uploadResponse.status}).`);
