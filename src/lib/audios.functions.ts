@@ -60,6 +60,9 @@ export const registerAudio = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    if (!data.storage_path.startsWith(`${userId}/`)) {
+      throw new Error("Caminho de armazenamento inválido.");
+    }
     // Verify upload permission server-side, then use admin client to bypass RLS
     // (RLS WITH CHECK uses auth.uid() which is unreliable across PostgREST when
     // using the new publishable key flow; we already trust `userId` from JWT).
