@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -170,7 +170,7 @@ function PeoplePage() {
                   <td className="p-3"><div className="flex items-center gap-2"><UserRound className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{p.full_name}</span></div></td>
                   <td className="p-3"><Badge variant={p.person_type === "associate" ? "default" : "outline"}>{p.person_type === "associate" ? "Associado" : "Visitante"}</Badge></td>
                   <td className="p-3 text-muted-foreground">{p.email || p.phone || "—"}</td>
-                  <td className="p-3"><Badge variant={p.status === "active" ? "outline" : "secondary"}>{p.status === "active" ? "Ativo" : "Inativo"}</Badge></td>
+                  <td className="p-3"><div className="flex items-center gap-2"><Badge variant={p.status === "active" ? "outline" : "secondary"}>{p.status === "active" ? "Ativo" : "Inativo"}</Badge>{p.linked_user_id && <Button asChild size="sm" variant="ghost"><Link to="/app/associados/$id" params={{ id: p.linked_user_id }}>Gerenciar</Link></Button>}</div></td>
                 </tr>
               ))}
               {!peopleLoading && filtered.length === 0 && <tr><td className="p-6 text-muted-foreground" colSpan={4}>Nenhuma pessoa encontrada.</td></tr>}
