@@ -147,11 +147,21 @@ export const validateMember = createServerFn({ method: "POST" })
     await assertCanManageMembers(context);
     const { supabase, userId } = context;
 
-    const { error } = await supabase
+    const { data: memberProfile, error } = await supabase
+      .from("profiles")
+      .select("full_name, phone")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+
+    const profileName = memberProfile?.full_name ?? null;
+    const profilePhone = memberProfile?.phone ?? null;
+
+    const { error: statusError } = await supabase
       .from("profiles")
       .update({ membership_status: "active", validated_at: new Date().toISOString(), validated_by: userId })
       .eq("id", data.user_id);
-    if (error) throw new Error(error.message);
+    if (statusError) throw new Error(statusError.message);
 
     await supabase.from("member_status_periods").insert({
       user_id: data.user_id,
@@ -171,6 +181,38 @@ export const validateMember = createServerFn({ method: "POST" })
         purpose: data.purpose ?? null,
         changed_by: userId,
       });
+    }
+
+    // Mantém o cadastro administrativo de "Pessoas" sincronizado com o usuário.
+    // Cadastros públicos aprovados passam a aparecer na lista de pessoas e ficam
+    // vinculados à conta de acesso para permitir a gestão posterior.
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(data.user_id);
+    const { data: existingPerson } = await supabase
+      .from("people")
+      .select("id")
+      .eq("linked_user_id", data.user_id)
+      .maybeSingle();
+
+    const personPayload = {
+      full_name: profileName ?? authUser?.user?.user_metadata?.full_name ?? authUser?.user?.email?.split("@")[0] ?? "Sem nome",
+      phone: profilePhone ?? authUser?.user?.user_metadata?.phone ?? null,
+      email: authUser?.user?.email ?? null,
+      person_type: "associate",
+      status: "active",
+      linked_user_id: data.user_id,
+    };
+
+    if (existingPerson) {
+      const { error: personError } = await supabase
+        .from("people")
+        .update(personPayload)
+        .eq("id", existingPerson.id);
+      if (personError) throw new Error(personError.message);
+    } else {
+      const { error: personError } = await supabase
+        .from("people")
+        .insert({ ...personPayload, created_by: userId });
+      if (personError) throw new Error(personError.message);
     }
 
     await logEvent(context, data.user_id, "member.validated", "Cadastro validado e conta configurada");
