@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, ExternalLink, Plus, Search, UserRound } from "lucide-react";
+import { ExternalLink, Plus, Search, UserRound, Check, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createPerson, listPeople } from "@/lib/people.functions";
+import { listMembers, validateMember } from "@/lib/members.functions";
+
 
 export const Route = createFileRoute("/_authenticated/app/associados/")({
   head: () => ({
@@ -27,9 +29,20 @@ export const Route = createFileRoute("/_authenticated/app/associados/")({
 function PeoplePage() {
   const signupUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/associados/cadastro`;
   const listFn = useServerFn(listPeople);
+  const membersFn = useServerFn(listMembers);
   const createFn = useServerFn(createPerson);
+  const validateFn = useServerFn(validateMember);
   const qc = useQueryClient();
-  const { data: people, isLoading } = useQuery({ queryKey: ["people"], queryFn: () => listFn() });
+
+  const { data: people, isLoading: peopleLoading } = useQuery({
+    queryKey: ["people"],
+    queryFn: () => listFn(),
+  });
+  const { data: members, isLoading: membersLoading } = useQuery({
+    queryKey: ["members"],
+    queryFn: () => membersFn(),
+  });
+
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -37,6 +50,11 @@ function PeoplePage() {
   const [email, setEmail] = useState("");
   const [type, setType] = useState<"visitor" | "associate">("visitor");
   const [notes, setNotes] = useState("");
+
+  const pendingMembers = useMemo(
+    () => (members ?? []).filter((m: any) => m.membership_status === "pending"),
+    [members],
+  );
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -58,8 +76,21 @@ function PeoplePage() {
     }),
     onSuccess: () => {
       toast.success("Pessoa cadastrada.");
-      setOpen(false); setName(""); setPhone(""); setEmail(""); setType("visitor"); setNotes("");
+      setOpen(false);
+      setName(""); setPhone(""); setEmail(""); setType("visitor"); setNotes("");
       qc.invalidateQueries({ queryKey: ["people"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const approve = useMutation({
+    mutationFn: (userId: string) => validateFn({
+      data: { user_id: userId, role_ids: [] },
+    }),
+    onSuccess: () => {
+      toast.success("Cadastro aprovado.");
+      qc.invalidateQueries({ queryKey: ["members"] });
+      qc.invalidateQueries({ queryKey: ["pending-members-count"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -75,8 +106,44 @@ function PeoplePage() {
           <h1 className="mt-1 font-display text-3xl text-foreground">Pessoas</h1>
           <p className="mt-1 text-muted-foreground">Cadastre visitantes, acompanhe sua trajetória e identifique quem já faz parte da associação.</p>
         </div>
-        <div className="flex flex-wrap gap-2"><Button variant="outline" asChild><a href={signupUrl} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Link de cadastro</a></Button><Button onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" /> Adicionar pessoa</Button></div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild><a href={signupUrl} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Link de cadastro</a></Button>
+          <Button onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" /> Adicionar pessoa</Button>
+        </div>
       </div>
+
+      {(pendingMembers.length > 0 || membersLoading) && (
+        <Card className="border-brand/40 bg-brand/5 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.16em] text-brand">Cadastros aguardando aprovação</p>
+              <h2 className="mt-1 font-display text-xl text-foreground">
+                {membersLoading ? "Carregando…" : `${pendingMembers.length} pendente${pendingMembers.length === 1 ? "" : "s"}`}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">Os cadastros públicos chegam como pendentes e precisam ser aprovados pela equipe.</p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-3">
+            {pendingMembers.map((m: any) => (
+              <div key={m.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-background p-4">
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground">{m.full_name ?? "Sem nome"}</p>
+                  <p className="text-sm text-muted-foreground">{m.email || "Sem e-mail"}{m.phone ? ` · ${m.phone}` : ""}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Solicitado em {m.created_at ? new Date(m.created_at).toLocaleDateString("pt-BR") : "—"}</p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button size="sm" onClick={() => approve.mutate(m.id)} disabled={approve.isPending}>
+                    <Check className="mr-2 h-4 w-4" /> Aprovar cadastro
+                  </Button>
+                  <Button size="sm" variant="outline" disabled title="Fluxo de recusa ainda não configurado">
+                    <X className="mr-2 h-4 w-4" /> Recusar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="p-5"><p className="text-sm text-muted-foreground">Visitantes ativos</p><p className="mt-1 text-3xl font-display">{visitors}</p></Card>
@@ -97,7 +164,7 @@ function PeoplePage() {
               <tr><th className="p-3">Pessoa</th><th className="p-3">Tipo</th><th className="p-3">Contato</th><th className="p-3">Situação</th></tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {isLoading ? <tr><td className="p-6 text-muted-foreground" colSpan={4}>Carregando…</td></tr> :
+              {peopleLoading ? <tr><td className="p-6 text-muted-foreground" colSpan={4}>Carregando…</td></tr> :
               filtered.map((p: any) => (
                 <tr key={p.id}>
                   <td className="p-3"><div className="flex items-center gap-2"><UserRound className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{p.full_name}</span></div></td>
@@ -106,7 +173,7 @@ function PeoplePage() {
                   <td className="p-3"><Badge variant={p.status === "active" ? "outline" : "secondary"}>{p.status === "active" ? "Ativo" : "Inativo"}</Badge></td>
                 </tr>
               ))}
-              {!isLoading && filtered.length === 0 && <tr><td className="p-6 text-muted-foreground" colSpan={4}>Nenhuma pessoa encontrada.</td></tr>}
+              {!peopleLoading && filtered.length === 0 && <tr><td className="p-6 text-muted-foreground" colSpan={4}>Nenhuma pessoa encontrada.</td></tr>}
             </tbody>
           </table>
         </Card>
