@@ -183,6 +183,8 @@ export const validateMember = createServerFn({ method: "POST" })
       });
     }
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
     // Mantém o cadastro administrativo de "Pessoas" sincronizado com o usuário.
     // Cadastros públicos aprovados passam a aparecer na lista de pessoas e ficam
     // vinculados à conta de acesso para permitir a gestão posterior.
