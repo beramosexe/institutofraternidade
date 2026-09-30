@@ -209,7 +209,10 @@ Deno.serve(async (req) => {
       utterances: rawUtterances ?? null,
     };
 
+    let transcriptionId: string;
+
     if (existing) {
+      transcriptionId = existing.id;
       await supabase.from("audio_transcriptions").update({
         raw_text: text,
         raw_segments: rawSegments as never,
@@ -226,20 +229,42 @@ Deno.serve(async (req) => {
         review_status: "unreviewed",
       }).eq("id", existing.id);
     } else {
-      await supabase.from("audio_transcriptions").insert({
+      const { data: inserted, error: insertError } = await supabase
+        .from("audio_transcriptions")
+        .insert({
+          audio_id,
+          raw_text: text,
+          raw_segments: rawSegments as never,
+          raw_provider_response: rawProviderResponse as never,
+          normalized_text: null,
+          normalized_segments: null,
+          normalization_status: "not_started",
+          text,
+          segments: rawSegments as never,
+          language,
+          provider: PROVIDER_LABEL,
+        })
+        .select("id")
+        .single();
+      if (insertError || !inserted) {
+        throw new Error(insertError?.message ?? "Failed to create transcription");
+      }
+      transcriptionId = inserted.id;
+    }
+
+    const { error: runError } = await supabase
+      .from("audio_transcription_runs")
+      .insert({
         audio_id,
+        transcription_id: transcriptionId,
+        provider: PROVIDER_LABEL,
+        model: TRANSCRIPTION_MODEL,
+        language,
         raw_text: text,
         raw_segments: rawSegments as never,
         raw_provider_response: rawProviderResponse as never,
-        normalized_text: null,
-        normalized_segments: null,
-        normalization_status: "not_started",
-        text,
-        segments: rawSegments as never,
-        language,
-        provider: PROVIDER_LABEL,
       });
-    }
+    if (runError) throw new Error(runError.message);
 
     await supabase.from("audios")
       .update({ status: "ready", error_message: null })
