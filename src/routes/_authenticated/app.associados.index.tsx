@@ -90,6 +90,7 @@ function PeoplePage() {
     onSuccess: () => {
       toast.success("Cadastro aprovado.");
       qc.invalidateQueries({ queryKey: ["members"] });
+      qc.invalidateQueries({ queryKey: ["people"] });
       qc.invalidateQueries({ queryKey: ["pending-members-count"] });
     },
     onError: (e: Error) => toast.error(e.message),
