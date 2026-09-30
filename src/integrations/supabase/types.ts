@@ -71,6 +71,12 @@ export type Database = {
           id: string
           language: string | null
           provider: string | null
+          raw_provider_response: Json | null
+          raw_segments: Json | null
+          raw_text: string | null
+          normalized_segments: Json | null
+          normalized_text: string | null
+          normalization_status: string
           review_status: Database["public"]["Enums"]["review_status"]
           reviewed_at: string | null
           reviewed_by: string | null
@@ -86,6 +92,12 @@ export type Database = {
           id?: string
           language?: string | null
           provider?: string | null
+          raw_provider_response?: Json
+          raw_segments?: Json
+          raw_text?: string | null
+          normalized_segments?: Json
+          normalized_text?: string | null
+          normalization_status?: string
           review_status?: Database["public"]["Enums"]["review_status"]
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -101,6 +113,12 @@ export type Database = {
           id?: string
           language?: string | null
           provider?: string | null
+          raw_provider_response?: Json
+          raw_segments?: Json
+          raw_text?: string | null
+          normalized_segments?: Json
+          normalized_text?: string | null
+          normalization_status?: string
           review_status?: Database["public"]["Enums"]["review_status"]
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -116,6 +134,60 @@ export type Database = {
             columns: ["audio_id"]
             isOneToOne: true
             referencedRelation: "audios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audio_transcription_runs: {
+        Row: {
+          audio_id: string
+          created_at: string
+          id: string
+          language: string | null
+          model: string
+          provider: string
+          raw_provider_response: Json | null
+          raw_segments: Json
+          raw_text: string
+          transcription_id: string | null
+        }
+        Insert: {
+          audio_id: string
+          created_at?: string
+          id?: string
+          language?: string | null
+          model: string
+          provider: string
+          raw_provider_response?: Json | null
+          raw_segments?: Json
+          raw_text: string
+          transcription_id?: string | null
+        }
+        Update: {
+          audio_id?: string
+          created_at?: string
+          id?: string
+          language?: string | null
+          model?: string
+          provider?: string
+          raw_provider_response?: Json | null
+          raw_segments?: Json
+          raw_text?: string
+          transcription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_transcription_runs_audio_id_fkey"
+            columns: ["audio_id"]
+            isOneToOne: false
+            referencedRelation: "audios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audio_transcription_runs_transcription_id_fkey"
+            columns: ["transcription_id"]
+            isOneToOne: false
+            referencedRelation: "audio_transcriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -298,6 +370,57 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      system_error_logs: {
+        Row: {
+          id: string
+          created_at: string
+          category: string
+          event: string
+          message: string
+          user_id: string | null
+          audio_id: string | null
+          request_id: string | null
+          metadata: Json
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          category: string
+          event: string
+          message: string
+          user_id?: string | null
+          audio_id?: string | null
+          request_id?: string | null
+          metadata?: Json
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          category?: string
+          event?: string
+          message?: string
+          user_id?: string | null
+          audio_id?: string | null
+          request_id?: string | null
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_error_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_error_logs_audio_id_fkey"
+            columns: ["audio_id"]
+            isOneToOne: false
+            referencedRelation: "audios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       channeling_entities: {
         Row: {

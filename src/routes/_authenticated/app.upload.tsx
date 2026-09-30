@@ -17,11 +17,12 @@ import { useMyAccess } from "@/components/app/AppShell";
 import { useAuth } from "@/lib/auth-context";
 import { suggestAudioTitle } from "@/lib/audio-title";
 import { UploadTokens } from "@/components/app/UploadTokens";
+import { reportSystemError } from "@/lib/system-error-logs.functions";
 
 const OTHER_VALUE = "__other__";
 const NONE_VALUE = "__none__";
 
-const ACCEPT = ".mp3,.m4a,.wav,.webm,.ogg,.aac,audio/*";
+const ACCEPT = "audio/*,video/mp4,video/quicktime,video/webm,.mp3,.m4a,.wav,.webm,.ogg,.aac,.flac,.opus,.mp4,.mov,.mkv";
 const MAX_BYTES = 500 * 1024 * 1024;
 
 export const Route = createFileRoute("/_authenticated/app/upload")({
@@ -34,6 +35,7 @@ function UploadPage() {
   const navigate = useNavigate();
   const register = useServerFn(registerAudio);
   const createUploadUrl = useServerFn(createAudioUploadUrl);
+  const reportError = useServerFn(reportSystemError);
 
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -45,6 +47,7 @@ function UploadPage() {
   const [messageSourceOther, setMessageSourceOther] = useState("");
   const [accessLevel, setAccessLevel] = useState<"public" | "associates" | "work_participants" | "attendees_only">("associates");
   const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const { data: works } = useQuery({
     queryKey: ["works-options"],
@@ -94,14 +97,73 @@ function UploadPage() {
       });
       path = key;
 
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type || "application/octet-stream",
-        },
-      });
+      let uploadResponse: Response;
+      try {
+        uploadResponse = await new Promise<Response>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+
+          xhr.upload.addEventListener("progress", (event) => {
+            if (!event.lengthComputable) return;
+            setUploadProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)));
+          });
+
+          xhr.addEventListener("load", () => {
+            resolve(
+              new Response(xhr.responseText, {
+                status: xhr.status,
+                statusText: xhr.statusText,
+              }),
+            );
+          });
+          xhr.addEventListener("error", () => reject(new Error("Falha de rede durante o upload.")));
+          xhr.addEventListener("abort", () => reject(new Error("Upload cancelado.")));
+          xhr.addEventListener("timeout", () => reject(new Error("O upload demorou demais e expirou.")));
+
+          setUploadProgress(0);
+          xhr.send(file);
+        });
+      } catch (error) {
+        void reportError({
+          data: {
+            category: "audio_upload",
+            event: "r2_put_failed",
+            message: error instanceof Error ? error.message : String(error),
+            metadata: {
+              stage: "browser_put",
+              fileName: file.name,
+              fileSizeBytes: file.size,
+              mimeType: file.type || "application/octet-stream",
+              origin: window.location.origin,
+              uploadHost: (() => {
+                try { return new URL(uploadUrl).hostname; } catch { return null; }
+              })(),
+            },
+          },
+        }).catch((logError) => console.error("[Upload] erro ao registrar log", logError));
+        throw new Error("Falha ao enviar o arquivo para o armazenamento.");
+      }
+
       if (!uploadResponse.ok) {
+        void reportError({
+          data: {
+            category: "audio_upload",
+            event: "r2_put_http_error",
+            message: `Upload para o armazenamento retornou HTTP ${uploadResponse.status}.`,
+            metadata: {
+              stage: "browser_put_response",
+              httpStatus: uploadResponse.status,
+              fileName: file.name,
+              fileSizeBytes: file.size,
+              mimeType: file.type || "application/octet-stream",
+              origin: window.location.origin,
+              uploadHost: (() => {
+                try { return new URL(uploadUrl).hostname; } catch { return null; }
+              })(),
+            },
+          },
+        }).catch((logError) => console.error("[Upload] erro ao registrar log", logError));
         throw new Error(`Falha no upload para o armazenamento (HTTP ${uploadResponse.status}).`);
       }
 
@@ -128,7 +190,7 @@ function UploadPage() {
           access_level: accessLevel,
           storage_path: path,
           file_size_bytes: file.size,
-          mime_type: file.type || `audio/${ext}`,
+          mime_type: file.type || "application/octet-stream",
         },
       });
 
@@ -138,6 +200,7 @@ function UploadPage() {
       toast.error(e instanceof Error ? e.message : "Falha ao enviar áudio.");
     } finally {
       setBusy(false);
+      setUploadProgress(0);
     }
   }
 
@@ -263,8 +326,22 @@ function UploadPage() {
 
           <Button type="submit" disabled={busy || !file} className="w-full md:w-auto">
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadIcon className="mr-2 h-4 w-4" />}
-            Enviar áudio
+            {busy ? `Enviando ${uploadProgress}%` : "Enviar áudio"}
           </Button>
+          {busy && (
+            <div className="mt-3 space-y-1.5 md:max-w-md">
+              <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+                <div
+                  className="h-full rounded-full bg-brand transition-[width] duration-200"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Enviando arquivo para o armazenamento…</span>
+                <span>{uploadProgress}%</span>
+              </div>
+            </div>
+          )}
         </Card>
       </form>
 

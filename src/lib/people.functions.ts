@@ -76,3 +76,55 @@ export const updatePerson = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return row;
   });
+
+
+export const linkPersonToMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { person_id: string; user_id: string }) =>
+    z.object({ person_id: z.string().uuid(), user_id: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ context, data }) => {
+    await assertCanManagePeople(context);
+
+    const { data: person, error: personError } = await context.supabase
+      .from("people")
+      .select("id, linked_user_id")
+      .eq("id", data.person_id)
+      .maybeSingle();
+    if (personError) throw new Error(personError.message);
+    if (!person) throw new Error("Pessoa não encontrada.");
+    if (person.linked_user_id && person.linked_user_id !== data.user_id) {
+      throw new Error("Esta pessoa já está vinculada a outro perfil.");
+    }
+
+    const { data: profile, error: profileError } = await context.supabase
+      .from("profiles")
+      .select("id, full_name, phone")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    if (profileError) throw new Error(profileError.message);
+    if (!profile) throw new Error("Perfil não encontrado.");
+
+    const { data: linkedPerson, error: linkedError } = await context.supabase
+      .from("people")
+      .select("id")
+      .eq("linked_user_id", data.user_id)
+      .neq("id", data.person_id)
+      .maybeSingle();
+    if (linkedError) throw new Error(linkedError.message);
+    if (linkedPerson) throw new Error("Este perfil já está vinculado a outra pessoa.");
+
+    const { error } = await context.supabase
+      .from("people")
+      .update({
+        linked_user_id: data.user_id,
+        full_name: profile.full_name ?? undefined,
+        phone: profile.phone ?? undefined,
+        person_type: "associate",
+        status: "active",
+      })
+      .eq("id", data.person_id);
+    if (error) throw new Error(error.message);
+
+    return { ok: true };
+  });

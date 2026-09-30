@@ -147,11 +147,21 @@ export const validateMember = createServerFn({ method: "POST" })
     await assertCanManageMembers(context);
     const { supabase, userId } = context;
 
-    const { error } = await supabase
+    const { data: memberProfile, error } = await supabase
+      .from("profiles")
+      .select("full_name, phone")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+
+    const profileName = memberProfile?.full_name ?? null;
+    const profilePhone = memberProfile?.phone ?? null;
+
+    const { error: statusError } = await supabase
       .from("profiles")
       .update({ membership_status: "active", validated_at: new Date().toISOString(), validated_by: userId })
       .eq("id", data.user_id);
-    if (error) throw new Error(error.message);
+    if (statusError) throw new Error(statusError.message);
 
     await supabase.from("member_status_periods").insert({
       user_id: data.user_id,
@@ -172,6 +182,7 @@ export const validateMember = createServerFn({ method: "POST" })
         changed_by: userId,
       });
     }
+
 
     await logEvent(context, data.user_id, "member.validated", "Cadastro validado e conta configurada");
     return { ok: true };
