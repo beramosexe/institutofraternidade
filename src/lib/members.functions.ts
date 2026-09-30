@@ -183,39 +183,6 @@ export const validateMember = createServerFn({ method: "POST" })
       });
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Mantém o cadastro administrativo de "Pessoas" sincronizado com o usuário.
-    // Cadastros públicos aprovados passam a aparecer na lista de pessoas e ficam
-    // vinculados à conta de acesso para permitir a gestão posterior.
-    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(data.user_id);
-    const { data: existingPerson } = await supabase
-      .from("people")
-      .select("id")
-      .eq("linked_user_id", data.user_id)
-      .maybeSingle();
-
-    const personPayload = {
-      full_name: profileName ?? authUser?.user?.user_metadata?.full_name ?? authUser?.user?.email?.split("@")[0] ?? "Sem nome",
-      phone: profilePhone ?? authUser?.user?.user_metadata?.phone ?? null,
-      email: authUser?.user?.email ?? null,
-      person_type: "associate",
-      status: "active",
-      linked_user_id: data.user_id,
-    };
-
-    if (existingPerson) {
-      const { error: personError } = await supabase
-        .from("people")
-        .update(personPayload)
-        .eq("id", existingPerson.id);
-      if (personError) throw new Error(personError.message);
-    } else {
-      const { error: personError } = await supabase
-        .from("people")
-        .insert({ ...personPayload, created_by: userId });
-      if (personError) throw new Error(personError.message);
-    }
 
     await logEvent(context, data.user_id, "member.validated", "Cadastro validado e conta configurada");
     return { ok: true };
