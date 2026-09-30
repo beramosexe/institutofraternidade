@@ -25,7 +25,7 @@ import {
   registerAudioPlay, setAudioFeatured, updateAudio,
 } from "@/lib/audios.functions";
 import { generateAudioInsights } from "@/lib/audio-insights.functions";
-import { saveTranscription } from "@/lib/transcriptions.functions";
+import { normalizeTranscription, saveTranscription } from "@/lib/transcriptions.functions";
 import { segmentsFromText } from "@/lib/transcript-segments";
 
 import { ACCESS_LEVEL_LABELS, AUDIO_STATUS_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
@@ -50,6 +50,7 @@ function AudioDetail() {
   const qc = useQueryClient();
   const streamFn = useServerFn(getAudioStreamUrl);
   const saveFn = useServerFn(saveTranscription);
+  const normalizeFn = useServerFn(normalizeTranscription);
   const failStaleFn = useServerFn(failStaleTranscriptions);
   const reprocessFn = useServerFn(reprocessAudio);
   const insightsFn = useServerFn(generateAudioInsights);
@@ -220,6 +221,23 @@ function AudioDetail() {
       qc.invalidateQueries({ queryKey: ["audio", id] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar"),
+  });
+
+
+  const normalizeMutation = useMutation({
+    mutationFn: () => {
+      if (!transcription) throw new Error("Transcrição não disponível.");
+      return normalizeFn({ data: { transcription_id: transcription.id } });
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["audio", id] });
+      setEditing(false);
+      setDirty(false);
+      toast.success(
+        `Normalização concluída: ${result.sourceSegments} segmentos RAW → ${result.normalizedSegments} segmentos.`,
+      );
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao normalizar"),
   });
 
   function onChangeSegments(next: Segment[]) {
@@ -591,6 +609,24 @@ function AudioDetail() {
                     ) : saveMutation.isSuccess ? (
                       <Badge variant="outline" className="justify-center border-brand/40 bg-brand/10"><Save className="mr-1 h-3 w-3" /> Salvo</Badge>
                     ) : null)}
+                    {canEditTimestamps && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="justify-start"
+                        disabled={normalizeMutation.isPending || !transcriptionData?.raw_segments}
+                        onClick={() => normalizeMutation.mutate()}
+                      >
+                        {normalizeMutation.isPending
+                          ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          : <Sparkles className="mr-2 h-4 w-4" />}
+                        {normalizeMutation.isPending
+                          ? "Normalizando com IA…"
+                          : transcriptionData?.normalization_status === "normalized"
+                            ? "Re-normalizar com IA"
+                            : "Normalizar com IA"}
+                      </Button>
+                    )}
                     {canReprocess && (
                       <Button size="sm" variant="outline" className="justify-start" disabled={insightsMutation.isPending} onClick={() => insightsMutation.mutate(true)}>
                         {insightsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
