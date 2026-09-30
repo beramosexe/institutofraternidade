@@ -71,10 +71,10 @@ export type Database = {
           id: string
           language: string | null
           provider: string | null
-          raw_provider_response: Json
-          raw_segments: Json
+          raw_provider_response: Json | null
+          raw_segments: Json | null
           raw_text: string | null
-          normalized_segments: Json
+          normalized_segments: Json | null
           normalized_text: string | null
           normalization_status: string
           review_status: Database["public"]["Enums"]["review_status"]
