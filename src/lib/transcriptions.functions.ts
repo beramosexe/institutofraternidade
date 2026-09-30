@@ -22,7 +22,7 @@ export const saveTranscription = createServerFn({ method: "POST" })
 
     const { data: before } = await supabase
       .from("audio_transcriptions")
-      .select("segments, version")
+      .select("segments, normalized_segments, version")
       .eq("id", data.transcription_id)
       .maybeSingle();
 
@@ -30,6 +30,10 @@ export const saveTranscription = createServerFn({ method: "POST" })
     const { error } = await supabase
       .from("audio_transcriptions")
       .update({
+        normalized_segments: data.segments as never,
+        normalized_text: text,
+        normalization_status: "reviewed",
+        // Legacy compatibility fields mirror the current normalized representation.
         segments: data.segments as never,
         text,
         review_status: "in_review",
@@ -41,7 +45,7 @@ export const saveTranscription = createServerFn({ method: "POST" })
     await supabase.from("transcription_revisions").insert({
       transcription_id: data.transcription_id,
       editor_id: userId,
-      segments_before: (before?.segments ?? null) as never,
+      segments_before: (before?.normalized_segments ?? before?.segments ?? null) as never,
       segments_after: data.segments as never,
       note: data.note,
     });
