@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createPerson, listPeople } from "@/lib/people.functions";
+import { createPerson, linkPersonToMember, listPeople } from "@/lib/people.functions";
 import { listMembers, validateMember } from "@/lib/members.functions";
 
 
@@ -31,6 +31,7 @@ function PeoplePage() {
   const listFn = useServerFn(listPeople);
   const membersFn = useServerFn(listMembers);
   const createFn = useServerFn(createPerson);
+  const linkFn = useServerFn(linkPersonToMember);
   const validateFn = useServerFn(validateMember);
   const qc = useQueryClient();
 
@@ -128,6 +129,17 @@ function PeoplePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const link = useMutation({
+    mutationFn: ({ personId, userId }: { personId: string; userId: string }) =>
+      linkFn({ data: { person_id: personId, user_id: userId } }),
+    onSuccess: () => {
+      toast.success("Pessoa vinculada ao perfil.");
+      qc.invalidateQueries({ queryKey: ["people"] });
+      qc.invalidateQueries({ queryKey: ["members"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const approve = useMutation({
     mutationFn: (userId: string) => validateFn({
       data: { user_id: userId, role_ids: [] },
@@ -216,7 +228,21 @@ function PeoplePage() {
                   <td className="p-3"><div className="flex items-center gap-2"><UserRound className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{p.full_name}</span></div></td>
                   <td className="p-3"><Badge variant={p.person_type === "associate" ? "default" : "outline"}>{p.person_type === "associate" ? "Associado" : p.person_type === "visitor" ? "Visitante" : "Perfil"}</Badge></td>
                   <td className="p-3 text-muted-foreground">{p.email || p.phone || "—"}</td>
-                  <td className="p-3"><div className="flex items-center gap-2"><Badge variant={p.status === "active" ? "outline" : "secondary"}>{p.status === "active" ? "Ativo" : "Inativo"}</Badge>{p.linked_user_id && <Button asChild size="sm" variant="ghost"><Link to="/app/associados/$id" params={{ id: p.linked_user_id }}>Gerenciar</Link></Button>}</div></td>
+                  <td className="p-3"><div className="flex items-center gap-2"><Badge variant={p.status === "active" ? "outline" : "secondary"}>{p.status === "active" ? "Ativo" : "Inativo"}</Badge>{p.linked_user_id ? <Button asChild size="sm" variant="ghost"><Link to="/app/associados/$id" params={{ id: p.linked_user_id }}>Gerenciar</Link></Button> : p.source === "people" && p.email ? (() => {
+                    const matchingProfile = (members ?? []).find((m: any) =>
+                      m.email && m.email.toLowerCase() === p.email.toLowerCase(),
+                    );
+                    return matchingProfile ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => link.mutate({ personId: p.id, userId: matchingProfile.id })}
+                        disabled={link.isPending}
+                      >
+                        Vincular perfil
+                      </Button>
+                    ) : null;
+                  })() : null}</div></td>
                 </tr>
               ))}
               {!peopleLoading && filtered.length === 0 && <tr><td className="p-6 text-muted-foreground" colSpan={4}>Nenhuma pessoa encontrada.</td></tr>}
