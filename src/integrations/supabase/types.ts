@@ -71,6 +71,12 @@ export type Database = {
           id: string
           language: string | null
           provider: string | null
+          raw_provider_response: Json
+          raw_segments: Json
+          raw_text: string | null
+          normalized_segments: Json
+          normalized_text: string | null
+          normalization_status: string
           review_status: Database["public"]["Enums"]["review_status"]
           reviewed_at: string | null
           reviewed_by: string | null
@@ -86,6 +92,12 @@ export type Database = {
           id?: string
           language?: string | null
           provider?: string | null
+          raw_provider_response?: Json
+          raw_segments?: Json
+          raw_text?: string | null
+          normalized_segments?: Json
+          normalized_text?: string | null
+          normalization_status?: string
           review_status?: Database["public"]["Enums"]["review_status"]
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -101,6 +113,12 @@ export type Database = {
           id?: string
           language?: string | null
           provider?: string | null
+          raw_provider_response?: Json
+          raw_segments?: Json
+          raw_text?: string | null
+          normalized_segments?: Json
+          normalized_text?: string | null
+          normalization_status?: string
           review_status?: Database["public"]["Enums"]["review_status"]
           reviewed_at?: string | null
           reviewed_by?: string | null
