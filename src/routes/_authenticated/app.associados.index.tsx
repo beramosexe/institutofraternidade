@@ -56,13 +56,58 @@ function PeoplePage() {
     [members],
   );
 
+  const registry = useMemo(() => {
+    const rows = new Map<string, any>();
+
+    for (const p of people ?? []) {
+      const key = p.linked_user_id ? `user:${p.linked_user_id}` : `person:${p.id}`;
+      rows.set(key, { ...p, source: "people", profile: null });
+    }
+
+    for (const m of members ?? []) {
+      const matchingKey = m.id && rows.has(`user:${m.id}`) ? `user:${m.id}` :
+        (m.email ? Array.from(rows.entries()).find(([, row]) =>
+          !row.linked_user_id && row.email && row.email.toLowerCase() === m.email.toLowerCase(),
+        )?.[0] : undefined);
+
+      if (matchingKey) {
+        const row = rows.get(matchingKey);
+        rows.set(matchingKey, {
+          ...row,
+          full_name: m.full_name ?? row.full_name,
+          phone: m.phone ?? row.phone,
+          email: m.email || row.email,
+          linked_user_id: m.id,
+          person_type: m.membership_status === "active" ? "associate" : row.person_type,
+          status: m.membership_status === "inactive" ? "inactive" : row.status,
+          source: "people+profile",
+          profile: m,
+        });
+      } else {
+        rows.set(`profile:${m.id}`, {
+          id: `profile:${m.id}`,
+          full_name: m.full_name ?? "Sem nome",
+          phone: m.phone,
+          email: m.email,
+          person_type: m.membership_status === "active" ? "associate" : "profile",
+          status: m.membership_status === "inactive" ? "inactive" : "active",
+          linked_user_id: m.id,
+          source: "profile",
+          profile: m,
+        });
+      }
+    }
+
+    return Array.from(rows.values());
+  }, [people, members]);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return people ?? [];
-    return (people ?? []).filter((p: any) =>
+    if (!term) return registry;
+    return registry.filter((p: any) =>
       [p.full_name, p.email, p.phone].some((v) => (v ?? "").toLowerCase().includes(term)),
     );
-  }, [people, q]);
+  }, [registry, q]);
 
   const save = useMutation({
     mutationFn: () => createFn({
@@ -96,16 +141,16 @@ function PeoplePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const visitors = (people ?? []).filter((p: any) => p.person_type === "visitor" && p.status === "active").length;
-  const associates = (people ?? []).filter((p: any) => p.person_type === "associate" && p.status === "active").length;
+  const visitors = registry.filter((p: any) => p.person_type === "visitor" && p.status === "active").length;
+  const associates = registry.filter((p: any) => p.person_type === "associate" && p.status === "active").length;
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-6 md:p-10">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-brand">Gestão</p>
-          <h1 className="mt-1 font-display text-3xl text-foreground">Pessoas</h1>
-          <p className="mt-1 text-muted-foreground">Cadastre visitantes, acompanhe sua trajetória e identifique quem já faz parte da associação.</p>
+          <h1 className="mt-1 font-display text-3xl text-foreground">Pessoas e associados</h1>
+          <p className="mt-1 text-muted-foreground">Pessoas cadastradas e perfis de usuários aparecem juntos, evitando duplicidade quando alguém passa de visitante a associado.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" asChild><a href={signupUrl} target="_blank" rel="noreferrer"><ExternalLink className="mr-2 h-4 w-4" /> Link de cadastro</a></Button>
@@ -153,7 +198,7 @@ function PeoplePage() {
 
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-xl">Integrantes cadastrados</h2>
+          <h2 className="font-display text-xl">Pessoas e perfis cadastrados</h2>
           <div className="relative w-full max-w-xs">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-9" placeholder="Buscar nome, e-mail ou telefone…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -169,7 +214,7 @@ function PeoplePage() {
               filtered.map((p: any) => (
                 <tr key={p.id}>
                   <td className="p-3"><div className="flex items-center gap-2"><UserRound className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{p.full_name}</span></div></td>
-                  <td className="p-3"><Badge variant={p.person_type === "associate" ? "default" : "outline"}>{p.person_type === "associate" ? "Associado" : "Visitante"}</Badge></td>
+                  <td className="p-3"><Badge variant={p.person_type === "associate" ? "default" : "outline"}>{p.person_type === "associate" ? "Associado" : p.person_type === "visitor" ? "Visitante" : "Perfil"}</Badge></td>
                   <td className="p-3 text-muted-foreground">{p.email || p.phone || "—"}</td>
                   <td className="p-3"><div className="flex items-center gap-2"><Badge variant={p.status === "active" ? "outline" : "secondary"}>{p.status === "active" ? "Ativo" : "Inativo"}</Badge>{p.linked_user_id && <Button asChild size="sm" variant="ghost"><Link to="/app/associados/$id" params={{ id: p.linked_user_id }}>Gerenciar</Link></Button>}</div></td>
                 </tr>
