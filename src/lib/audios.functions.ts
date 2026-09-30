@@ -228,8 +228,23 @@ export const getAudioStreamUrl = createServerFn({ method: "POST" })
       .select("id, storage_path")
       .eq("id", data.audio_id)
       .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!audio) throw new Error("Áudio não encontrado ou sem acesso.");
+    if (error) {
+      console.error("getAudioStreamUrl: failed to query audio", {
+        audio_id: data.audio_id,
+        code: error.code ?? null,
+        details: error.details ?? null,
+        hint: error.hint ?? null,
+        message: error.message,
+      });
+      throw new Error(`Falha ao consultar o áudio no Supabase: ${error.message}`);
+    }
+    if (!audio) {
+      console.warn("getAudioStreamUrl: audio unavailable to authenticated user", {
+        audio_id: data.audio_id,
+        user_id: userId,
+      });
+      throw new Error("Áudio não encontrado ou sem acesso. Verifique seu acesso ou se o registro ainda existe.");
+    }
     // Audio files are stored in R2; Supabase only stores metadata.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const signedUrl = await getSignedDownloadUrl(audio.storage_path, 60 * 60);
