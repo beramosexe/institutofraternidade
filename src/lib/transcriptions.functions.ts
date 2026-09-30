@@ -32,7 +32,7 @@ export const saveTranscription = createServerFn({ method: "POST" })
       .update({
         normalized_segments: data.segments as never,
         normalized_text: text,
-        normalization_status: "reviewed",
+        normalization_status: "normalized",
         // Legacy compatibility fields mirror the current normalized representation.
         segments: data.segments as never,
         text,
