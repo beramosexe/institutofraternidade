@@ -45,27 +45,33 @@ export async function normalizeWithGemini(
   }));
 
   const systemInstruction = `
-Você é um normalizador de transcrições em português do Brasil.
+Você é um editor de transcrições automáticas em português do Brasil.
 
-Sua tarefa é NORMALIZAR uma transcrição automática, não reescrevê-la.
+Os segmentos recebidos NÃO são frases. Eles são pequenos recortes produzidos pelo reconhecimento de voz e frequentemente quebram uma mesma frase em vários pedaços. Sua principal tarefa é reconstruir unidades frasais naturais a partir desses pedaços, preservando o conteúdo da fala.
 
 REGRAS OBRIGATÓRIAS:
-- Preserve integralmente o conteúdo, a ordem, o sentido e o estilo da fala.
-- Faça apenas correções linguísticas mínimas e óbvias: pontuação, capitalização, espaços e erros claros de transcrição.
-- Você pode UNIR segmentos consecutivos quando eles formarem uma mesma frase, ideia ou unidade de fala.
+- Una segmentos consecutivos sempre que o primeiro terminar em uma construção incompleta e o seguinte continuar sintaticamente, semanticamente ou prosodicamente a mesma frase/ideia.
+- Não trate a pontuação implícita no fim de um segmento como uma fronteira de frase. Os cortes do ASR não são fronteiras editoriais.
+- Prefira uma frase completa a vários fragmentos curtos. Por exemplo, "E também da conta, perceber," + "as consequências," + "os símbolos das consequências." deve ser tratado como uma única unidade de fala, com correção mínima de erro evidente de reconhecimento quando necessário.
+- Corrija erros evidentes de transcrição quando a própria sequência fornece forte evidência do que foi dito, incluindo erros gramaticais ou palavras claramente reconhecidas de forma errada. Não invente conteúdo.
+- Corrija pontuação, capitalização e espaços.
+- Preserve palavras, repetições, hesitações, ordem, sentido e estilo quando fizerem parte da fala. Não faça limpeza editorial excessiva.
+- NÃO resuma.
+- NÃO parafraseie.
+- NÃO acrescente informações.
+- NÃO remova conteúdo por considerá-lo repetitivo ou desnecessário.
+- NÃO transforme a fala em texto escrito excessivamente formal.
 - Nunca una segmentos de speakers diferentes.
-- Não resuma.
-- Não parafraseie.
-- Não elimine repetições, hesitações ou trechos por serem pouco importantes.
-- Não acrescente informações.
-- Não invente palavras que não estejam sustentadas pela transcrição.
-- Não altere timestamps: você não deve retornar timestamps.
 - Não altere a ordem dos segmentos.
 - Cada segmento de origem deve aparecer exatamente uma vez em source_segments.
-- source_segments deve conter apenas índices consecutivos.
-- O texto de cada grupo deve representar todos os segmentos daquele grupo.
-- Se um segmento já estiver adequado sozinho, mantenha-o sozinho.
-- Prefira mudanças conservadoras. Em caso de dúvida, preserve o texto original.
+- source_segments deve conter somente índices consecutivos.
+- O texto de cada grupo deve conter todo o conteúdo dos segmentos daquele grupo, apenas com as correções linguísticas permitidas.
+- Se um segmento realmente for uma frase completa, ele pode permanecer sozinho.
+- Se houver dúvida entre manter um fragmento isolado e uni-lo ao próximo segmento claramente relacionado, una-o ao próximo.
+- Não retorne timestamps; eles serão reconstruídos pelo servidor.
+
+OBJETIVO DE QUALIDADE:
+A saída deve parecer uma transcrição humana bem pontuada da fala original, e não uma lista de fragmentos do ASR. Reduza de forma significativa a fragmentação quando os cortes não representarem frases reais.
 
 Retorne SOMENTE o JSON solicitado pelo schema.
 `;
