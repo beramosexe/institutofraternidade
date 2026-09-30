@@ -260,7 +260,7 @@ export const getPublicAudioUrl = createServerFn({ method: "POST" })
     return { url: signedUrl };
   });
 
-/** Archive / restore / delete / reprocess */
+/** Atualiza apenas os metadados editoriais do áudio. Nunca altera o arquivo do R2. */
 export const updateAudio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: {
@@ -273,30 +273,61 @@ export const updateAudio = createServerFn({ method: "POST" })
       message_source: string | null;
       recorded_at: string | null;
       work_id: string | null;
-      status: "ready" | "archived" | "uploaded" | "transcribing" | "error";
     }>;
   }) =>
     z.object({
       id: z.string().uuid(),
       patch: z.object({
-        title: z.string().min(1).max(200).optional(),
+        title: z.string().trim().min(1).max(200).optional(),
         description: z.string().max(2000).nullable().optional(),
-        access_level: z.enum(["public","associates","work_participants","attendees_only"]).optional(),
-        audio_type: z.enum(["canalizacao","outro"]).optional(),
-        message_source: z.string().max(200).nullable().optional(),
+        access_level: z.enum(["public", "associates", "work_participants", "attendees_only"]).optional(),
+        audio_type: z.enum(["canalizacao", "outro"]).optional(),
+        message_source: z.string().trim().max(200).nullable().optional(),
         recorded_at: z.string().nullable().optional(),
         work_id: z.string().uuid().nullable().optional(),
-        status: z.enum(["ready","archived","uploaded","transcribing","error"]).optional(),
       }),
     }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase.from("audios").update(data.patch).eq("id", data.id);
+    const { supabase, userId } = context;
+
+    const { data: audio, error: audioError } = await supabase
+      .from("audios")
+      .select("id, uploaded_by")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (audioError) throw new Error(audioError.message);
+    if (!audio) throw new Error("Áudio não encontrado ou sem acesso.");
+
+    if (audio.uploaded_by !== userId) {
+      const { data: canEdit, error: permissionError } = await supabase.rpc("has_permission", {
+        _user_id: userId,
+        _permission: "audio.edit_any",
+      });
+      if (permissionError) throw new Error(permissionError.message);
+      if (!canEdit) throw new Error("Você não tem permissão para editar este áudio.");
+    }
+
+    const patch = Object.fromEntries(
+      Object.entries(data.patch).filter(([, value]) => value !== undefined),
+    );
+    if (Object.keys(patch).length === 0) return { ok: true };
+
+    const { error } = await supabase
+      .from("audios")
+      .update(patch)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
-    await context.supabase.from("audit_logs").insert({
-      actor_id: context.userId, entity: "audios", entity_id: data.id, action: "update",
-      diff: data.patch as never,
+
+    const { error: auditError } = await supabase.from("audit_logs").insert({
+      actor_id: userId,
+      entity: "audios",
+      entity_id: data.id,
+      action: "update",
+      diff: patch as never,
     });
+    if (auditError) throw new Error(auditError.message);
+
     return { ok: true };
   });
 
