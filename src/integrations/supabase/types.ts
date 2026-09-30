@@ -138,6 +138,60 @@ export type Database = {
           },
         ]
       }
+      audio_transcription_runs: {
+        Row: {
+          audio_id: string
+          created_at: string
+          id: string
+          language: string | null
+          model: string
+          provider: string
+          raw_provider_response: Json | null
+          raw_segments: Json
+          raw_text: string
+          transcription_id: string | null
+        }
+        Insert: {
+          audio_id: string
+          created_at?: string
+          id?: string
+          language?: string | null
+          model: string
+          provider: string
+          raw_provider_response?: Json | null
+          raw_segments?: Json
+          raw_text: string
+          transcription_id?: string | null
+        }
+        Update: {
+          audio_id?: string
+          created_at?: string
+          id?: string
+          language?: string | null
+          model?: string
+          provider?: string
+          raw_provider_response?: Json | null
+          raw_segments?: Json
+          raw_text?: string
+          transcription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_transcription_runs_audio_id_fkey"
+            columns: ["audio_id"]
+            isOneToOne: false
+            referencedRelation: "audios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audio_transcription_runs_transcription_id_fkey"
+            columns: ["transcription_id"]
+            isOneToOne: false
+            referencedRelation: "audio_transcriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audio_upload_tokens: {
         Row: {
           created_at: string
