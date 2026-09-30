@@ -126,6 +126,10 @@ Deno.serve(async (req) => {
     const dg = await resp.json();
     console.log("Deepgram response keys:", Object.keys(dg));
 
+    const alternative = dg?.results?.channels?.[0]?.alternatives?.[0];
+    const paragraphGroups = alternative?.paragraphs?.paragraphs;
+    const rawUtterances = dg?.results?.utterances;
+
     // Keep the provider output as RAW. No heuristic grouping or rewriting happens here.
     // Display-friendly grouping belongs to the presentation layer and must never overwrite RAW.
     const paragraphSentenceSegments: Segment[] = Array.isArray(paragraphGroups)
