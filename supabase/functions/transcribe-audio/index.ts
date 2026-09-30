@@ -126,11 +126,9 @@ Deno.serve(async (req) => {
     const dg = await resp.json();
     console.log("Deepgram response keys:", Object.keys(dg));
 
-    // Prefer sentence-level timestamps from Deepgram Paragraphs.
-    // This produces readable synced chunks instead of one segment per word.
-    const alternative = dg?.results?.channels?.[0]?.alternatives?.[0];
-    const paragraphGroups = alternative?.paragraphs?.paragraphs;
-    const sentenceSegments: Segment[] = Array.isArray(paragraphGroups)
+    // Keep the provider output as RAW. No heuristic grouping or rewriting happens here.
+    // Display-friendly grouping belongs to the presentation layer and must never overwrite RAW.
+    const paragraphSentenceSegments: Segment[] = Array.isArray(paragraphGroups)
       ? paragraphGroups.flatMap((paragraph: {
           sentences?: Array<{ start: number; end: number; text: string }>;
         }) =>
@@ -150,7 +148,6 @@ Deno.serve(async (req) => {
         )
       : [];
 
-    const rawUtterances = dg?.results?.utterances;
     const utteranceSegments: Segment[] = Array.isArray(rawUtterances)
       ? rawUtterances.map((u: {
           start: number;
@@ -162,20 +159,23 @@ Deno.serve(async (req) => {
           end: Number(u.end),
           text: String(u.transcript ?? "").trim(),
           ...(u.speaker !== undefined ? { speaker: Number(u.speaker) } : {}),
-        })).filter((s: Segment) => s.text.length > 0)
+        })).filter(
+          (s: Segment) =>
+            s.text.length > 0 &&
+            Number.isFinite(s.start) &&
+            Number.isFinite(s.end) &&
+            s.end > s.start,
+        )
       : [];
 
-    const rawSegments =
-      sentenceSegments.length > 0
-        ? sentenceSegments
-        : utteranceSegments;
+    // Utterances are preferred because they are a direct provider-level
+    // timestamped representation. Paragraph sentences are only a fallback.
+    const rawSegments = utteranceSegments.length > 0
+      ? utteranceSegments
+      : paragraphSentenceSegments;
 
-    const segments = groupTranscriptSegments(rawSegments);
-
-    const fallbackText =
-      alternative?.transcript ?? "";
-
-    const text = String(fallbackText).trim() || segments.map((s) => s.text).join(" ").trim();
+    const fallbackText = String(alternative?.transcript ?? "").trim();
+    const text = fallbackText || rawSegments.map((s) => s.text).join(" ").trim();
 
     if (!text) {
       throw new Error("Transcription returned empty text");
@@ -197,10 +197,26 @@ Deno.serve(async (req) => {
       .eq("audio_id", audio_id)
       .maybeSingle();
 
+    const rawProviderResponse = {
+      model: TRANSCRIPTION_MODEL,
+      provider: PROVIDER_LABEL,
+      metadata: dg?.metadata ?? null,
+      raw_alternative: alternative ?? null,
+      utterances: rawUtterances ?? null,
+    };
+
     if (existing) {
       await supabase.from("audio_transcriptions").update({
+        raw_text: text,
+        raw_segments: rawSegments as never,
+        raw_provider_response: rawProviderResponse as never,
+        normalized_text: null,
+        normalized_segments: null,
+        normalization_status: "not_started",
+        // Legacy compatibility fields now mirror RAW until a normalized/reviewed
+        // representation exists. The UI should prefer normalized_* when present.
         text,
-        segments: segments as never,
+        segments: rawSegments as never,
         language,
         provider: PROVIDER_LABEL,
         review_status: "unreviewed",
@@ -208,8 +224,14 @@ Deno.serve(async (req) => {
     } else {
       await supabase.from("audio_transcriptions").insert({
         audio_id,
+        raw_text: text,
+        raw_segments: rawSegments as never,
+        raw_provider_response: rawProviderResponse as never,
+        normalized_text: null,
+        normalized_segments: null,
+        normalization_status: "not_started",
         text,
-        segments: segments as never,
+        segments: rawSegments as never,
         language,
         provider: PROVIDER_LABEL,
       });
@@ -259,78 +281,6 @@ Deno.serve(async (req) => {
     return json({ error: msg }, 500);
   }
 });
-
-function groupTranscriptSegments(input: Segment[]): Segment[] {
-  if (input.length === 0) return [];
-
-  const result: Segment[] = [];
-  let current: Segment | null = null;
-
-  const strongEnd = /[.!?…]+["'”»)]*$/;
-  const softEnd = /[,;:—-]+["'”»)]*$/;
-
-  const wordCount = (text: string) =>
-    text.trim().split(/\s+/).filter(Boolean).length;
-
-  const normalizeJoin = (left: string, right: string) => {
-    const a = left.trim();
-    const b = right.trim();
-    if (!a) return b;
-    if (!b) return a;
-    return /[([{\/-–—]$/.test(a) ? a + b : a + " " + b;
-  };
-
-  const looksLikeContinuation = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return true;
-    if (softEnd.test(trimmed) || !strongEnd.test(trimmed)) return true;
-    const lastWord = trimmed.split(/\s+/).slice(-1)[0] ?? "";
-    return /^(e|mas|porém|porque|que|quando|como|se|então|ou|ou seja|a|o|as|os|um|uma|isso|essa|esse|esta|este|para|de|do|da|dos|das|com|sem|sobre|entre|também|já|ainda|não|sim)$/i.test(lastWord);
-  };
-
-  for (const segment of input) {
-    if (!current) {
-      current = { ...segment };
-      continue;
-    }
-
-    const combinedText = normalizeJoin(current.text, segment.text);
-    const combinedWords = wordCount(combinedText);
-    const gap = Math.max(0, segment.start - current.end);
-    const currentWords = wordCount(current.text);
-    const canContinue =
-      currentWords < 18 ||
-      softEnd.test(current.text) ||
-      looksLikeContinuation(current.text);
-    const naturalPause = gap >= 1.4;
-    const hardLimit = currentWords >= 40;
-
-    if (hardLimit || naturalPause || (!canContinue && combinedWords > 24)) {
-      result.push(current);
-      current = { ...segment };
-      continue;
-    }
-
-    current = {
-      start: current.start,
-      end: segment.end,
-      text: combinedText,
-      ...(segment.speaker !== undefined
-        ? { speaker: segment.speaker }
-        : current.speaker !== undefined
-          ? { speaker: current.speaker }
-          : {}),
-    };
-
-    if (strongEnd.test(current.text) && combinedWords >= 24) {
-      result.push(current);
-      current = null;
-    }
-  }
-
-  if (current) result.push(current);
-  return result;
-}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
