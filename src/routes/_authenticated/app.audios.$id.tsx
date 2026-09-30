@@ -78,7 +78,7 @@ function AudioDetail() {
         .from("audios")
         .select(`
           *, works(name, color),
-          audio_transcriptions(id, text, segments, review_status, reviewed_at)
+          audio_transcriptions(id, text, segments, raw_text, raw_segments, normalized_text, normalized_segments, normalization_status, review_status, reviewed_at)
         `)
 
         .eq("id", id)
@@ -159,7 +159,9 @@ function AudioDetail() {
   useEffect(() => {
     if (!audio || audio.status !== "ready" || audio.summary) return;
     const t = Array.isArray(audio.audio_transcriptions) ? audio.audio_transcriptions[0] : audio.audio_transcriptions;
-    const text = (t as { text?: string } | null)?.text;
+    const text = (t as { text?: string; raw_text?: string; normalized_text?: string | null } | null)?.normalized_text
+      ?? (t as { text?: string; raw_text?: string } | null)?.raw_text
+      ?? (t as { text?: string } | null)?.text;
     if (!text || text.trim().length < 40) return;
     if (insightsTriedRef.current === id) return;
     insightsTriedRef.current = id;
@@ -180,6 +182,21 @@ function AudioDetail() {
     ? (Array.isArray(audio.audio_transcriptions) ? audio.audio_transcriptions[0] : audio.audio_transcriptions)
     : null;
 
+  const transcriptionData = transcription as {
+    id: string;
+    text?: string | null;
+    segments?: unknown;
+    raw_text?: string | null;
+    raw_segments?: unknown;
+    normalized_text?: string | null;
+    normalized_segments?: unknown;
+    normalization_status?: string | null;
+    review_status: string;
+  } | null;
+
+  const displayText = transcriptionData?.normalized_text ?? transcriptionData?.raw_text ?? transcriptionData?.text ?? "";
+  const displaySegments = (transcriptionData?.normalized_segments ?? transcriptionData?.raw_segments ?? transcriptionData?.segments ?? []) as Segment[];
+
   const [editing, setEditing] = useState(false);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [dirty, setDirty] = useState(false);
@@ -188,9 +205,9 @@ function AudioDetail() {
   const autoTimedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setSegments((transcription?.segments as Segment[] | null) ?? []);
+    setSegments(displaySegments);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transcription?.id]);
+  }, [transcriptionData?.id, transcriptionData?.normalized_segments, transcriptionData?.raw_segments, transcriptionData?.segments]);
 
 
   const saveMutation = useMutation({
@@ -215,9 +232,9 @@ function AudioDetail() {
   // Provider may return text without timestamps: build evenly spread segments
   // from the real audio duration so the synced view (and editor) still works.
   function handleDurationKnown(duration: number) {
-    if (!transcription?.text || segments.length > 0) return;
+    if (!displayText || segments.length > 0) return;
     if (autoTimedRef.current === transcription.id) return;
-    const generated = segmentsFromText(transcription.text, duration);
+    const generated = segmentsFromText(displayText, duration);
     if (!generated.length) return;
     autoTimedRef.current = transcription.id;
     setSegments(generated);
@@ -483,7 +500,7 @@ function AudioDetail() {
               editable={editing}
               editableTimestamps={editing}
               onChangeSegments={onChangeSegments}
-              fallbackText={transcription?.text ?? undefined}
+              fallbackText={displayText || undefined}
               onDurationKnown={handleDurationKnown}
               onFirstPlay={() => { playFn({ data: { id } }).catch(() => {}); }}
               accentColor={accent}
