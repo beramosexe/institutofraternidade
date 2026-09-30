@@ -6,9 +6,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   AlertTriangle, ArrowLeft, Clock, Loader2, RefreshCw, Save, Sparkles,
-  Star, ChevronDown, ChevronUp, Lock, Globe, Settings2, FileText,
+  Star, ChevronDown, ChevronUp, Lock, Globe, Settings2, FileText, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +22,7 @@ import { SyncedTranscript, type Segment } from "@/components/app/SyncedTranscrip
 import { useMyAccess } from "@/components/app/AppShell";
 import {
   getAudioStreamUrl, failStaleTranscriptions, reprocessAudio,
-  registerAudioPlay, setAudioFeatured,
+  registerAudioPlay, setAudioFeatured, updateAudio,
 } from "@/lib/audios.functions";
 import { generateAudioInsights } from "@/lib/audio-insights.functions";
 import { saveTranscription } from "@/lib/transcriptions.functions";
@@ -50,6 +55,17 @@ function AudioDetail() {
   const insightsFn = useServerFn(generateAudioInsights);
   const playFn = useServerFn(registerAudioPlay);
   const featuredFn = useServerFn(setAudioFeatured);
+  const updateAudioFn = useServerFn(updateAudio);
+  const [metadataEditOpen, setMetadataEditOpen] = useState(false);
+  const [metadataForm, setMetadataForm] = useState({
+    title: "",
+    description: "",
+    access_level: "associates" as "public" | "associates" | "work_participants" | "attendees_only",
+    audio_type: "canalizacao" as "canalizacao" | "outro",
+    message_source: "",
+    recorded_at: "",
+    work_id: "",
+  });
   const { data: access } = useMyAccess();
   const [transcriptExpanded, setTranscriptExpanded] = useState(false);
   const [managementOpen, setManagementOpen] = useState(false);
@@ -102,6 +118,31 @@ function AudioDetail() {
       qc.invalidateQueries({ queryKey: ["library-audios"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao gerar resumo"),
+  });
+
+  const metadataMutation = useMutation({
+    mutationFn: () =>
+      updateAudioFn({
+        data: {
+          id,
+          patch: {
+            title: metadataForm.title.trim(),
+            description: metadataForm.description.trim() || null,
+            access_level: metadataForm.access_level,
+            audio_type: metadataForm.audio_type,
+            message_source: metadataForm.message_source.trim() || null,
+            recorded_at: metadataForm.recorded_at || null,
+            work_id: metadataForm.work_id || null,
+          },
+        },
+      }),
+    onSuccess: () => {
+      setMetadataEditOpen(false);
+      qc.invalidateQueries({ queryKey: ["audio", id] });
+      qc.invalidateQueries({ queryKey: ["library-audios"] });
+      toast.success("Informações do áudio atualizadas.");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao atualizar o áudio"),
   });
 
   const featuredMutation = useMutation({
@@ -199,7 +240,21 @@ function AudioDetail() {
   const canFeature = perms.includes("audio.edit_any");
   const accent = (audio.works as { color?: string | null } | null)?.color || "hsl(var(--brand))";
   const restricted = audio.access_level !== "public";
+  const canEditMetadata = isOwner || perms.includes("audio.edit_any");
   const keywords = (audio.keywords as string[] | null) ?? [];
+
+  function openMetadataEditor() {
+    setMetadataForm({
+      title: audio.title,
+      description: audio.description ?? "",
+      access_level: audio.access_level,
+      audio_type: audio.audio_type,
+      message_source: audio.message_source ?? "",
+      recorded_at: audio.recorded_at ?? "",
+      work_id: audio.work_id ?? "",
+    });
+    setMetadataEditOpen(true);
+  }
   const summaryIsLong = (audio.summary?.length ?? 0) > 360;
 
   const showManagement = canEditTimestamps || canReprocess || canFeature;
@@ -244,6 +299,128 @@ function AudioDetail() {
           <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{audio.description}</p>
         )}
       </header>
+
+      {canEditMetadata && (
+        <div className="-mt-1 flex justify-end">
+          <Button size="sm" variant="outline" onClick={openMetadataEditor}>
+            <Pencil className="mr-2 h-4 w-4" /> Editar informações
+          </Button>
+        </div>
+      )}
+
+      <Dialog open={metadataEditOpen} onOpenChange={setMetadataEditOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar informações do áudio</DialogTitle>
+            <DialogDescription>
+              Altere os dados editoriais do áudio. O arquivo original no R2 não será reenviado nem reprocessado.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            className="grid gap-4 py-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!metadataForm.title.trim() || metadataMutation.isPending) return;
+              metadataMutation.mutate();
+            }}
+          >
+            <div className="grid gap-2">
+              <Label htmlFor="audio-title">Título</Label>
+              <Input
+                id="audio-title"
+                value={metadataForm.title}
+                onChange={(event) => setMetadataForm((current) => ({ ...current, title: event.target.value }))}
+                maxLength={200}
+                required
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="audio-description">Descrição</Label>
+              <Textarea
+                id="audio-description"
+                value={metadataForm.description}
+                onChange={(event) => setMetadataForm((current) => ({ ...current, description: event.target.value }))}
+                maxLength={2000}
+                rows={4}
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <Label>Tipo</Label>
+                <Select
+                  value={metadataForm.audio_type}
+                  onValueChange={(value) => setMetadataForm((current) => ({ ...current, audio_type: value as typeof current.audio_type }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="canalizacao">Canalização</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Acesso</Label>
+                <Select
+                  value={metadataForm.access_level}
+                  onValueChange={(value) => setMetadataForm((current) => ({ ...current, access_level: value as typeof current.access_level }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">Público</SelectItem>
+                    <SelectItem value="associates">Associados</SelectItem>
+                    <SelectItem value="work_participants">Participantes do trabalho</SelectItem>
+                    <SelectItem value="attendees_only">Somente presentes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="audio-message-source">Fonte da mensagem</Label>
+                <Input
+                  id="audio-message-source"
+                  value={metadataForm.message_source}
+                  onChange={(event) => setMetadataForm((current) => ({ ...current, message_source: event.target.value }))}
+                  maxLength={200}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="audio-recorded-at">Data da gravação</Label>
+                <Input
+                  id="audio-recorded-at"
+                  type="date"
+                  value={metadataForm.recorded_at}
+                  onChange={(event) => setMetadataForm((current) => ({ ...current, recorded_at: event.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Trabalho</Label>
+              <WorkSelector
+                value={metadataForm.work_id}
+                onChange={(value) => setMetadataForm((current) => ({ ...current, work_id: value }))}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setMetadataEditOpen(false)} disabled={metadataMutation.isPending}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={metadataMutation.isPending || !metadataForm.title.trim()}>
+                {metadataMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Salvar alterações
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
 
       {audio.status !== "ready" ? (
@@ -417,5 +594,34 @@ function AudioDetail() {
       )}
     </div>
 
+  );
+}
+
+
+function WorkSelector({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const { data: works = [], isLoading } = useQuery({
+    queryKey: ["works-options"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("works")
+        .select("id, name")
+        .order("starts_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+  return (
+    <Select value={value || "__none__"} onValueChange={(next) => onChange(next === "__none__" ? "" : next)}>
+      <SelectTrigger disabled={isLoading}>
+        <SelectValue placeholder={isLoading ? "Carregando…" : "Nenhum trabalho"} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none__">Nenhum trabalho</SelectItem>
+        {works.map((work) => (
+          <SelectItem key={work.id} value={work.id}>{work.name}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
