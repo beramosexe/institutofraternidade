@@ -53,7 +53,21 @@ Deno.serve(async (req) => {
       .eq("id", audio_id)
       .maybeSingle();
 
-    if (aErr || !audio) throw new Error("Audio not found");
+    if (aErr) {
+      console.error("transcribe-audio: failed to look up audio", {
+        audio_id,
+        code: aErr.code ?? null,
+        details: aErr.details ?? null,
+        hint: aErr.hint ?? null,
+        message: aErr.message,
+      });
+      throw new Error(`Falha ao consultar o áudio no Supabase: ${aErr.message}`);
+    }
+
+    if (!audio) {
+      console.error("transcribe-audio: audio row not found", { audio_id });
+      throw new Error(`Áudio ${audio_id} não foi encontrado no banco de dados.`);
+    }
 
     // Mark job running (close orphan jobs from previous interrupted runs first)
     await supabase.from("processing_jobs").update({
@@ -274,14 +288,14 @@ Deno.serve(async (req) => {
       status: "done",
       finished_at: new Date().toISOString(),
       result: {
-        segments_count: segments.length,
+        segments_count: rawSegments.length,
         duration,
         language,
         provider: PROVIDER_LABEL,
       } as never,
     }).eq("audio_id", audio_id).eq("status", "running");
 
-    return json({ ok: true, segments: segments.length, language });
+    return json({ ok: true, segments: rawSegments.length, language });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("transcribe-audio error", msg);
