@@ -149,12 +149,6 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
         entity: "audio_transcriptions",
         entity_id: data.transcription_id,
         action: "normalization_generated",
-        metadata: {
-          provider: "gemini",
-          model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-          source_segments: prepared.length,
-          normalized_segments: normalized.length,
-        },
       });
 
       return {
