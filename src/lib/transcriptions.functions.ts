@@ -64,6 +64,7 @@ export const markTranscriptionReviewed = createServerFn({ method: "POST" })
       .from("audio_transcriptions")
       .update({
         review_status: data.reviewed ? "reviewed" : "unreviewed",
+        normalization_status: data.reviewed ? "reviewed" : "normalized",
         reviewed_by: data.reviewed ? userId : null,
         reviewed_at: data.reviewed ? new Date().toISOString() : null,
       })
