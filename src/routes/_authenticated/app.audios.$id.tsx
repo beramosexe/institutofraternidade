@@ -27,6 +27,7 @@ import {
 import { generateAudioInsights } from "@/lib/audio-insights.functions";
 import { normalizeTranscription, saveTranscription } from "@/lib/transcriptions.functions";
 import { segmentsFromText } from "@/lib/transcript-segments";
+import { CanalizacaoChat } from "@/components/app/CanalizacaoChat";
 
 import { ACCESS_LEVEL_LABELS, AUDIO_STATUS_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
 
@@ -334,6 +335,10 @@ function AudioDetail() {
           <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{audio.description}</p>
         )}
       </header>
+
+      {audio.audio_type === "canalizacao" && audio.status === "ready" && (
+        <CanalizacaoChat audioId={id} title={audio.title} />
+      )}
 
       {canEditMetadata && (
         <div className="-mt-1 flex justify-end">
