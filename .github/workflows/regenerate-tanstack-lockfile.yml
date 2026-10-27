@@ -1,6 +1,12 @@
 name: Regenerate lockfile for TanStack security fix
 
 on:
+  push:
+    branches:
+      - codex/chat-gemini-canalizacoes
+    paths:
+      - package.json
+      - .github/workflows/regenerate-tanstack-lockfile.yml
   workflow_dispatch:
 
 permissions:
