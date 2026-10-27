@@ -43,6 +43,7 @@ jobs:
             '@tanstack/react-router': '1.170.41',
             '@tanstack/router-plugin': '1.168.18'
           };
+          const expectedCore = '1.171.34';
           let failed = false;
           function compare(a, b) {
             const aa = a.split('.').map(Number);
@@ -55,8 +56,16 @@ jobs:
             console.log(`${name}: ${installed ?? 'MISSING'} (required >= ${min})`);
             if (!installed || compare(installed, min) < 0) failed = true;
           }
+          const corePaths = Object.entries(lock.packages)
+            .filter(([path]) => path.endsWith('/node_modules/@tanstack/router-core') || path === 'node_modules/@tanstack/router-core');
+          for (const [path, pkg] of corePaths) {
+            console.log(`${path}: ${pkg.version} (expected ${expectedCore})`);
+            if (pkg.version !== expectedCore) failed = true;
+          }
           if (failed) process.exit(1);
           NODE
+      - name: Build application
+        run: npm run build
       - name: Commit refreshed lockfile
         run: |
           git config user.name "github-actions[bot]"
