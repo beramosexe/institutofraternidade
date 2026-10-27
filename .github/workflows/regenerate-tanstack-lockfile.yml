@@ -27,7 +27,12 @@ jobs:
           node-version: 22
           cache: npm
       - name: Regenerate npm lockfile
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+        run: |
+          set -o pipefail
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --verbose 2>&1 | tee /tmp/npm-lockfile.log
+        env:
+          NPM_CONFIG_FETCH_RETRIES: 3
+          NPM_CONFIG_FETCH_TIMEOUT: 60000
       - name: Verify patched TanStack versions
         run: |
           node - <<'NODE'
