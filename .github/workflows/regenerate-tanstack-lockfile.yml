@@ -29,7 +29,7 @@ jobs:
       - name: Regenerate npm lockfile
         run: |
           set -o pipefail
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --verbose 2>&1 | tee /tmp/npm-lockfile.log
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund 2>&1 | tee /tmp/npm-lockfile.log
         env:
           NPM_CONFIG_FETCH_RETRIES: 3
           NPM_CONFIG_FETCH_TIMEOUT: 60000
@@ -39,7 +39,8 @@ jobs:
           const lock = require('./package-lock.json');
           const required = {
             '@tanstack/react-start': '1.168.60',
-            '@tanstack/start-server-core': '1.169.39'
+            '@tanstack/start-server-core': '1.169.39',
+            '@tanstack/router-plugin': '1.168.60'
           };
           let failed = false;
           function compare(a, b) {
