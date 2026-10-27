@@ -4,10 +4,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
-async function askGemini(question: string, transcript: string, title: string, history: ChatMessage[]) {
-  const apiKey = process.env["LOVABLE_API_KEY"];
-  if (!apiKey) throw new Error("A IA não está configurada neste projeto.");
+const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
 
+async function askGemini(question: string, transcript: string, title: string, history: ChatMessage[]) {
+  const apiKey = process.env["GEMINI_API_KEY"];
+  if (!apiKey) {
+    throw new Error("Gemini não está configurado. Defina GEMINI_API_KEY nas variáveis de ambiente do servidor.");
+  }
+
+  const model = process.env["GEMINI_MODEL"] || DEFAULT_GEMINI_MODEL;
   const clippedTranscript = transcript.length > 45_000 ? transcript.slice(0, 45_000) + "…" : transcript;
   const system = [
     "Você é um assistente do Instituto Fraternidade, em português do Brasil.",
@@ -21,29 +26,60 @@ async function askGemini(question: string, transcript: string, title: string, hi
     "Transcrição/contexto da canalização:\n" + clippedTranscript,
   ].join("\n\n");
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: "google/gemini-3.7-flash",
-      messages: [
-        { role: "system", content: system },
-        ...history.slice(-10).map((item) => ({ role: item.role, content: item.content })),
-        { role: "user", content: question },
-      ],
-    }),
-  });
+  // Chamada direta à API oficial do Google. A chave permanece no servidor.
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [
+          ...history.slice(-10).map((item) => ({
+            role: item.role === "assistant" ? "model" : "user",
+            parts: [{ text: item.content }],
+          })),
+          { role: "user", parts: [{ text: question }] },
+        ],
+        generationConfig: {
+          temperature: 0.6,
+          maxOutputTokens: 2048,
+        },
+      }),
+    },
+  );
+
+  const payload = await response.json().catch(() => null) as {
+    error?: { message?: string; status?: string };
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }; finishReason?: string }>;
+  } | null;
 
   if (!response.ok) {
-    if (response.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos para continuar.");
-    if (response.status === 403) throw new Error("O uso de IA está bloqueado nas configurações do projeto.");
-    if (response.status === 429) throw new Error("Muitas solicitações agora. Tente novamente em instantes.");
-    throw new Error(`Falha ao consultar o Gemini (${response.status}).`);
+    const message = payload?.error?.message;
+    if (response.status === 400 || response.status === 401 || response.status === 403) {
+      throw new Error(message
+        ? `O Google Gemini recusou a solicitação: ${message}`
+        : "O Google Gemini recusou a solicitação. Confira a chave e as permissões da API.");
+    }
+    if (response.status === 429) {
+      throw new Error("O limite gratuito do Gemini foi atingido ou há muitas solicitações. Aguarde e tente novamente.");
+    }
+    throw new Error(message
+      ? `Falha na API do Google Gemini: ${message}`
+      : `Falha ao consultar o Google Gemini (HTTP ${response.status}).`);
   }
 
-  const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
-  const answer = payload.choices?.[0]?.message?.content?.trim();
-  if (!answer) throw new Error("A IA não retornou uma resposta.");
+  const answer = payload?.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text ?? "")
+    .join("")
+    .trim();
+
+  if (!answer) {
+    throw new Error("O Gemini não retornou uma resposta textual. Tente reformular a pergunta.");
+  }
   return answer;
 }
 
