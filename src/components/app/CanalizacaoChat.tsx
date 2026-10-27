@@ -81,7 +81,16 @@ export function CanalizacaoChat({ audioId, title }: { audioId: string; title: st
                 <div className={`max-w-[90%] min-w-0 rounded-xl px-3.5 py-3 text-sm leading-relaxed ${message.role === "user" ? "whitespace-pre-wrap bg-brand text-brand-foreground" : "bg-muted text-foreground"}`}>
                   {message.role === "assistant" ? (
                     <div className="chat-markdown">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          a: ({ href, children, ...props }) => (
+                            <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                              {children}
+                            </a>
+                          ),
+                        }}
+                      >
                         {message.content}
                       </ReactMarkdown>
                     </div>
