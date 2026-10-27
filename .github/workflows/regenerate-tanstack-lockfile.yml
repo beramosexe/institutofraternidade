@@ -64,6 +64,8 @@ jobs:
           }
           if (failed) process.exit(1);
           NODE
+      - name: Install dependencies for build
+        run: npm ci --no-audit --no-fund
       - name: Build application
         run: npm run build
       - name: Commit refreshed lockfile
