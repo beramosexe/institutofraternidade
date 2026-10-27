@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Bot, Loader2, Send, Sparkles, UserRound } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { askCanalizacaoAssistant } from "@/lib/canalizacao-chat.functions";
 import { Button } from "@/components/ui/button";
@@ -76,8 +78,14 @@ export function CanalizacaoChat({ audioId, title }: { audioId: string; title: st
             {messages.map((message, index) => (
               <div key={index} className={`flex gap-2.5 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 {message.role === "assistant" && <Bot className="mt-1 h-4 w-4 shrink-0 text-brand" />}
-                <div className={`max-w-[90%] whitespace-pre-wrap rounded-xl px-3.5 py-3 text-sm leading-relaxed ${message.role === "user" ? "bg-brand text-brand-foreground" : "bg-muted text-foreground"}`}>
-                  {message.content}
+                <div className={`max-w-[90%] min-w-0 rounded-xl px-3.5 py-3 text-sm leading-relaxed ${message.role === "user" ? "whitespace-pre-wrap bg-brand text-brand-foreground" : "bg-muted text-foreground"}`}>
+                  {message.role === "assistant" ? (
+                    <div className="chat-markdown">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : message.content}
                 </div>
                 {message.role === "user" && <UserRound className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />}
               </div>
