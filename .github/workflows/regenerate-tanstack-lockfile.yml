@@ -31,10 +31,16 @@ jobs:
             '@tanstack/start-server-core': '1.169.39'
           };
           let failed = false;
+          function compare(a, b) {
+            const aa = a.split('.').map(Number);
+            const bb = b.split('.').map(Number);
+            for (let i = 0; i < 3; i++) if ((aa[i] || 0) !== (bb[i] || 0)) return (aa[i] || 0) - (bb[i] || 0);
+            return 0;
+          }
           for (const [name, min] of Object.entries(required)) {
             const installed = lock.packages[`node_modules/${name}`]?.version;
             console.log(`${name}: ${installed ?? 'MISSING'} (required >= ${min})`);
-            if (!installed || installed.localeCompare(min, undefined, { numeric: true }) < 0) failed = true;
+            if (!installed || compare(installed, min) < 0) failed = true;
           }
           if (failed) process.exit(1);
           NODE
