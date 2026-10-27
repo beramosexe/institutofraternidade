@@ -1,0 +1,47 @@
+name: Regenerate lockfile for TanStack security fix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/chat-gemini-canalizacoes
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Regenerate npm lockfile
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Verify patched TanStack versions
+        run: |
+          node - <<'NODE'
+          const lock = require('./package-lock.json');
+          const required = {
+            '@tanstack/react-start': '1.168.60',
+            '@tanstack/start-server-core': '1.169.39'
+          };
+          let failed = false;
+          for (const [name, min] of Object.entries(required)) {
+            const installed = lock.packages[`node_modules/${name}`]?.version;
+            console.log(`${name}: ${installed ?? 'MISSING'} (required >= ${min})`);
+            if (!installed || installed.localeCompare(min, undefined, { numeric: true }) < 0) failed = true;
+          }
+          if (failed) process.exit(1);
+          NODE
+      - name: Commit refreshed lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git diff --cached --quiet || git commit -m "fix(deps): regenerar lockfile com TanStack Start corrigido"
+          git push origin HEAD:codex/chat-gemini-canalizacoes
