@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X, Loader2 } from "lucide-react";
+import { Pause, Play, SkipBack, SkipForward, Repeat, Crosshair, AlertTriangle, Search, X, Loader2, ClipboardCopy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { reportSystemError } from "@/lib/system-error-logs.functions";
+import { toast } from "sonner";
 
 export type Segment = { start: number; end: number; text: string };
 
@@ -397,6 +398,15 @@ export function SyncedTranscript({
     timeRef.current = to;
     setTime(to);
   }
+  async function copyTranscript(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Texto copiado.");
+    } catch {
+      toast.error("Não foi possível copiar o texto.");
+    }
+  }
+
   const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
   const visibleSegments = useMemo(
     () =>
@@ -712,7 +722,7 @@ export function SyncedTranscript({
                   className="flex-1 resize-none rounded-md border border-transparent bg-transparent px-2 py-1 text-sm leading-relaxed text-foreground focus:border-input focus:outline-none focus:ring-2 focus:ring-ring/30"
                 />
               ) : (
-                <p className="flex-1 text-sm leading-relaxed text-foreground">{seg.text}</p>
+                <p className="flex-1 text-sm leading-relaxed text-foreground">{seg.text}</p>\n                <Button\n                  size="icon" variant="ghost" className="h-7 w-7 shrink-0 opacity-60 hover:opacity-100"\n                  title="Copiar este trecho" aria-label="Copiar este trecho"\n                  onClick={() => void copyTranscript(seg.text)}\n                >\n                  <ClipboardCopy className="h-3.5 w-3.5" />\n                </Button>
               )}
             </div>
           );
