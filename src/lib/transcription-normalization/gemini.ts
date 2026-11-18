@@ -114,12 +114,15 @@ export async function normalizeWithGemini(
     const end = Math.min(segments.length, start + CHUNK_SIZE);
     const chunk = segments.slice(start, end);
     const chunkGroups = await normalizeChunk(chunk, start, options.forceGrouping ?? false);
-    // Discard any overlap indices already emitted by the preceding chunk.
+    // For the first chunk keep all groups. For later chunks, ignore any
+    // group that ends entirely inside the overlap; when a group crosses the
+    // boundary, keep only its new indices and use its returned text for that
+    // continuation. This keeps source coverage exact without duplicating IDs.
     for (const group of chunkGroups) {
-      const remaining = group.source_segments.filter((index) => index >= start);
-      if (!remaining.length) continue;
+      const newIndices = group.source_segments.filter((index) => index >= start);
+      if (!newIndices.length) continue;
       groups.push({
-        source_segments: remaining,
+        source_segments: newIndices,
         text: group.text,
       });
     }
