@@ -1,7 +1,7 @@
 import type { NormalizationGroup, RawTranscriptSegment } from "./types";
 
 const DEFAULT_MODEL = "gemini-2.5-flash";
-const CHUNK_SIZE = 80;
+const CHUNK_SIZE = 80;\nconst CHUNK_OVERLAP = 8;
 
 const responseSchema = {
   type: "ARRAY",
@@ -108,10 +108,28 @@ export async function normalizeWithGemini(
   options: { forceGrouping?: boolean } = {},
 ): Promise<NormalizationGroup[]> {
   const groups: NormalizationGroup[] = [];
-  for (let start = 0; start < segments.length; start += CHUNK_SIZE) {
-    const chunk = segments.slice(start, start + CHUNK_SIZE);
+  let start = 0;
+  while (start < segments.length) {
+    const end = Math.min(segments.length, start + CHUNK_SIZE);
+    const chunk = segments.slice(start, end);
     const chunkGroups = await normalizeChunk(chunk, start, options.forceGrouping ?? false);
-    groups.push(...chunkGroups);
+    // Discard any overlap indices already emitted by the preceding chunk.
+    for (const group of chunkGroups) {
+      const remaining = group.source_segments.filter((index) => index >= start);
+      if (!remaining.length) continue;
+      groups.push({
+        source_segments: remaining,
+        text: group.text,
+      });
+    }
+    if (end === segments.length) break;
+    start = end - CHUNK_OVERLAP;
+  }
+  // The overlap is only context for the model: rebuild an exact partition.
+  const flattened = groups.flatMap((group) => group.source_segments);
+  const expected = segments.map((_, index) => index);
+  if (flattened.length !== expected.length || flattened.some((index, i) => index !== expected[i])) {
+    throw new Error("A normalização em blocos não preservou a sequência completa dos segmentos.");
   }
   return groups;
 }
