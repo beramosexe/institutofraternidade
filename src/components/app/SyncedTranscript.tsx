@@ -555,6 +555,16 @@ export function SyncedTranscript({
 
       {!hideTranscript && (
         <div className="space-y-2">
+          <div className="flex justify-end">
+            <Button
+              size="sm" variant="outline" className="h-8"
+              disabled={!segments.length && !fallbackText}
+              onClick={() => void copyTranscript(segments.length ? segments.map((segment) => segment.text).join("\n\n") : fallbackText || "")}
+            >
+              <ClipboardCopy className="mr-2 h-3.5 w-3.5" /> Copiar transcrição inteira
+            </Button>
+          </div>
+        <div className="space-y-2">
           {segments.length > 3 && !editable && !showCompactTranscript && (
             <div className="flex items-center gap-2">
               <div className="relative min-w-0 flex-1">
@@ -722,7 +732,16 @@ export function SyncedTranscript({
                   className="flex-1 resize-none rounded-md border border-transparent bg-transparent px-2 py-1 text-sm leading-relaxed text-foreground focus:border-input focus:outline-none focus:ring-2 focus:ring-ring/30"
                 />
               ) : (
-                <p className="flex-1 text-sm leading-relaxed text-foreground">{seg.text}</p>\n                <Button\n                  size="icon" variant="ghost" className="h-7 w-7 shrink-0 opacity-60 hover:opacity-100"\n                  title="Copiar este trecho" aria-label="Copiar este trecho"\n                  onClick={() => void copyTranscript(seg.text)}\n                >\n                  <ClipboardCopy className="h-3.5 w-3.5" />\n                </Button>
+                <div className="flex min-w-0 flex-1 items-start gap-2">
+                  <p className="min-w-0 flex-1 text-sm leading-relaxed text-foreground">{seg.text}</p>
+                  <Button
+                    size="icon" variant="ghost" className="h-7 w-7 shrink-0 opacity-60 hover:opacity-100"
+                    title="Copiar este trecho" aria-label="Copiar este trecho"
+                    onClick={() => void copyTranscript(seg.text)}
+                  >
+                    <ClipboardCopy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               )}
             </div>
           );
