@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeWithGemini } from "@/lib/transcription-normalization/gemini";
 import { prepareNormalizationInput } from "@/lib/transcription-normalization/prepare";
-import { validateNormalizationGroups } from "@/lib/transcription-normalization/validate";
+import { validateNormalizationGroups, assertAcceptableGrouping, getFragmentationMetrics } from "@/lib/transcription-normalization/validate";
 import { checkAndImproveNormalization } from "@/lib/transcription-normalization/quality-check";
 import type { RawTranscriptSegment } from "@/lib/transcription-normalization/types";
 
@@ -130,36 +130,34 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
 
     try {
       const prepared = prepareNormalizationInput(source);
-      // Layer 1: reconstruct sentence-level transcript units from ASR fragments.
-      const draftGroups = await normalizeWithGemini(prepared);
+      // First pass: sentence reconstruction from the original ASR fragments.
+      let draftGroups = await normalizeWithGemini(prepared);
       validateNormalizationGroups(draftGroups, source);
 
-      // Layer 2: independent editorial quality check against RAW source and draft.
-      const checkedGroups = await checkAndImproveNormalization(source, draftGroups);
-      const normalized = validateNormalizationGroups(checkedGroups, source);
+      // Independent editorial review.
+      let checkedGroups = await checkAndImproveNormalization(source, draftGroups);
+      let normalized = validateNormalizationGroups(checkedGroups, source);
+      let qualityMetrics = getFragmentationMetrics(normalized, source);
+
+      // Do not silently accept a technically complete but still fragmented result.
+      // Retry the primary reconstruction once with explicit recovery instructions.
+      if (qualityMetrics.qualityStatus === "warning") {
+        draftGroups = await normalizeWithGemini(prepared, { forceGrouping: true });
+        validateNormalizationGroups(draftGroups, source);
+        checkedGroups = await checkAndImproveNormalization(source, draftGroups);
+        normalized = validateNormalizationGroups(checkedGroups, source);
+        qualityMetrics = getFragmentationMetrics(normalized, source);
+      }
+
+      // If the second attempt is still fragmented, fail without replacing the
+      // currently saved transcript. The user can retry or review the RAW text.
+      assertAcceptableGrouping(normalized, source);
       const normalizedText = normalized.map((segment) => segment.text).join(" ").trim();
-      const suspiciousFragments = normalized.filter((segment) => {
-        const clean = segment.text.trim();
-        const wordCount = clean.split(/\s+/).filter(Boolean).length;
-        const hasSentenceEnding = /[.!?…]$/.test(clean);
-        return wordCount <= 4 && !hasSentenceEnding;
-      }).length;
-      const fragmentationWarning =
-        (normalized.length >= 8 && suspiciousFragments / normalized.length > 0.15) ||
-        (source.length >= 12 && normalized.length / source.length > 0.85);
-      const qualityMetrics = {
-        rawSegments: source.length,
+      qualityMetrics = {
+        ...qualityMetrics,
         draftGroups: draftGroups.length,
-        finalGroups: normalized.length,
-        groupingReductionPercent: source.length > 0
-          ? Math.round((1 - normalized.length / source.length) * 100)
-          : 0,
-        averageSourceSegmentsPerGroup: normalized.length > 0
-          ? Number((source.length / normalized.length).toFixed(2))
-          : 0,
-        suspiciousFragments,
-        qualityStatus: fragmentationWarning ? "warning" : "ok",
         checkedByGemini: true,
+        recoveryAttempted: qualityMetrics.groupingReductionPercent < 25,
       };
 
       const { error: updateError } = await supabase
