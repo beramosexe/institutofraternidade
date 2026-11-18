@@ -1,7 +1,8 @@
 import type { NormalizationGroup, RawTranscriptSegment } from "./types";
 
 const DEFAULT_MODEL = "gemini-2.5-flash";
-const CHUNK_SIZE = 80;\nconst CHUNK_OVERLAP = 8;
+const CHUNK_SIZE = 80;
+const CHUNK_OVERLAP = 8;
 
 const responseSchema = {
   type: "ARRAY",
