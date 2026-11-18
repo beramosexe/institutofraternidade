@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeWithGemini } from "@/lib/transcription-normalization/gemini";
 import { prepareNormalizationInput } from "@/lib/transcription-normalization/prepare";
 import { validateNormalizationGroups } from "@/lib/transcription-normalization/validate";
+import { checkAndImproveNormalization } from "@/lib/transcription-normalization/quality-check";
 import type { RawTranscriptSegment } from "@/lib/transcription-normalization/types";
 
 const segmentSchema = z.object({
@@ -129,15 +130,36 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
 
     try {
       const prepared = prepareNormalizationInput(source);
-      const groups = await normalizeWithGemini(source);
-      const normalized = validateNormalizationGroups(groups, source);
+      // Layer 1: reconstruct sentence-level transcript units from ASR fragments.
+      const draftGroups = await normalizeWithGemini(prepared);
+      validateNormalizationGroups(draftGroups, source);
+
+      // Layer 2: independent editorial quality check against RAW source and draft.
+      const checkedGroups = await checkAndImproveNormalization(source, draftGroups);
+      const normalized = validateNormalizationGroups(checkedGroups, source);
       const normalizedText = normalized.map((segment) => segment.text).join(" ").trim();
+      const qualityMetrics = {
+        rawSegments: source.length,
+        draftGroups: draftGroups.length,
+        finalGroups: normalized.length,
+        groupingReductionPercent: source.length > 0
+          ? Math.round((1 - normalized.length / source.length) * 100)
+          : 0,
+        averageSourceSegmentsPerGroup: normalized.length > 0
+          ? Number((source.length / normalized.length).toFixed(2))
+          : 0,
+        checkedByGemini: true,
+      };
 
       const { error: updateError } = await supabase
         .from("audio_transcriptions")
         .update({
           normalized_segments: normalized,
           normalized_text: normalizedText,
+          // Keep legacy consumer fields in sync so every user-facing surface
+          // (including older list/search/copy flows) receives the normalized text.
+          segments: normalized as never,
+          text: normalizedText,
           normalization_status: "normalized",
         })
         .eq("id", data.transcription_id);
@@ -149,12 +171,14 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
         entity: "audio_transcriptions",
         entity_id: data.transcription_id,
         action: "normalization_generated",
+        diff: qualityMetrics as never,
       });
 
       return {
         ok: true,
         sourceSegments: prepared.length,
         normalizedSegments: normalized.length,
+        quality: qualityMetrics,
       };
     } catch (error) {
       await supabase
