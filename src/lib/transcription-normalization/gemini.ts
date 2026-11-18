@@ -27,7 +27,7 @@ function getGeminiConfig() {
 
   return {
     apiKey,
-    model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
+    model: process.env.GEMINI_NORMALIZATION_MODEL || process.env.GEMINI_MODEL || DEFAULT_MODEL,
   };
 }
 
