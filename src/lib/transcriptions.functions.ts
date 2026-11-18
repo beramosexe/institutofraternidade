@@ -138,10 +138,11 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
       let checkedGroups = await checkAndImproveNormalization(source, draftGroups);
       let normalized = validateNormalizationGroups(checkedGroups, source);
       let qualityMetrics = getFragmentationMetrics(normalized, source);
+      let recoveryAttempted = false;
 
-      // Do not silently accept a technically complete but still fragmented result.
-      // Retry the primary reconstruction once with explicit recovery instructions.
+      // Retry only when the returned grouping still shows clear fragmentation.
       if (qualityMetrics.qualityStatus === "warning") {
+        recoveryAttempted = true;
         draftGroups = await normalizeWithGemini(prepared, { forceGrouping: true });
         validateNormalizationGroups(draftGroups, source);
         checkedGroups = await checkAndImproveNormalization(source, draftGroups);
@@ -149,15 +150,14 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
         qualityMetrics = getFragmentationMetrics(normalized, source);
       }
 
-      // If the second attempt is still fragmented, fail without replacing the
-      // currently saved transcript. The user can retry or review the RAW text.
+      // Keep the existing transcript intact if both attempts remain fragmented.
       assertAcceptableGrouping(normalized, source);
       const normalizedText = normalized.map((segment) => segment.text).join(" ").trim();
       qualityMetrics = {
         ...qualityMetrics,
         draftGroups: draftGroups.length,
         checkedByGemini: true,
-        recoveryAttempted: qualityMetrics.groupingReductionPercent < 25,
+        recoveryAttempted,
       };
 
       const { error: updateError } = await supabase
