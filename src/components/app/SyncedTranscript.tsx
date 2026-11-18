@@ -563,6 +563,7 @@ export function SyncedTranscript({
             >
               <ClipboardCopy className="mr-2 h-3.5 w-3.5" /> Copiar transcrição inteira
             </Button>
+          </div>
           {segments.length > 3 && !editable && !showCompactTranscript && (
             <div className="flex items-center gap-2">
               <div className="relative min-w-0 flex-1">
