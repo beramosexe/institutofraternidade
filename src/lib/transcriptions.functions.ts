@@ -140,8 +140,8 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
       const normalizedText = normalized.map((segment) => segment.text).join(" ").trim();
       const suspiciousFragments = normalized.filter((segment) => {
         const clean = segment.text.trim();
-        const wordCount = clean.split(/\\s+/).filter(Boolean).length;
-        const hasSentenceEnding = /[.!?…][\"')\\]]?$/.test(clean);
+        const wordCount = clean.split(/\s+/).filter(Boolean).length;
+        const hasSentenceEnding = /[.!?…]$/.test(clean);
         return wordCount <= 4 && !hasSentenceEnding;
       }).length;
       const fragmentationWarning =
