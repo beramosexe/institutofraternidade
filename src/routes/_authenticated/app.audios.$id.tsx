@@ -235,7 +235,9 @@ function AudioDetail() {
       setEditing(false);
       setDirty(false);
       toast.success(
-        `Normalização concluída: ${result.sourceSegments} segmentos RAW → ${result.normalizedSegments} segmentos.`,
+        result.quality.qualityStatus === "warning"
+          ? `Normalização revisada, mas ainda há sinais de fragmentação: ${result.normalizedSegments} grupos para ${result.sourceSegments} segmentos RAW. Confira o resultado antes de aprovar.`
+          : `Normalização e checagem concluídas: ${result.sourceSegments} segmentos RAW → ${result.normalizedSegments} grupos.`,
       );
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao normalizar"),
