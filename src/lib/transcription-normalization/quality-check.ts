@@ -12,11 +12,6 @@ const responseSchema = {
   },
 };
 
-/**
- * Independent editorial pass. It receives both the original ASR segments and
- * the first normalization result, then repairs sentence boundaries, grammar
- * and punctuation without summarizing or removing spoken content.
- */
 export async function checkAndImproveNormalization(
   source: RawTranscriptSegment[],
   draft: NormalizationGroup[],
@@ -30,22 +25,21 @@ export async function checkAndImproveNormalization(
     speaker: segment.speaker ?? null,
     text: segment.text,
   }));
-
   const reviewInstruction = `
-Você é um revisor editorial independente de transcrições em português brasileiro.
-Você receberá os segmentos originais do reconhecimento de voz e uma primeira versão normalizada.
-
-Sua tarefa é CHECAR E CORRIGIR a primeira versão antes que ela seja publicada:
-- Reconstrua frases completas quando ainda houver fragmentos curtos que claramente pertencem à mesma frase.
-- Corrija concordância, regência, pontuação, capitalização e erros evidentes de reconhecimento, somente quando houver evidência no áudio representada pelo contexto textual.
-- Garanta que cada grupo seja uma unidade de sentido legível. Não deixe conectivos, artigos, preposições ou complementos soltos em grupos separados quando pertencem à frase seguinte/anterior.
-- Preserve o conteúdo efetivamente falado, a ordem, repetições relevantes, hesitações e oralidade.
-- Não resuma, não parafraseie, não invente, não formalize excessivamente e não elimine conteúdo.
-- Nunca una falas de pessoas diferentes.
-- Cada índice original deve aparecer exatamente uma vez, em ordem, em source_segments.
-- Cada grupo deve conter índices consecutivos.
-- A saída deve corrigir a transcrição, não apenas avaliar ou comentar.
-- Retorne somente a lista JSON no schema solicitado.
+Você é um revisor editorial que deve entregar a transcrição final em português brasileiro.
+O primeiro passe pode ter deixado os cortes do reconhecimento de voz como se fossem frases. Corrija isso.
+- A unidade de saída é uma frase ou oração completa, não um segmento de ASR.
+- Una frases fragmentadas em vários itens quando forem continuação sintática ou semântica.
+- "Abençoar" seguido de "a própria vida." deve resultar em "Abençoar a própria vida."
+- Conectivos, artigos, preposições e complementos não devem ficar isolados.
+- Não use timestamps nem pausas curtas como fronteira editorial.
+- Não mantenha grupos unitários ou de poucas palavras apenas para preservar o formato anterior.
+- Preserve cada palavra e a sequência falada; não resuma, não invente, não parafraseie e não apague repetições relevantes.
+- Corrija apenas pontuação, capitalização, gramática e erros evidentes de ASR sustentados pelo contexto.
+- Não una falas de pessoas diferentes.
+- Cada índice original deve aparecer uma única vez, em ordem, em índices consecutivos.
+- A propriedade text deve conter o texto completo e legível correspondente a todos os índices do grupo.
+- Retorne somente JSON no schema solicitado.
 `;
 
   const response = await fetch(
@@ -58,9 +52,9 @@ Sua tarefa é CHECAR E CORRIGIR a primeira versão antes que ela seja publicada:
         contents: [{
           role: "user",
           parts: [{
-            text: "Revise a normalização. Compare com os segmentos originais e devolva a versão final corrigida.\\n\\nORIGINAL:\\n" +
+            text: "ORIGINAIS (referência obrigatória):\\n" +
               JSON.stringify(original) +
-              "\\n\\nPRIMEIRA NORMALIZAÇÃO:\\n" +
+              "\\n\\nRASCUNHO (pode estar fragmentado; reestruture as frases):\\n" +
               JSON.stringify(draft),
           }],
         }],
@@ -77,20 +71,14 @@ Sua tarefa é CHECAR E CORRIGIR a primeira versão antes que ela seja publicada:
     error?: { message?: string };
     candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
   };
-
   if (!response.ok) {
     throw new Error(payload.error?.message || `Gemini quality check retornou HTTP ${response.status}.`);
   }
-
   const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error("Gemini não retornou conteúdo na checagem de qualidade.");
-
   let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new Error("Gemini retornou JSON inválido na checagem de qualidade.");
-  }
+  try { parsed = JSON.parse(text); }
+  catch { throw new Error("Gemini retornou JSON inválido na checagem de qualidade."); }
   if (!Array.isArray(parsed)) throw new Error("A checagem de qualidade não retornou uma lista de grupos.");
   return parsed as NormalizationGroup[];
 }
