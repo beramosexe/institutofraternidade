@@ -138,6 +138,15 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
       const checkedGroups = await checkAndImproveNormalization(source, draftGroups);
       const normalized = validateNormalizationGroups(checkedGroups, source);
       const normalizedText = normalized.map((segment) => segment.text).join(" ").trim();
+      const suspiciousFragments = normalized.filter((segment) => {
+        const clean = segment.text.trim();
+        const wordCount = clean.split(/\\s+/).filter(Boolean).length;
+        const hasSentenceEnding = /[.!?…][\"')\\]]?$/.test(clean);
+        return wordCount <= 4 && !hasSentenceEnding;
+      }).length;
+      const fragmentationWarning =
+        (normalized.length >= 8 && suspiciousFragments / normalized.length > 0.15) ||
+        (source.length >= 12 && normalized.length / source.length > 0.85);
       const qualityMetrics = {
         rawSegments: source.length,
         draftGroups: draftGroups.length,
@@ -148,6 +157,8 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
         averageSourceSegmentsPerGroup: normalized.length > 0
           ? Number((source.length / normalized.length).toFixed(2))
           : 0,
+        suspiciousFragments,
+        qualityStatus: fragmentationWarning ? "warning" : "ok",
         checkedByGemini: true,
       };
 
