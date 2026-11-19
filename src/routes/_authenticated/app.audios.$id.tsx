@@ -616,7 +616,7 @@ function AudioDetail() {
                     ) : saveMutation.isSuccess ? (
                       <Badge variant="outline" className="justify-center border-brand/40 bg-brand/10"><Save className="mr-1 h-3 w-3" /> Salvo</Badge>
                     ) : null)}
-                    {canEditTimestamps && (
+                    {canReprocess && (
                       <Button
                         size="sm"
                         variant="outline"
