@@ -21,7 +21,8 @@ function reviewStatus(a: { audio_transcriptions: unknown }) {
 function transcriptText(a: { audio_transcriptions: unknown }) {
   const t = a.audio_transcriptions;
   const one = Array.isArray(t) ? t[0] : t;
-  return (one as { text?: string } | null)?.text ?? "";
+  const transcription = one as { text?: string; normalized_text?: string | null } | null;
+  return transcription?.normalized_text ?? transcription?.text ?? "";
 }
 
 export const Route = createFileRoute("/_authenticated/app/audios/")({
@@ -57,7 +58,7 @@ function AudiosLibrary() {
           id, title, message_source, audio_type, access_level, recorded_at, status,
           summary, keywords, play_count, is_featured, duration_seconds, created_at, published_at,
           work_id, works(name, color),
-          audio_transcriptions(id, text, review_status)
+          audio_transcriptions(id, text, normalized_text, review_status)
         `)
         .neq("status", "archived")
         .order("created_at", { ascending: false });
