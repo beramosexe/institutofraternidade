@@ -73,13 +73,13 @@ export function getFragmentationMetrics(
   const unfinished = normalized.filter((segment) => {
     const clean = segment.text.trim();
     const words = clean.split(/\s+/).filter(Boolean);
-    const endsSentence = /[.!?…][”’"')\\]]*$/.test(clean);
+    const endsSentence = /[.!?…][”’"')\]]*$/.test(clean);
     const startsWithContinuation = /^(e|mas|porque|que|de|da|do|das|dos|para|por|com|em|no|na|nos|nas|a|o|as|os|um|uma|ao|à)\b/i.test(clean);
     return words.length <= 5 && !endsSentence && (startsWithContinuation || !/[.!?…]$/.test(clean));
   }).length;
   const tinyWithoutEnding = normalized.filter((segment) => {
     const words = segment.text.trim().split(/\s+/).filter(Boolean);
-    return words.length <= 3 && !/[.!?…][”’"')\\]]*$/.test(segment.text.trim());
+    return words.length <= 3 && !/[.!?…][”’"')\]]*$/.test(segment.text.trim());
   }).length;
   const reduction = source.length ? 1 - normalized.length / source.length : 0;
   const suspiciousRatio = normalized.length ? unfinished / normalized.length : 0;
@@ -152,7 +152,7 @@ export function mergeObviousFragments(
     const shouldMerge = sameSpeaker && (previousIsOpen || currentStartsAsContinuation);
 
     if (shouldMerge) {
-      previous.text = `${previousText.replace(/[\\s,;:]+$/, "")} ${currentText}`.trim();
+      previous.text = `${previousText.replace(/[\s,;:]+$/, "")} ${currentText}`.trim();
       previous.end = current.end;
     } else {
       result.push({ ...current });
