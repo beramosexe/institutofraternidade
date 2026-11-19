@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeWithGemini } from "@/lib/transcription-normalization/gemini";
 import { prepareNormalizationInput } from "@/lib/transcription-normalization/prepare";
-import { validateNormalizationGroups, assertAcceptableGrouping, getFragmentationMetrics } from "@/lib/transcription-normalization/validate";
+import { validateNormalizationGroups, assertAcceptableGrouping, getFragmentationMetrics, mergeObviousFragments } from "@/lib/transcription-normalization/validate";
 import { checkAndImproveNormalization } from "@/lib/transcription-normalization/quality-check";
 import type { RawTranscriptSegment } from "@/lib/transcription-normalization/types";
 
@@ -136,7 +136,7 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
 
       // Independent editorial review.
       let checkedGroups = await checkAndImproveNormalization(source, draftGroups);
-      let normalized = validateNormalizationGroups(checkedGroups, source);
+      let normalized = mergeObviousFragments(validateNormalizationGroups(checkedGroups, source));
       let qualityMetrics = getFragmentationMetrics(normalized, source);
       let recoveryAttempted = false;
 
@@ -146,7 +146,7 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
         draftGroups = await normalizeWithGemini(prepared, { forceGrouping: true });
         validateNormalizationGroups(draftGroups, source);
         checkedGroups = await checkAndImproveNormalization(source, draftGroups);
-        normalized = validateNormalizationGroups(checkedGroups, source);
+        normalized = mergeObviousFragments(validateNormalizationGroups(checkedGroups, source));
         qualityMetrics = getFragmentationMetrics(normalized, source);
       }
 
