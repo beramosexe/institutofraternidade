@@ -25,6 +25,8 @@ export async function checkAndImproveNormalization(
     speaker: segment.speaker ?? null,
     text: segment.text,
   }));
+  const speakerByIndex = new Map(original.map((segment) => [segment.index, segment.speaker]));
+
   const reviewInstruction = `
 Você é um revisor editorial que deve entregar a transcrição final em português brasileiro.
 O primeiro passe pode ter deixado os cortes do reconhecimento de voz como se fossem frases. Corrija isso.
@@ -38,7 +40,9 @@ O primeiro passe pode ter deixado os cortes do reconhecimento de voz como se fos
 - Corrija apenas pontuação, capitalização, gramática e erros evidentes de ASR sustentados pelo contexto.
 - Não una falas de pessoas diferentes.
 - Cada índice original deve aparecer uma única vez, em ordem, em índices consecutivos.
+- Não una segmentos de falantes diferentes; respeite o campo speaker dos índices originais.
 - A propriedade text deve conter o texto completo e legível correspondente a todos os índices do grupo.
+- Não copie conteúdo de um grupo para outro, nem repita palavras apenas para produzir uma frase mais longa.
 - Retorne somente JSON no schema solicitado.
 `;
 
@@ -80,5 +84,36 @@ O primeiro passe pode ter deixado os cortes do reconhecimento de voz como se fos
   try { parsed = JSON.parse(text); }
   catch { throw new Error("Gemini retornou JSON inválido na checagem de qualidade."); }
   if (!Array.isArray(parsed)) throw new Error("A checagem de qualidade não retornou uma lista de grupos.");
-  return parsed as NormalizationGroup[];
+
+  const groups = parsed as NormalizationGroup[];
+  const actual = groups.flatMap((group) => {
+    if (!Array.isArray(group.source_segments) || group.source_segments.length === 0) {
+      throw new Error("A revisão editorial retornou um grupo sem segmentos de origem.");
+    }
+    if (typeof group.text !== "string" || !group.text.trim()) {
+      throw new Error("A revisão editorial retornou um grupo sem texto.");
+    }
+    for (let i = 0; i < group.source_segments.length; i += 1) {
+      const index = group.source_segments[i];
+      if (!Number.isInteger(index) || index < 0 || index >= source.length) {
+        throw new Error(`Índice original inválido na revisão editorial: ${index}.`);
+      }
+      if (i > 0 && index !== group.source_segments[i - 1] + 1) {
+        throw new Error("A revisão editorial retornou índices não consecutivos.");
+      }
+      if (i > 0) {
+        const previousSpeaker = speakerByIndex.get(index - 1);
+        const currentSpeaker = speakerByIndex.get(index);
+        if (previousSpeaker !== null && currentSpeaker !== null && previousSpeaker !== currentSpeaker) {
+          throw new Error("A revisão editorial tentou unir falas de pessoas diferentes.");
+        }
+      }
+    }
+    return group.source_segments;
+  });
+  const expected = source.map((_, index) => index);
+  if (actual.length !== expected.length || actual.some((index, i) => index !== expected[i])) {
+    throw new Error("A revisão editorial não preservou integralmente a ordem e a cobertura dos segmentos originais.");
+  }
+  return groups;
 }
