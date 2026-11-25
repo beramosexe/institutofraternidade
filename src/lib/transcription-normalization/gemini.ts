@@ -3,6 +3,7 @@ import type { NormalizationGroup, RawTranscriptSegment } from "./types";
 const DEFAULT_MODEL = "gemini-2.5-flash";
 const CHUNK_SIZE = 80;
 const CHUNK_OVERLAP = 8;
+const MAX_BOUNDARY_RETRIES = 1;
 
 const responseSchema = {
   type: "ARRAY",
@@ -30,41 +31,46 @@ function makeSystemInstruction(forceGrouping: boolean) {
 Você é um editor de transcrições automáticas em português do Brasil.
 Os itens enviados são recortes de ASR, NÃO frases. O índice identifica o segmento original.
 
-OBJETIVO PRINCIPAL: reconstruir frases completas e unidades de sentido naturais. A quantidade de grupos deve ser significativamente menor que a quantidade de segmentos RAW quando os cortes forem artificiais.
+OBJETIVO: reconstruir sentenças e orações completas, com pontuação natural, sem transformar a fala em resumo ou paráfrase.
 
-REGRAS:
-- Una segmentos consecutivos que façam parte da mesma frase/oração, inclusive quando cada pedaço isolado parece gramaticalmente plausível.
-- Não trate mudança de timestamp nem pausa curta como fim de frase.
-- Um grupo pode conter vários segmentos; a fronteira deve representar uma conclusão real de frase/ideia, não cada pequeno corte do ASR.
+REGRAS DE CONTEÚDO:
+- Una segmentos consecutivos que formem uma mesma frase, inclusive quando cada recorte isolado parece gramaticalmente plausível.
+- Não trate timestamps, pausas curtas ou limites técnicos de blocos como fronteira editorial.
 - Não deixe artigos, preposições, conectivos, pronomes ou complementos isolados.
-- Só encerre um grupo quando a frase estiver sintática e semanticamente completa, ou houver mudança clara de falante/assunto e a construção anterior estiver completa.
-- Preserve ordem, palavras, repetições, hesitações e oralidade. Corrija pontuação, capitalização e erros evidentes de ASR com forte evidência contextual.
+- Só encerre um grupo quando a construção estiver completa ou houver mudança real de falante.
+- Preserve a sequência, palavras, repetições, hesitações e oralidade.
+- Corrija apenas pontuação, capitalização e erros evidentes de ASR sustentados pelo contexto.
 - Não resuma, parafraseie, invente nem elimine conteúdo.
 - Nunca una falantes diferentes.
-- source_segments deve conter índices consecutivos; todos os índices devem aparecer exatamente uma vez e em ordem.
-- text deve conter o conteúdo correspondente ao grupo, com pontuação humana. Não copie literalmente um fragmento curto apenas porque veio separado.
-- Exemplos: "Abençoar" + "a própria vida." deve virar um grupo "Abençoar a própria vida."; "Quem é merecedor" + "de abençoar," + "de bênçãos?" só deve ser dividido se a fala realmente apresentar uma pausa/ideia concluída; neste contexto, reconstrua uma frase coerente.
-- Se o item termina com artigo, preposição, conjunção, pronome relativo ou verbo que exige complemento, una ao seguinte.
-- Se um item seguinte completa semanticamente o anterior, una-os mesmo que o anterior termine com pontuação espúria.
-${forceGrouping ? "- MODO DE RECUPERAÇÃO: a versão anterior permaneceu excessivamente fragmentada. Seja mais agressivo ao unir segmentos curtos contíguos. Não gere grupos de uma única palavra ou de 2-4 palavras, a menos que sejam uma resposta/expressão realmente completa e independente." : ""}
+
+REGRAS DE RASTREABILIDADE:
+- source_segments deve conter índices globais, inteiros, consecutivos e crescentes.
+- Cada índice solicitado deve aparecer exatamente uma vez na resposta.
+- Cada texto de grupo deve corresponder ao conteúdo dos índices daquele grupo.
+- Não inclua no texto de um grupo conteúdo pertencente a índices de outro grupo.
+- A saída deve cobrir integralmente os índices apresentados.
+
+BORDAS ENTRE BLOCOS:
+- Os dados podem incluir uma região identificada como CONTEXTO. Ela serve para compreender a frase, mas não pertence à saída deste bloco.
+- Não retorne índices da região CONTEXTO.
+- Se a primeira unidade de saída for continuação de uma frase que começou no contexto, retorne somente o texto correspondente aos índices deste bloco e não repita o texto anterior.
+- Não force ponto final quando a frase claramente continuar depois do bloco.
+
+Exemplos:
+- "Abençoar" + "a própria vida." => "Abençoar a própria vida."
+- "É importante que vocês" + "compreendam esse processo." => uma sentença, não dois grupos.
+- Um novo falante sempre inicia outro grupo.
+
+${forceGrouping ? "- MODO DE RECUPERAÇÃO: una fragmentos curtos contíguos quando houver continuidade sintática ou semântica clara. Ainda assim, não una sentenças independentes completas." : ""}
 Retorne SOMENTE JSON conforme o schema.
 `;
 }
 
-async function normalizeChunk(
-  segments: RawTranscriptSegment[],
-  offset: number,
+async function requestGemini(
+  input: Array<Record<string, unknown>>,
   forceGrouping: boolean,
 ): Promise<NormalizationGroup[]> {
   const { apiKey, model } = getGeminiConfig();
-  const input = segments.map((segment, localIndex) => ({
-    index: offset + localIndex,
-    start: segment.start,
-    end: segment.end,
-    ...(typeof segment.speaker === "number" ? { speaker: segment.speaker } : {}),
-    text: segment.text.trim(),
-  }));
-
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
@@ -75,7 +81,9 @@ async function normalizeChunk(
         contents: [{
           role: "user",
           parts: [{
-            text: "Reconstrua as frases. Agrupe por unidade frasal, não por recorte ASR. Índices globais:\\n\\n" + JSON.stringify(input),
+            text:
+              "Reconstrua as frases, agrupando por unidade frasal. Os registros CONTEXTO são apenas referência. Os registros SAÍDA devem ser cobertos exatamente uma vez.\\n\\n" +
+              JSON.stringify(input),
           }],
         }],
         generationConfig: {
@@ -103,37 +111,137 @@ async function normalizeChunk(
   return parsed as NormalizationGroup[];
 }
 
-/** Normalize in bounded chunks, preserving global source indices. */
+function validateChunkGroups(
+  groups: NormalizationGroup[],
+  expectedIndices: number[],
+  allowedSpeakers: Map<number, number | undefined>,
+) {
+  if (!Array.isArray(groups) || groups.length === 0) {
+    throw new Error("A IA não retornou grupos para o bloco.");
+  }
+  const actual = groups.flatMap((group) => {
+    if (!Array.isArray(group.source_segments) || !group.source_segments.length) {
+      throw new Error("A IA retornou um grupo sem segmentos de origem.");
+    }
+    if (typeof group.text !== "string" || !group.text.trim()) {
+      throw new Error("A IA retornou um grupo sem texto.");
+    }
+    for (const index of group.source_segments) {
+      if (!Number.isInteger(index) || !allowedSpeakers.has(index)) {
+        throw new Error(`A IA retornou índice fora do bloco: ${index}.`);
+      }
+    }
+    for (let i = 1; i < group.source_segments.length; i += 1) {
+      if (group.source_segments[i] !== group.source_segments[i - 1] + 1) {
+        throw new Error("Um grupo do Gemini contém índices não consecutivos.");
+      }
+    }
+    for (let i = 1; i < group.source_segments.length; i += 1) {
+      const previousSpeaker = allowedSpeakers.get(group.source_segments[i - 1]);
+      const currentSpeaker = allowedSpeakers.get(group.source_segments[i]);
+      if (previousSpeaker !== undefined && currentSpeaker !== undefined && previousSpeaker !== currentSpeaker) {
+        throw new Error("A IA tentou unir segmentos de falantes diferentes.");
+      }
+    }
+    return group.source_segments;
+  });
+  if (actual.length !== expectedIndices.length || actual.some((index, i) => index !== expectedIndices[i])) {
+    throw new Error("A resposta do Gemini não cobriu exatamente os índices solicitados em ordem.");
+  }
+}
+
+function makeInput(
+  segments: RawTranscriptSegment[],
+  start: number,
+  end: number,
+  previousContextStart: number,
+  forceGrouping: boolean,
+) {
+  const records: Array<Record<string, unknown>> = [];
+  for (let index = previousContextStart; index < start; index += 1) {
+    const segment = segments[index];
+    records.push({
+      region: "CONTEXTO",
+      index,
+      ...(typeof segment.speaker === "number" ? { speaker: segment.speaker } : {}),
+      text: segment.text.trim(),
+    });
+  }
+  for (let index = start; index < end; index += 1) {
+    const segment = segments[index];
+    records.push({
+      region: "SAÍDA",
+      index,
+      ...(typeof segment.speaker === "number" ? { speaker: segment.speaker } : {}),
+      text: segment.text.trim(),
+    });
+  }
+  return records;
+}
+
+/**
+ * Normalizes bounded chunks while treating overlap strictly as read-only context.
+ * Each request owns a non-overlapping output range. Context is never re-emitted,
+ * so sentence text and source indices cannot be duplicated at chunk boundaries.
+ */
 export async function normalizeWithGemini(
   segments: RawTranscriptSegment[],
   options: { forceGrouping?: boolean } = {},
 ): Promise<NormalizationGroup[]> {
-  const groups: NormalizationGroup[] = [];
+  if (segments.length === 0) return [];
+
+  const allGroups: NormalizationGroup[] = [];
   let start = 0;
+
   while (start < segments.length) {
     const end = Math.min(segments.length, start + CHUNK_SIZE);
-    const chunk = segments.slice(start, end);
-    const chunkGroups = await normalizeChunk(chunk, start, options.forceGrouping ?? false);
-    // For the first chunk keep all groups. For later chunks, ignore any
-    // group that ends entirely inside the overlap; when a group crosses the
-    // boundary, keep only its new indices and use its returned text for that
-    // continuation. This keeps source coverage exact without duplicating IDs.
-    for (const group of chunkGroups) {
-      const newIndices = group.source_segments.filter((index) => index >= start);
-      if (!newIndices.length) continue;
-      groups.push({
-        source_segments: newIndices,
-        text: group.text,
-      });
+    const contextStart = Math.max(0, start - CHUNK_OVERLAP);
+    const outputIndices = Array.from({ length: end - start }, (_, i) => start + i);
+    const allowedSpeakers = new Map<number, number | undefined>();
+    for (let index = contextStart; index < end; index += 1) {
+      allowedSpeakers.set(index, segments[index].speaker);
     }
-    if (end === segments.length) break;
-    start = end - CHUNK_OVERLAP;
+
+    const input = makeInput(
+      segments,
+      start,
+      end,
+      contextStart,
+      options.forceGrouping ?? false,
+    );
+    let chunkGroups: NormalizationGroup[] | null = null;
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= MAX_BOUNDARY_RETRIES; attempt += 1) {
+      try {
+        chunkGroups = await requestGemini(input, (options.forceGrouping ?? false) || attempt > 0);
+        validateChunkGroups(chunkGroups, outputIndices, allowedSpeakers);
+        lastError = undefined;
+        break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (!chunkGroups || lastError) {
+      throw lastError instanceof Error
+        ? lastError
+        : new Error("Não foi possível reconstruir o bloco da transcrição.");
+    }
+
+    allGroups.push(...chunkGroups.map((group) => ({
+      source_segments: [...group.source_segments],
+      text: group.text.trim(),
+    })));
+
+    start = end;
   }
-  // The overlap is only context for the model: rebuild an exact partition.
-  const flattened = groups.flatMap((group) => group.source_segments);
+
+  const flattened = allGroups.flatMap((group) => group.source_segments);
   const expected = segments.map((_, index) => index);
   if (flattened.length !== expected.length || flattened.some((index, i) => index !== expected[i])) {
     throw new Error("A normalização em blocos não preservou a sequência completa dos segmentos.");
   }
-  return groups;
+
+  return allGroups;
 }
