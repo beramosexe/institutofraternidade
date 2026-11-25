@@ -44,12 +44,14 @@ export function validateNormalizationGroups(
       expectedIndex += 1;
     }
 
-    const first = source[group.source_segments[0]];
-    const last = source[group.source_segments[group.source_segments.length - 1]];
+    const sourceSegments = [...group.source_segments];
+    const first = source[sourceSegments[0]];
+    const last = source[sourceSegments[sourceSegments.length - 1]];
     normalized.push({
       start: first.start,
       end: last.end,
       text: group.text.trim(),
+      source_segments: sourceSegments,
       ...(typeof first.speaker === "number" ? { speaker: first.speaker } : {}),
     });
   }
@@ -121,11 +123,9 @@ export function assertAcceptableGrouping(
   return metrics;
 }
 
-
 /**
  * Deterministic final pass: merge adjacent ASR fragments that clearly do not
- * form independent sentences. Gemini remains responsible for editorial
- * correction; this guard prevents obvious sentence splits from reaching UI.
+ * form independent sentences. Provenance follows every merge in source order.
  */
 export function mergeObviousFragments(
   segments: NormalizedTranscriptSegment[],
@@ -137,7 +137,7 @@ export function mergeObviousFragments(
   for (const current of segments) {
     const previous = result[result.length - 1];
     if (!previous) {
-      result.push({ ...current });
+      result.push({ ...current, ...(current.source_segments ? { source_segments: [...current.source_segments] } : {}) });
       continue;
     }
 
@@ -154,10 +154,40 @@ export function mergeObviousFragments(
     if (shouldMerge) {
       previous.text = `${previousText.replace(/[\s,;:]+$/, "")} ${currentText}`.trim();
       previous.end = current.end;
+      if (previous.source_segments || current.source_segments) {
+        previous.source_segments = [
+          ...(previous.source_segments ?? []),
+          ...(current.source_segments ?? []),
+        ];
+      }
     } else {
-      result.push({ ...current });
+      result.push({ ...current, ...(current.source_segments ? { source_segments: [...current.source_segments] } : {}) });
     }
   }
 
   return result;
+}
+
+/** Ensure provenance partitions all original segments exactly once in order. */
+export function assertSourceSegmentCoverage(
+  normalized: NormalizedTranscriptSegment[],
+  sourceLength: number,
+) {
+  let expected = 0;
+  for (const [groupIndex, segment] of normalized.entries()) {
+    if (!Array.isArray(segment.source_segments) || segment.source_segments.length === 0) {
+      throw new Error(`Sentença normalizada ${groupIndex} não possui vínculo com segmentos RAW.`);
+    }
+    for (const index of segment.source_segments) {
+      if (!Number.isInteger(index) || index !== expected || index < 0 || index >= sourceLength) {
+        throw new Error(
+          `Vínculo RAW inválido na sentença ${groupIndex}: esperado índice ${expected}, recebido ${index}.`,
+        );
+      }
+      expected += 1;
+    }
+  }
+  if (expected !== sourceLength) {
+    throw new Error(`Vínculo RAW incompleto: ${expected} de ${sourceLength} segmentos.`);
+  }
 }
