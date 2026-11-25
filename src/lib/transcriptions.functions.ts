@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeWithGemini } from "@/lib/transcription-normalization/gemini";
 import { prepareNormalizationInput } from "@/lib/transcription-normalization/prepare";
-import { validateNormalizationGroups, assertAcceptableGrouping, getFragmentationMetrics, mergeObviousFragments } from "@/lib/transcription-normalization/validate";
+import { validateNormalizationGroups, assertAcceptableGrouping, getFragmentationMetrics, mergeObviousFragments, assertSourceSegmentCoverage } from "@/lib/transcription-normalization/validate";
 import { checkAndImproveNormalization } from "@/lib/transcription-normalization/quality-check";
 import type { RawTranscriptSegment } from "@/lib/transcription-normalization/types";
 
@@ -11,6 +11,8 @@ const segmentSchema = z.object({
   start: z.number(),
   end: z.number(),
   text: z.string(),
+  // Optional to preserve compatibility with legacy/manual edits.
+  source_segments: z.array(z.number().int().nonnegative()).optional(),
 });
 
 const saveSchema = z.object({
@@ -152,12 +154,14 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
 
       // Keep the existing transcript intact if both attempts remain fragmented.
       assertAcceptableGrouping(normalized, source);
+      assertSourceSegmentCoverage(normalized, source.length);
       const normalizedText = normalized.map((segment) => segment.text).join(" ").trim();
       qualityMetrics = {
         ...qualityMetrics,
         draftGroups: draftGroups.length,
         checkedByGemini: true,
         recoveryAttempted,
+        provenanceSegments: normalized.reduce((total, segment) => total + (segment.source_segments?.length ?? 0), 0),
       };
 
       const { error: updateError } = await supabase
