@@ -11,9 +11,8 @@ export type NormalizationGroup = {
 };
 
 /**
- * A normalized sentence keeps its original timeline and the exact RAW segment
- * indexes that produced it. source_segments is optional for legacy/manual
- * edits created before provenance tracking was introduced.
+ * A normalized sentence keeps its original timeline and exact RAW segment
+ * indexes that produced it. Optional for legacy/manual edits.
  */
 export type NormalizedTranscriptSegment = {
   start: number;
