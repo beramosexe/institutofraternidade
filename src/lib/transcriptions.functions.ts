@@ -3,13 +3,16 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeWithGemini } from "@/lib/transcription-normalization/gemini";
 import { prepareNormalizationInput } from "@/lib/transcription-normalization/prepare";
-import { validateNormalizationGroups } from "@/lib/transcription-normalization/validate";
+import { validateNormalizationGroups, assertAcceptableGrouping, getFragmentationMetrics, mergeObviousFragments, assertSourceSegmentCoverage } from "@/lib/transcription-normalization/validate";
+import { checkAndImproveNormalization } from "@/lib/transcription-normalization/quality-check";
 import type { RawTranscriptSegment } from "@/lib/transcription-normalization/types";
 
 const segmentSchema = z.object({
   start: z.number(),
   end: z.number(),
   text: z.string(),
+  // Optional to preserve compatibility with legacy/manual edits.
+  source_segments: z.array(z.number().int().nonnegative()).optional(),
 });
 
 const saveSchema = z.object({
@@ -129,15 +132,47 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
 
     try {
       const prepared = prepareNormalizationInput(source);
-      const groups = await normalizeWithGemini(source);
-      const normalized = validateNormalizationGroups(groups, source);
+      // First pass: sentence reconstruction from the original ASR fragments.
+      let draftGroups = await normalizeWithGemini(prepared);
+      validateNormalizationGroups(draftGroups, source);
+
+      // Independent editorial review.
+      let checkedGroups = await checkAndImproveNormalization(source, draftGroups);
+      let normalized = mergeObviousFragments(validateNormalizationGroups(checkedGroups, source));
+      let qualityMetrics = getFragmentationMetrics(normalized, source);
+      let recoveryAttempted = false;
+
+      // Retry only when the returned grouping still shows clear fragmentation.
+      if (qualityMetrics.qualityStatus === "warning") {
+        recoveryAttempted = true;
+        draftGroups = await normalizeWithGemini(prepared, { forceGrouping: true });
+        validateNormalizationGroups(draftGroups, source);
+        checkedGroups = await checkAndImproveNormalization(source, draftGroups);
+        normalized = mergeObviousFragments(validateNormalizationGroups(checkedGroups, source));
+        qualityMetrics = getFragmentationMetrics(normalized, source);
+      }
+
+      // Keep the existing transcript intact if both attempts remain fragmented.
+      assertAcceptableGrouping(normalized, source);
+      assertSourceSegmentCoverage(normalized, source.length);
       const normalizedText = normalized.map((segment) => segment.text).join(" ").trim();
+      qualityMetrics = {
+        ...qualityMetrics,
+        draftGroups: draftGroups.length,
+        checkedByGemini: true,
+        recoveryAttempted,
+        provenanceSegments: normalized.reduce((total, segment) => total + (segment.source_segments?.length ?? 0), 0),
+      };
 
       const { error: updateError } = await supabase
         .from("audio_transcriptions")
         .update({
           normalized_segments: normalized,
           normalized_text: normalizedText,
+          // Keep legacy consumer fields in sync so every user-facing surface
+          // (including older list/search/copy flows) receives the normalized text.
+          segments: normalized as never,
+          text: normalizedText,
           normalization_status: "normalized",
         })
         .eq("id", data.transcription_id);
@@ -149,12 +184,14 @@ export const normalizeTranscription = createServerFn({ method: "POST" })
         entity: "audio_transcriptions",
         entity_id: data.transcription_id,
         action: "normalization_generated",
+        diff: qualityMetrics as never,
       });
 
       return {
         ok: true,
         sourceSegments: prepared.length,
         normalizedSegments: normalized.length,
+        quality: qualityMetrics,
       };
     } catch (error) {
       await supabase

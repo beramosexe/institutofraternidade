@@ -27,6 +27,7 @@ import {
 import { generateAudioInsights } from "@/lib/audio-insights.functions";
 import { normalizeTranscription, saveTranscription } from "@/lib/transcriptions.functions";
 import { segmentsFromText } from "@/lib/transcript-segments";
+import { CanalizacaoChat } from "@/components/app/CanalizacaoChat";
 
 import { ACCESS_LEVEL_LABELS, AUDIO_STATUS_LABELS, REVIEW_STATUS_LABELS } from "@/lib/permissions";
 
@@ -234,7 +235,9 @@ function AudioDetail() {
       setEditing(false);
       setDirty(false);
       toast.success(
-        `Normalização concluída: ${result.sourceSegments} segmentos RAW → ${result.normalizedSegments} segmentos.`,
+        result.quality.qualityStatus === "warning"
+          ? `Normalização revisada, mas ainda há sinais de fragmentação: ${result.normalizedSegments} grupos para ${result.sourceSegments} segmentos RAW. Confira o resultado antes de aprovar.`
+          : `Normalização e checagem concluídas: ${result.sourceSegments} segmentos RAW → ${result.normalizedSegments} grupos.`,
       );
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao normalizar"),
@@ -334,6 +337,10 @@ function AudioDetail() {
           <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{audio.description}</p>
         )}
       </header>
+
+      {audio.audio_type === "canalizacao" && audio.status === "ready" && (
+        <CanalizacaoChat audioId={id} title={audio.title} />
+      )}
 
       {canEditMetadata && (
         <div className="-mt-1 flex justify-end">
@@ -609,7 +616,7 @@ function AudioDetail() {
                     ) : saveMutation.isSuccess ? (
                       <Badge variant="outline" className="justify-center border-brand/40 bg-brand/10"><Save className="mr-1 h-3 w-3" /> Salvo</Badge>
                     ) : null)}
-                    {canEditTimestamps && (
+                    {canReprocess && (
                       <Button
                         size="sm"
                         variant="outline"
